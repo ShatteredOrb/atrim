@@ -1,5 +1,5 @@
 # atrim
-**A legal, unmodified and DRM-free copy of *Amnesia: The Dark Descent* and/or *Amnesia: A Machine for Pigs* is required.**
+**A legal, unmodified and DRM-free copy of *Amnesia: The Dark Descent* is required.**
 
 This is atrim, a custom client for *Amnesia: The Dark Descent* which attempts to port the game to very old and weak machines, and make it compatible with operating systems as early as Windows 2000.
 
