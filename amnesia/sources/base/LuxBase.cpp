@@ -1055,6 +1055,8 @@ void cLuxBase::ExitEngine()
 {
     if(mpEngine)
     {
+        mpEngine->GetGraphics()->GetLowLevel()->SetPreSwapBuffersCallback(NULL, NULL);
+
         DestroyHPLEngine(mpEngine);
     }
 }

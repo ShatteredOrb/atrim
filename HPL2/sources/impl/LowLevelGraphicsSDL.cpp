@@ -942,6 +942,8 @@ void cLowLevelGraphicsSDL::FlushRendering()
 
 void cLowLevelGraphicsSDL::SwapBuffers()
 {
+    RunPreSwapBuffersCallback(); 
+
     SDL_GL_SwapBuffers();
 }
 

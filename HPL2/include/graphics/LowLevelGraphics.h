@@ -1,6 +1,8 @@
 #ifndef HPL_LOWLEVELGRAPHICS_H
 #define HPL_LOWLEVELGRAPHICS_H
 
+#include <stddef.h>
+
 #include "math/MathTypes.h"
 #include "system/SystemTypes.h"
 #include "graphics/GraphicsTypes.h"
@@ -21,9 +23,15 @@ class iMutex;
 
 //----------------------------------------
 
+typedef void (*tPreSwapBuffersCallback)(void *apUserData);
+
 class iLowLevelGraphics
 {
 public:
+    iLowLevelGraphics() : mpPreSwapBuffersCallback(NULL),
+                          mpPreSwapBuffersUserData(NULL),
+                          mbInPreSwapBuffersCallback(false) {}
+
     virtual ~iLowLevelGraphics() {}
 
 
@@ -112,6 +120,16 @@ public:
 
     virtual void FlushRendering() = 0;
     virtual void SwapBuffers() = 0;
+
+    /**
+    * Registers a func run by SwapBuffers() right before
+    * the back buffer is presented.
+    */
+    void SetPreSwapBuffersCallback(tPreSwapBuffersCallback apCallback, void *apUserData = NULL)
+    {
+        mpPreSwapBuffersCallback = apCallback;
+        mpPreSwapBuffersUserData = apUserData;
+    }
 
     /**
     * Copies the current frame buffer to a texture.
@@ -284,7 +302,22 @@ public:
     }
 
 protected:
+    void RunPreSwapBuffersCallback()
+    {
+        if(mpPreSwapBuffersCallback == NULL || mbInPreSwapBuffersCallback)
+        {
+            return;
+        }
+        mbInPreSwapBuffersCallback = true;
+        mpPreSwapBuffersCallback(mpPreSwapBuffersUserData);
+        mbInPreSwapBuffersCallback = false;
+    }
+
     static bool mbForceShaderModel3And4Off;
+
+    tPreSwapBuffersCallback mpPreSwapBuffersCallback;
+    void *mpPreSwapBuffersUserData;
+    bool mbInPreSwapBuffersCallback;
 };
 };
 #endif // HPL_LOWLEVELGRAPHICS_H
