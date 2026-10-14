@@ -1110,7 +1110,6 @@ void cParticleEmitter_UserData::UpdateMotion(double adFixedDelta)
         // Revolution
         if ( mbUseRevolution )
         {
-            //pParticle->mvRevolution += pParticle->mvRevolutionVel * adFixedDelta;
             cMatrixf mtxRotationMatrix = cMath::MatrixRotate( pParticle->mvRevolutionVel * (float)adFixedDelta,  eEulerRotationOrder_XYZ );
             pParticle->mvPos = cMath::MatrixMul(mtxRotationMatrix, pParticle->mvPos);
             pParticle->mvVel = cMath::MatrixMul(mtxRotationMatrix, pParticle->mvVel);

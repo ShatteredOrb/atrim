@@ -1625,20 +1625,6 @@ cVector3f iCharacterBody::UpdatePositionFromCharSpeed(double adFixedDelta)
     vPosAdd += mvForward * mfMoveSpeed[eCharDir_Forward] * (float)adFixedDelta;
     vPosAdd += mvRight * mfMoveSpeed[eCharDir_Right] * (float)adFixedDelta;
 
-    //TODO: This does not work when one lowers the speed (since it also caps max speed!). So leave in strafe bug / trick for now!
-    //Make sure speed is not greater than max forward.
-    /*float fMaxStep = mfMoveSpeed[eCharDir_Forward] >=0 ? mfMaxPosMoveSpeed[eCharDir_Forward] : mfMaxNegMoveSpeed[eCharDir_Forward];
-
-    fMaxStep *= adFixedDelta;
-    fMaxStep = cMath::Abs(fMaxStep);
-
-    float fStepLength = vPosAdd.Length();
-    if(fStepLength > fMaxStep)
-    {
-        vPosAdd = vPosAdd / fStepLength;
-        vPosAdd = vPosAdd * fMaxStep;
-    }*/
-
     //Finally update position
     return vPosAdd;
 }
@@ -2075,7 +2061,7 @@ void iCharacterBody::CheckForceCollision(double adFixedDelta)
             cVector3f vNewVelAdd = vYVel - vNormal * cMath::Vector3Dot(vNormal, vYVel);
             vNewVelocity += vNewVelAdd;
 
-            //If the new velocity is zero, then we set back to old positon (to prevent slope sliding)
+            //If the new velocity is zero, then we set back to old position (to prevent slope sliding)
             if(fabs(vNewVelAdd.Length()) < 0.0001f )
             {
                 mvPosition = vOldPos;
@@ -2436,7 +2422,7 @@ void iCharacterBody::UpdateGravityAttachment()
 
         }
         ///////////
-        // Transform only using positon delta
+        // Transform only using position delta
         else
         {
             mvPosition +=    mpGravityAttachedBody->GetWorldMatrix().GetTranslation() -
