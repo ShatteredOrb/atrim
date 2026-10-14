@@ -153,6 +153,8 @@ public:
 
     void InitOver();
 
+    void DrawVersionWatermark();
+
 
     bool LoadLanguage(const tString& asName, bool abForceReload = false);
 
@@ -220,6 +222,10 @@ public:
 
     bool mbShowPreMenu;
     bool mbShowMenu;
+
+    bool mbShowVersionInfo;
+    cGuiSet *mpVersionWatermarkSet;
+    tWString msVersionWatermarkText;
 
     tString msStartMapFile;
     tString msStartMapFolder;

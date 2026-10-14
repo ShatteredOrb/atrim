@@ -76,6 +76,8 @@
 
 #include "LuxCommentaryIcon.h"
 
+#include "impl/PlatformBuildID.h"
+
 //////////////////////////////////////////////////////////////////////////
 // GLOBAL FUNCTIONS
 //////////////////////////////////////////////////////////////////////////
@@ -85,6 +87,23 @@
 #define kCurrentVersion_Major 1
 #define kCurrentVersion_Minor 4
 #define kCurrentVersion_Patch 6
+
+//-----------------------------------------------------------------------
+
+//////////////////////////////////////
+// Version watermark layout.
+// Everything is relative to the screen so it scales with resolution and aspect ratio.
+
+static const float kVersionWatermark_FontHeightRel   = 0.026f;  //Font size as fraction of screen height (~28px @ 1080p)
+static const float kVersionWatermark_MinFontSize     = 12.0f;
+static const float kVersionWatermark_MarginRightRel  = 0.072f;  //Distance from right edge, fraction of screen width
+static const float kVersionWatermark_MarginBottomRel = 0.050f;  //Distance from bottom edge, fraction of screen height
+static const float kVersionWatermark_ShadowOffsetRel = 0.07f;   //Shadow offset (right and down), fraction of font size
+
+static void LuxVersionWatermark_PreSwapCallback(void *apUserData)
+{
+    static_cast<cLuxBase*>(apUserData)->DrawVersionWatermark();
+}
 
 //-----------------------------------------------------------------------
 
@@ -314,6 +333,9 @@ cLuxBase::cLuxBase()
     mpGameCfg = NULL;
 
     mpCurrentMapLoading = NULL;
+
+    mbShowVersionInfo = false;
+    mpVersionWatermarkSet = NULL;
 
     ///////////////////////////////
     // Init string
@@ -809,6 +831,8 @@ bool cLuxBase::InitMainConfig()
     mbShowPreMenu = mpMainConfig->GetBool("Main", "ShowPreMenu", true);
     mbShowMenu = mpMainConfig->GetBool("Main", "ShowMenu", true);
 
+    mbShowVersionInfo = mpMainConfig->GetBool("Main", "ShowVersionInfo", false);
+
     SetUpdateLogActive(mpMainConfig->GetBool("Main", "UpdateLogActive", false));
 
     ////////////////////////////////////
@@ -1056,6 +1080,7 @@ void cLuxBase::ExitEngine()
     if(mpEngine)
     {
         mpEngine->GetGraphics()->GetLowLevel()->SetPreSwapBuffersCallback(NULL, NULL);
+        mpVersionWatermarkSet = NULL;
 
         DestroyHPLEngine(mpEngine);
     }
@@ -1095,6 +1120,25 @@ bool cLuxBase::InitGame()
     else
     {
         mpDefaultFont = mpEngine->GetResources()->GetFontManager()->CreateFontData("font_default.fnt");
+    }
+
+    ///////////////////////////////////////
+    // Version watermark
+    {
+        tString sVersion = "atrim " +
+                           cString::ToString(kCurrentVersion_Major) + "." +
+                           cString::ToString(kCurrentVersion_Minor) + "." +
+                           cString::ToString(kCurrentVersion_Patch) +
+                           " build " + GetBuildID() +
+                           " " + cPlatform::GetPlatformName();
+        msVersionWatermarkText = cString::To16Char(sVersion);
+
+        mpVersionWatermarkSet = mpEngine->GetGui()->CreateSet("VersionWatermark", NULL);
+        mpVersionWatermarkSet->SetActive(false);
+        mpVersionWatermarkSet->SetDrawMouse(false);
+
+        //Should be drawn by preswap instead.
+        mpEngine->GetGraphics()->GetLowLevel()->SetPreSwapBuffersCallback(LuxVersionWatermark_PreSwapCallback, this);
     }
 
     ///////////////////////////////////////
@@ -1225,6 +1269,67 @@ void cLuxBase::InitOver()
 {
     //Set proper caption when loading is done.
     gpBase->mpEngine->GetGraphics()->GetLowLevel()->SetWindowCaption(msGameName);
+}
+
+//-----------------------------------------------------------------------
+
+void cLuxBase::DrawVersionWatermark()
+{
+    if(mbShowVersionInfo == false || mpVersionWatermarkSet == NULL || mpDefaultFont == NULL)
+    {
+        return;
+    }
+
+    iLowLevelGraphics *pLowGfx = mpEngine->GetGraphics()->GetLowLevel();
+    const cVector2f vScreenSize = pLowGfx->GetScreenSizeFloat();
+
+    ///////////////////////////////
+    // Size and position (right aligned, relative to screen)
+    float fFontSize = vScreenSize.y * kVersionWatermark_FontHeightRel;
+    if(fFontSize < kVersionWatermark_MinFontSize)
+    {
+        fFontSize = kVersionWatermark_MinFontSize;
+    }
+    const cVector2f vFontSize(fFontSize, fFontSize);
+
+    const float fTextWidth = mpDefaultFont->GetLength(vFontSize, msVersionWatermarkText.c_str());
+
+    cVector3f vPos;
+    vPos.x = vScreenSize.x - vScreenSize.x * kVersionWatermark_MarginRightRel - fTextWidth;
+    vPos.y = vScreenSize.y - vScreenSize.y * kVersionWatermark_MarginBottomRel - fFontSize;
+    vPos.z = 10;
+
+    ///////////////////////////////
+    // Draw straight to the screen. Virtual size must be refreshed every time!
+    mpVersionWatermarkSet->SetVirtualSize(vScreenSize, -1000, 1000, cVector2f(0, 0));
+
+    //Make sure it draws to the back buffer
+    pLowGfx->SetCurrentFrameBuffer(NULL);
+
+    // Shadow color. DO NOT CHANGE!
+    const cColor watermarkShadowColor(0.0f / 255.0f, 0.0f / 255.0f, 0.0f / 255.0f, 1.0f);
+
+    // Changable by dev. for now its just IW style blue :P  (hex : 297ECE)
+    const cColor watermarkColor(41.0f / 255.0f, 126.0f / 255.0f, 206.0f / 255.0f, 1.0f);
+
+    //Shadow is offset right/down by whole pixels (at least 1) so it stays crisp and scales with font size
+    float fShadowOffset = (float)(int)(fFontSize * kVersionWatermark_ShadowOffsetRel + 0.5f);
+    if(fShadowOffset < 1.0f)
+    {
+        fShadowOffset = 1.0f;
+    }
+
+    //The gui sorts render objects by Z first (equal Z = undefined order),
+    //so the shadow gets a lower Z to be guaranteed to end up underneath the text
+    const cVector3f vShadowPos(vPos.x + fShadowOffset, vPos.y + fShadowOffset, vPos.z - 1.0f);
+
+    mpVersionWatermarkSet->DrawFont(msVersionWatermarkText, mpDefaultFont, vShadowPos, vFontSize, watermarkShadowColor);
+    mpVersionWatermarkSet->DrawFont(msVersionWatermarkText, mpDefaultFont, vPos, vFontSize, watermarkColor);
+
+    mpVersionWatermarkSet->Render(NULL);
+    mpVersionWatermarkSet->ClearRenderObjects();
+
+    pLowGfx->FlushRendering();
 }
 
 //-----------------------------------------------------------------------
