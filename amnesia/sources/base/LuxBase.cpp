@@ -1135,7 +1135,12 @@ bool cLuxBase::InitGame()
                            cString::ToString(kCurrentVersion_Patch) +
                            " build " + GetBuildID() +
                            " (" + kCurrentVersion_Branch + ") " +
-                           cPlatform::GetPlatformName();
+                           cPlatform::GetPlatformName()
+#if _DEBUG
+                           + " Debug";
+#else
+                           + " Release";
+#endif
 
         msVersionWatermarkText = cString::To16Char(sVersion);
 
