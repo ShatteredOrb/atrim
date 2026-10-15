@@ -45,6 +45,16 @@ static LARGE_INTEGER lTimerStart;
 
 bool cPlatformWin32::DWMCompositorActive()
 {
+    static bool bDwmChecked = false;
+    static bool bDwmActive  = false;
+
+    // This check might not be thread safe... but ok ig ;P
+    if(bDwmChecked)
+    {
+        return bDwmActive;
+    }
+    bDwmChecked = true;
+
     wchar_t sysDir[MAX_PATH];
     if(GetSystemDirectoryW(sysDir, MAX_PATH) == 0)
     {
@@ -57,29 +67,29 @@ bool cPlatformWin32::DWMCompositorActive()
         return false;
     }
 
+    // Only dwmapi.dll should be valid in System32 and SysWOW64 to prevent malicious hijacks
+
     HMODULE hDwmapi = LoadLibraryW(dwmPath);
     if(!hDwmapi)
     {
         return false;
     }
 
+    // Loading process and final check if its active, free library otherwise
+
     typedef HRESULT(WINAPI * DwmIsCompositionEnabledFunc)(BOOL*);
 
     DwmIsCompositionEnabledFunc pDwmIsCompositionEnabled =
-        (DwmIsCompositionEnabledFunc)GetProcAddress(
-            hDwmapi, "DwmIsCompositionEnabled");
+        (DwmIsCompositionEnabledFunc)GetProcAddress(hDwmapi, "DwmIsCompositionEnabled");
 
     BOOL bDwmEnabled = FALSE;
-    HRESULT hr = E_FAIL;
-
-    if(pDwmIsCompositionEnabled)
+    if(pDwmIsCompositionEnabled && SUCCEEDED(pDwmIsCompositionEnabled(&bDwmEnabled)))
     {
-        hr = pDwmIsCompositionEnabled(&bDwmEnabled);
+        bDwmActive = (bDwmEnabled != FALSE);
     }
 
     FreeLibrary(hDwmapi);
-
-    return SUCCEEDED(hr) && bDwmEnabled != FALSE;
+    return bDwmActive;
 }
 
 //-----------------------------------------------------------------------

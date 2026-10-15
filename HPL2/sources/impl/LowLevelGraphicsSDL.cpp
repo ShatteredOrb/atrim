@@ -149,6 +149,7 @@ bool cLowLevelGraphicsSDL::Init(int alWidth, int alHeight, int alBpp, bool abFul
     {
         abBorderless = true;
         abFullscreen = false;
+
         mlFlags |= SDL_NOFRAME;
 
         const SDL_VideoInfo* iVideoInfo = SDL_GetVideoInfo();
@@ -184,14 +185,10 @@ bool cLowLevelGraphicsSDL::Init(int alWidth, int alHeight, int alBpp, bool abFul
         }
         else
         {
-            //SetWindowCaption(asWindowCaption);
             cPlatform::CreateMessageBox(_W("Warning!"), _W("Could not set displaymode and 640x480 is used instead!\n"));
         }
     }
-    else
-    {
-        //SetWindowCaption(asWindowCaption);
-    }
+
     // update with the screen size ACTUALLY obtained
     mvScreenSize = cVector2l(mpScreen->w, mpScreen->h);
 #ifdef _WIN32
@@ -201,22 +198,17 @@ bool cLowLevelGraphicsSDL::Init(int alWidth, int alHeight, int alBpp, bool abFul
     {
         SDL_SysWMinfo pInfo;
         SDL_VERSION(&pInfo.version);
-        SDL_GetWMInfo(&pInfo);
 
-        RECT r;
-        GetWindowRect(pInfo.window, &r);
-
-        if(abBorderless)
+        if(SDL_GetWMInfo(&pInfo) > 0)
         {
-            LONG lStyle = GetWindowLong(pInfo.window, GWL_STYLE);
-            lStyle &= ~(WS_CAPTION | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_SYSMENU);
-            SetWindowLong(pInfo.window, GWL_STYLE, lStyle);
-
-            SetWindowPos(pInfo.window, HWND_TOP, 0, 0, alWidth, alHeight, SWP_FRAMECHANGED | SWP_SHOWWINDOW);
-        }
-        else if(avWindowPos.x >= 0 && avWindowPos.y >= 0)
-        {
-            SetWindowPos(pInfo.window, HWND_TOP, avWindowPos.x, avWindowPos.y, 0, 0, SWP_NOSIZE);
+            if(abBorderless)
+            {
+                SetWindowPos(pInfo.window, HWND_TOP, 0, 0, alWidth, alHeight, SWP_FRAMECHANGED | SWP_SHOWWINDOW);
+            }
+            else if(avWindowPos.x >= 0 && avWindowPos.y >= 0)
+            {
+                SetWindowPos(pInfo.window, HWND_TOP, avWindowPos.x, avWindowPos.y, 0, 0, SWP_NOSIZE);
+            }
         }
     }
 #endif
