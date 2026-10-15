@@ -689,7 +689,13 @@ ePlatform cPlatform::GetPlatform()
 
 //-----------------------------------------------------------------------
 
+#if defined(_WIN64)
+tString cPlatform::msName = "Win64";
+#elif defined(_WIN32)
 tString cPlatform::msName = "Win32";
+#else
+tString cPlatform::msName = "Unknown";
+#endif
 
 //-----------------------------------------------------------------------
 
