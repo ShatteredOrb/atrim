@@ -84,6 +84,9 @@
 
 //-----------------------------------------------------------------------
 
+// The current branch that is on svn/git. Must change!
+#define kCurrentVersion_Branch "v1.4.6-beta"
+
 #define kCurrentVersion_Major 1
 #define kCurrentVersion_Minor 4
 #define kCurrentVersion_Patch 6
@@ -396,7 +399,8 @@ bool cLuxBase::Init(const tString &asCommandline)
         return false;
     }
 
-    Log("Version %d.%d.%d\n\n", kCurrentVersion_Major, kCurrentVersion_Minor, kCurrentVersion_Patch);
+    Log("Version %d.%d.%d", kCurrentVersion_Major, kCurrentVersion_Minor, kCurrentVersion_Patch);
+    Log(" (%s)\n\n", kCurrentVersion_Branch);
 
     /////////////////////////////
     // Init the engine
@@ -1125,12 +1129,14 @@ bool cLuxBase::InitGame()
     ///////////////////////////////////////
     // Version watermark
     {
-        tString sVersion = "atrim " +
+        tString sVersion = msGameName + " atrim " +
                            cString::ToString(kCurrentVersion_Major) + "." +
                            cString::ToString(kCurrentVersion_Minor) + "." +
                            cString::ToString(kCurrentVersion_Patch) +
                            " build " + GetBuildID() +
-                           " " + cPlatform::GetPlatformName();
+                           " (" + kCurrentVersion_Branch + ") " +
+                           cPlatform::GetPlatformName();
+
         msVersionWatermarkText = cString::To16Char(sVersion);
 
         mpVersionWatermarkSet = mpEngine->GetGui()->CreateSet("VersionWatermark", NULL);
