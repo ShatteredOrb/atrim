@@ -858,7 +858,7 @@ cDeferredLight *cRendererDeferred::GetDeferredLight(int alID)
     return NULL;
 }
 
-int cRendererDeferred::GetDeferredLightNum()
+size_t cRendererDeferred::GetDeferredLightNum()
 {
     return mvTempDeferredLights.size();
 }

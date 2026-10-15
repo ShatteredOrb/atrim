@@ -434,7 +434,7 @@ void cMeshEntity::UpdateLogic(double adFixedDelta)
             {
                 if ( pAnimState->IsActive() )
                 {
-                    soloIndex = i;
+                    soloIndex = (int)i;
                     fAnimationWeightMul = 1.0f;
                 }
             }

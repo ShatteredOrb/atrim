@@ -143,7 +143,7 @@ public:
     }
 
     cDeferredLight *GetDeferredLight(int alID);
-    int GetDeferredLightNum();
+    size_t GetDeferredLightNum();
     float GetLightComplexity(cDeferredLight* apLightData);
 
     //Static properties. Must be set before renderer data load.
