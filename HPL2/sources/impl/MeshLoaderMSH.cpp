@@ -270,7 +270,43 @@ cMesh *cMeshLoaderMSH::LoadMesh(const tWString& asFile, tMeshLoadFlag aFlags)
 
                 //Get and fill the array data
                 void *pData = GetVertexBufferWithFormat(pVtxBuff, arrayType, elementFormat);
-                GetBinaryBufferDataWithFormat(&binBuff, pData, (size_t)(lVtxNum * lElementNum), elementFormat);
+                size_t lDataCount = (size_t)(lVtxNum * lElementNum);
+                if(pData == NULL || lDataCount == 0)
+                {
+                    Error("Vertex array for element %d is empty or invalid while loading '%s' - skipping data read\n",
+                          arrayType, cString::To8Char(asFile).c_str());
+
+                    if(lDataCount > 0)
+                    {
+                        switch(elementFormat)
+                        {
+                        case eVertexBufferElementFormat_Float:
+                        {
+                            tFloatVec vTmp(lDataCount);
+                            binBuff.GetFloat32Array(&vTmp[0], (int)lDataCount);
+                            break;
+                        }
+                        case eVertexBufferElementFormat_Int:
+                        {
+                            tIntVec vTmp(lDataCount);
+                            binBuff.GetInt32Array(&vTmp[0], (int)lDataCount);
+                            break;
+                        }
+                        case eVertexBufferElementFormat_Byte:
+                        {
+                            tByteVec vTmp(lDataCount);
+                            binBuff.GetCharArray((char*)&vTmp[0], (int)lDataCount);
+                            break;
+                        }
+                        default:
+                            break;
+                        }
+                    }
+                }
+                else
+                {
+                    GetBinaryBufferDataWithFormat(&binBuff, pData, lDataCount, elementFormat);
+                }
             }
         }
 
@@ -285,7 +321,14 @@ cMesh *cMeshLoaderMSH::LoadMesh(const tWString& asFile, tMeshLoadFlag aFlags)
             }
 
             pVtxBuff->ResizeIndices(lIdxNum);
-            binBuff.GetInt32Array((int*)pVtxBuff->GetIndices(), lIdxNum);
+            if(lIdxNum > 0)
+            {
+                unsigned int *pIndices = pVtxBuff->GetIndices();
+                if(pIndices)
+                {
+                    binBuff.GetInt32Array((int*)pIndices, lIdxNum);
+                }
+            }
         }
 
 

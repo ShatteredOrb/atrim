@@ -203,11 +203,11 @@ void *cVtxBufferGLElementArray::GetArrayPtr()
     switch(mFormat)
     {
     case eVertexBufferElementFormat_Float:
-        return &(*mpFloatArray)[0];
+        return (mpFloatArray && !mpFloatArray->empty()) ? &(*mpFloatArray)[0] : NULL;
     case eVertexBufferElementFormat_Int:
-        return &(*mpIntArray)[0];
+        return (mpIntArray && !mpIntArray->empty()) ? &(*mpIntArray)[0] : NULL;
     case eVertexBufferElementFormat_Byte:
-        return &(*mpByteArray)[0];
+        return (mpByteArray && !mpByteArray->empty()) ? &(*mpByteArray)[0] : NULL;
     }
     return NULL;
 }
@@ -362,13 +362,20 @@ cBoundingVolume iVertexBufferOpenGL::CreateBoundingVolume()
     }
 
     cVtxBufferGLElementArray *pElement = GetElementArray(eVertexBufferElement_Position);
-    if(pElement->mFormat != eVertexBufferElementFormat_Float)
+    if(pElement == NULL || pElement->mFormat != eVertexBufferElementFormat_Float)
     {
-        Warning("Could not breate bounding volume since position was not for format float in buffer %d!\n", this);
+        Warning("Could not create bounding volume since position was missing or not float format in buffer %d!\n", this);
         return bv;
     }
 
-    bv.AddArrayPoints((float*)pElement->GetArrayPtr(), GetVertexNum());
+    float *pData = (float*)pElement->GetArrayPtr();
+    if(pData == NULL)
+    {
+        Warning("Could not create bounding volume from buffer %d because position array is empty!\n", this);
+        return bv;
+    }
+
+    bv.AddArrayPoints(pData, GetVertexNum());
     bv.CreateFromPoints(pElement->mlElementNum);
 
     return bv;
@@ -382,25 +389,35 @@ bool iVertexBufferOpenGL::Compile(tVertexCompileFlag aFlags)
     //Create tangents
     if(aFlags & eVertexCompileFlag_CreateTangents)
     {
-        CreateElementArray(eVertexBufferElement_Texture1Tangent, eVertexBufferElementFormat_Float, 4);
-
         cVtxBufferGLElementArray *pPosElement = GetElementArray(eVertexBufferElement_Position);
         cVtxBufferGLElementArray *pNormalElement = GetElementArray(eVertexBufferElement_Normal);
         cVtxBufferGLElementArray *pTextureElement = GetElementArray(eVertexBufferElement_Texture0);
-        cVtxBufferGLElementArray *pTangentElement = GetElementArray(eVertexBufferElement_Texture1Tangent);
 
-        pTangentElement->Resize(GetVertexNum() * 4);
+        if(pPosElement == NULL || pNormalElement == NULL || pTextureElement == NULL ||
+           pPosElement->GetArrayPtr() == NULL || pNormalElement->GetArrayPtr() == NULL ||
+           pTextureElement->GetArrayPtr() == NULL || mvIndexArray.empty())
+        {
+            Warning("Cannot create tangents for buffer %d - missing or empty position/normal/texture/index data!\n", this);
+        }
+        else
+        {
+            CreateElementArray(eVertexBufferElement_Texture1Tangent, eVertexBufferElementFormat_Float, 4);
 
-        cMath::CreateTriTangentVectors((float*)pTangentElement->GetArrayPtr(),
-                                       &mvIndexArray[0], GetIndexNum(),
+            cVtxBufferGLElementArray *pTangentElement = GetElementArray(eVertexBufferElement_Texture1Tangent);
+            pTangentElement->Resize(GetVertexNum() * 4);
 
-                                       (float*)pPosElement->GetArrayPtr(),
-                                       pPosElement->mlElementNum,
-
-                                       (float*)pTextureElement->GetArrayPtr(),
-                                       (float*)pNormalElement->GetArrayPtr(),
-                                       GetVertexNum()
-                                      );
+            float *pTangentData = (float*)pTangentElement->GetArrayPtr();
+            if(pTangentData)
+            {
+                cMath::CreateTriTangentVectors(pTangentData,
+                                               &mvIndexArray[0], GetIndexNum(),
+                                               (float*)pPosElement->GetArrayPtr(),
+                                               pPosElement->mlElementNum,
+                                               (float*)pTextureElement->GetArrayPtr(),
+                                               (float*)pNormalElement->GetArrayPtr(),
+                                               GetVertexNum());
+            }
+        }
     }
 
     //////////////////////////////////////////
@@ -415,12 +432,26 @@ bool iVertexBufferOpenGL::Compile(tVertexCompileFlag aFlags)
 void iVertexBufferOpenGL::CreateShadowDouble(bool abUpdateData)
 {
     cVtxBufferGLElementArray *pPosElement = GetElementArray(eVertexBufferElement_Position);
+    if(pPosElement == NULL)
+    {
+        Warning("CreateShadowDouble called on buffer %d with no position element!\n", this);
+        return;
+    }
 
-    //Set to new size.
     int lSize = (int)pPosElement->Size();
+    if(lSize == 0)
+    {
+        Warning("CreateShadowDouble called on buffer %d with empty position array!\n", this);
+        return;
+    }
+
     pPosElement->Reserve(lSize * 2);
 
     float *pPosArray = (float*)pPosElement->GetArrayPtr();
+    if(pPosArray == NULL)
+    {
+        return;
+    }
 
     int lCount = lSize / 4;
     int lZero = 0;
@@ -446,7 +477,13 @@ void iVertexBufferOpenGL::Transform(const cMatrixf &a_mtxTransform)
 {
     ///////////////
     //Get position
-    float *pPosArray = (float*)GetElementArray(eVertexBufferElement_Position)->GetArrayPtr();
+    cVtxBufferGLElementArray *pPosElement = GetElementArray(eVertexBufferElement_Position);
+    float *pPosArray = pPosElement ? (float*)pPosElement->GetArrayPtr() : NULL;
+    if(pPosArray == NULL)
+    {
+        Warning("Transform called on buffer %d with no/empty position data!\n", this);
+        return;
+    }
 
     ///////////////
     //Get normal
@@ -473,7 +510,7 @@ void iVertexBufferOpenGL::Transform(const cMatrixf &a_mtxTransform)
     cMatrixf mtxRot = a_mtxTransform.GetRotation();
     cMatrixf mtxNormalRot = cMath::MatrixInverse(mtxRot).GetTranspose();
 
-    int lVtxStride = GetElementArray(eVertexBufferElement_Position)->mlElementNum;
+    int lVtxStride = pPosElement->mlElementNum;
     int lShadowDoubleOffset = GetVertexNum() * 4;
 
     //////////////////////
@@ -620,7 +657,7 @@ unsigned char *iVertexBufferOpenGL::GetByteArray(eVertexBufferElement aElement)
 
 unsigned int *iVertexBufferOpenGL::GetIndices()
 {
-    return &mvIndexArray[0];
+    return mvIndexArray.empty() ? NULL : &mvIndexArray[0];
 }
 
 //-----------------------------------------------------------------------
@@ -677,28 +714,26 @@ iVertexBuffer *iVertexBufferOpenGL::CreateCopy(    eVertexBufferType aType, eVer
 
         pDestElement->Resize(pSrcElement->Size());
 
-        memcpy(    pDestElement->GetArrayPtr(), pSrcElement->GetArrayPtr(),
-                   pSrcElement->Size() * GetVertexFormatByteSize(pSrcElement->mFormat));
-    }
-
-    /*for(int i=0; i < klNumOfVertexFlags; i++)
-    {
-        if( (kvVertexFlags[i] & mVertexFlags) && (kvVertexFlags[i] & alVtxToCopy))
+        void *pSrcData = pSrcElement->GetArrayPtr();
+        void *pDstData = pDestElement->GetArrayPtr();
+        if(pSrcData && pDstData && pSrcElement->Size() > 0)
         {
-            int lElements = kvVertexElements[i];
-            if(mbTangents && kvVertexFlags[i] == eVertexElementFlag_Texture1)
-                lElements=4;
-
-            pVtxBuff->ResizeArray(kvVertexFlags[i], (int)mvVertexArray[i].size());
-
-            memcpy(pVtxBuff->GetArray(kvVertexFlags[i]),
-                    &mvVertexArray[i][0], mvVertexArray[i].size() * sizeof(float));
+            memcpy(pDstData, pSrcData,
+                   pSrcElement->Size() * GetVertexFormatByteSize(pSrcElement->mFormat));
         }
-    }*/
+    }
 
     //Copy indices to the new buffer
     pVtxBuff->ResizeIndices(GetIndexNum());
-    memcpy(pVtxBuff->GetIndices(), GetIndices(), GetIndexNum() * sizeof(unsigned int) );
+    if(GetIndexNum() > 0)
+    {
+        unsigned int *pSrcIdx = GetIndices();
+        unsigned int *pDstIdx = pVtxBuff->GetIndices();
+        if(pSrcIdx && pDstIdx)
+        {
+            memcpy(pDstIdx, pSrcIdx, GetIndexNum() * sizeof(unsigned int));
+        }
+    }
 
     pVtxBuff->mbTangents = mbTangents;
     pVtxBuff->mbHasShadowDouble = mbHasShadowDouble;
@@ -713,6 +748,11 @@ iVertexBuffer *iVertexBufferOpenGL::CreateCopy(    eVertexBufferType aType, eVer
 int iVertexBufferOpenGL::GetVertexNum()
 {
     cVtxBufferGLElementArray *pPosElement = GetElementArray(eVertexBufferElement_Position);
+    if(pPosElement == NULL || pPosElement->mlElementNum <= 0)
+    {
+        return 0;
+    }
+
     int lSize = (int)pPosElement->Size() / pPosElement->mlElementNum;
 
     //If there is a shadow double, just return the length of the first half.

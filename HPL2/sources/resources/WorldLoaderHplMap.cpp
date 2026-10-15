@@ -668,6 +668,12 @@ void cWorldLoaderHplMap::LoadCacheFile(const tWString& asFile)
                 if(lCompressionType == 0)
                 {
                     void *pData = GetVertexBufferWithFormat(pVtxBuff, arrayType, elementFormat);
+                    if(pData == NULL)
+                    {
+                        Error("Vertex array for element %d is empty or invalid in '%s'!\n",
+                            arrayType, cString::To8Char(asFile).c_str());
+                        continue;
+                    }
                     GetBinaryBufferDataWithFormat(&binBuff, pData, (size_t)(lVtxNum * lElementNum), elementFormat);
                 }
                 /////////////////////////
@@ -917,6 +923,12 @@ void cWorldLoaderHplMap::SaveCacheFile(const tWString& asFile)
                 if(lCompressionType == 0)
                 {
                     void *pData = GetVertexBufferWithFormat(pVtxBuff, arrayType, elementFormat);
+                    if(pData == NULL)
+                    {
+                        Error("Vertex array for element %d is empty or invalid in '%s'!\n",
+                            arrayType, cString::To8Char(asFile).c_str());
+                        continue;
+                    }
                     AddBinaryBufferDataWithFormat(&binBuff, pData, (size_t)(lVtxNum * lElementNum), elementFormat);
                 }
                 ////////////////////////////////////

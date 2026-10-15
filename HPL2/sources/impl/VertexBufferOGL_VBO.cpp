@@ -84,42 +84,49 @@ void cVertexBufferOGL_VBO::UpdateData(tVertexElementFlag aTypes, bool abIndices)
     if(aTypes != 0 && mlInterleavedStride > 0)
     {
         const int lVertexCount = GetVertexNum();
-        const size_t lTotalBytes = (size_t)lVertexCount * mlInterleavedStride;
+        const size_t lTotalBytes = (size_t)lVertexCount * (size_t)mlInterleavedStride;
 
-        int lUpdateIdx = 1 - mlCurrentInterleaved;
-        unsigned int lHandle = mlInterleavedHandle[lUpdateIdx];
-
-        static std::vector<char> temp; // Temporary buffer
-        if(temp.size() < lTotalBytes)
+        if(lTotalBytes > 0)
         {
-            temp.resize(lTotalBytes);
-        }
+            int lUpdateIdx = 1 - mlCurrentInterleaved;
+            unsigned int lHandle = mlInterleavedHandle[lUpdateIdx];
 
-        for(size_t i = 0; i < mvElementArrays.size(); ++i)
-        {
-            cVtxBufferGLElementArray *pElement = mvElementArrays[i];
-            const size_t lElementBytes = pElement->mlElementNum * GetVertexFormatByteSize(pElement->mFormat);
-            const char *src = (const char*)pElement->GetArrayPtr();
-
-            for(int v = 0; v < lVertexCount; ++v)
+            static std::vector<char> temp; // Temporary buffer
+            if(temp.size() < lTotalBytes)
             {
-                char *dst = &temp[v * mlInterleavedStride + mvElementOffsets[i]];
-                memcpy(dst, src + v * lElementBytes, lElementBytes);
+                temp.resize(lTotalBytes);
             }
+
+            for(size_t i = 0; i < mvElementArrays.size(); ++i)
+            {
+                cVtxBufferGLElementArray *pElement = mvElementArrays[i];
+                const size_t lElementBytes = pElement->mlElementNum * GetVertexFormatByteSize(pElement->mFormat);
+                const char *src = (const char*)pElement->GetArrayPtr();
+                if(src == NULL)
+                {
+                    continue; // empty element
+                }
+
+                for(int v = 0; v < lVertexCount; ++v)
+                {
+                    char *dst = &temp[(size_t)v * mlInterleavedStride + mvElementOffsets[i]];
+                    memcpy(dst, src + (size_t)v * lElementBytes, lElementBytes);
+                }
+            }
+
+            glBindBufferARB(GL_ARRAY_BUFFER_ARB, lHandle);
+
+            if(lTotalBytes != mlLastUploadedBytes[lUpdateIdx])
+            {
+                glBufferDataARB(GL_ARRAY_BUFFER_ARB, (GLsizeiptr)lTotalBytes, NULL, usageType);
+                mlLastUploadedBytes[lUpdateIdx] = lTotalBytes;
+            }
+
+            glBufferSubDataARB(GL_ARRAY_BUFFER_ARB, 0, (GLsizeiptr)lTotalBytes, &temp[0]);
+            glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
+
+            mlCurrentInterleaved = lUpdateIdx;
         }
-
-        glBindBufferARB(GL_ARRAY_BUFFER_ARB, lHandle);
-
-        if(lTotalBytes != mlLastUploadedBytes[lUpdateIdx])
-        {
-            glBufferDataARB(GL_ARRAY_BUFFER_ARB, lTotalBytes, NULL, usageType);
-            mlLastUploadedBytes[lUpdateIdx] = lTotalBytes;
-        }
-
-        glBufferSubDataARB(GL_ARRAY_BUFFER_ARB, 0, lTotalBytes, &temp[0]);
-        glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
-
-        mlCurrentInterleaved = lUpdateIdx;
     }
 
     //Create the VBO index array
@@ -127,12 +134,18 @@ void cVertexBufferOGL_VBO::UpdateData(tVertexElementFlag aTypes, bool abIndices)
     {
         glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, mlElementHandle);
 
-        if(mbUse16BitIndices)
+        const int lIndexCount = GetIndexNum();
+        if(lIndexCount <= 0 || mvIndexArray.empty())
+        {
+            mlIndexBufferSize = 0;
+            glBufferDataARB(GL_ELEMENT_ARRAY_BUFFER_ARB, 0, NULL, usageType);
+        }
+        else if(mbUse16BitIndices)
         {
             //16bit conversion
-            std::vector<unsigned short> shortIndices(GetIndexNum());
+            std::vector<unsigned short> shortIndices(lIndexCount);
 
-            for(int i = 0; i < GetIndexNum(); ++i)
+            for(int i = 0; i < lIndexCount; ++i)
             {
 #ifdef _DEBUG
                 if(mvIndexArray[i] > 65535)
@@ -143,7 +156,7 @@ void cVertexBufferOGL_VBO::UpdateData(tVertexElementFlag aTypes, bool abIndices)
                 shortIndices[i] = (unsigned short)mvIndexArray[i];
             }
 
-            mlIndexBufferSize = GetIndexNum() * sizeof(unsigned short);
+            mlIndexBufferSize = lIndexCount * (int)sizeof(unsigned short);
 
             glBufferDataARB(GL_ELEMENT_ARRAY_BUFFER_ARB,
                             mlIndexBufferSize, &shortIndices[0], usageType);
@@ -151,7 +164,7 @@ void cVertexBufferOGL_VBO::UpdateData(tVertexElementFlag aTypes, bool abIndices)
         else
         {
             //Use 32bit
-            mlIndexBufferSize = GetIndexNum() * sizeof(unsigned int);
+            mlIndexBufferSize = lIndexCount * (int)sizeof(unsigned int);
 
             glBufferDataARB(GL_ELEMENT_ARRAY_BUFFER_ARB,
                             mlIndexBufferSize, &mvIndexArray[0], usageType);
@@ -173,13 +186,19 @@ void cVertexBufferOGL_VBO::Draw(eVertexBufferDrawType aDrawType)
 
     //////////////////////////////////
     //Bind and draw the buffer
-    glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, mlElementHandle);
 
     int lSize = mlElementNum;
     if(mlElementNum < 0)
     {
         lSize = GetIndexNum();
     }
+
+    if(lSize <= 0 || mlElementHandle == 0)
+    {
+        return; // nothing to draw (empty/broken mesh)
+    }
+
+    glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, mlElementHandle);
 
     GLenum indexType = mbUse16BitIndices ? GL_UNSIGNED_SHORT : GL_UNSIGNED_INT;
 
@@ -267,7 +286,7 @@ void cVertexBufferOGL_VBO::CompileSpecific()
     }
 
     const int lVertexCount = GetVertexNum();
-    const size_t lTotalBytes = (size_t)lVertexCount * mlInterleavedStride;
+    const size_t lTotalBytes = (size_t)lVertexCount * (size_t)mlInterleavedStride;
 
     for(int b = 0; b < 2; ++b)
     {
@@ -277,35 +296,54 @@ void cVertexBufferOGL_VBO::CompileSpecific()
         }
     }
 
-    //Pack into temp buffer
-    std::vector<char> temp(lTotalBytes);
-
-    for(size_t i = 0; i < mvElementArrays.size(); ++i)
+    // Pack into temp buffer (skip when there is no vertex data)
+    if(lTotalBytes > 0 && mlInterleavedStride > 0)
     {
-        cVtxBufferGLElementArray *pElement = mvElementArrays[i];
+        std::vector<char> temp(lTotalBytes);
 
-        const size_t lElementBytes = pElement->mlElementNum * GetVertexFormatByteSize(pElement->mFormat);
-        const char *src = (const char*)pElement->GetArrayPtr();
-
-        for(int v = 0; v < lVertexCount; ++v)
+        for(size_t i = 0; i < mvElementArrays.size(); ++i)
         {
-            char *dst = &temp[v * mlInterleavedStride + mvElementOffsets[i]];
-            memcpy(dst, src + v * lElementBytes, lElementBytes);
-        }
-    }
+            cVtxBufferGLElementArray *pElement = mvElementArrays[i];
 
-    for(int b = 0; b < 2; ++b)
-    {
-        glBindBufferARB(GL_ARRAY_BUFFER_ARB, mlInterleavedHandle[b]);
-        glBufferDataARB(GL_ARRAY_BUFFER_ARB, lTotalBytes, &temp[0], usageType);
-        mlLastUploadedBytes[b] = lTotalBytes;
+            const size_t lElementBytes = pElement->mlElementNum * GetVertexFormatByteSize(pElement->mFormat);
+            const char *src = (const char*)pElement->GetArrayPtr();
+            if(src == NULL)
+            {
+                continue; // empty element
+            }
+
+            for(int v = 0; v < lVertexCount; ++v)
+            {
+                char *dst = &temp[(size_t)v * mlInterleavedStride + mvElementOffsets[i]];
+                memcpy(dst, src + (size_t)v * lElementBytes, lElementBytes);
+            }
+        }
+
+        for(int b = 0; b < 2; ++b)
+        {
+            glBindBufferARB(GL_ARRAY_BUFFER_ARB, mlInterleavedHandle[b]);
+            glBufferDataARB(GL_ARRAY_BUFFER_ARB, (GLsizeiptr)lTotalBytes, &temp[0], usageType);
+            mlLastUploadedBytes[b] = lTotalBytes;
+        }
+        glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
     }
-    glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
+    else
+    {
+        // No usable vertex data, allocate empty VBOs so later binds stay valid
+        for(int b = 0; b < 2; ++b)
+        {
+            glBindBufferARB(GL_ARRAY_BUFFER_ARB, mlInterleavedHandle[b]);
+            glBufferDataARB(GL_ARRAY_BUFFER_ARB, 0, NULL, usageType);
+            mlLastUploadedBytes[b] = 0;
+        }
+        glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
+    }
 
     //Start with buffer 0 or the primary buffer
     mlCurrentInterleaved = 0;
 
     //Create the VBO index array
+    const int lIndexCount = GetIndexNum();
     mbUse16BitIndices = (GetVertexNum() <= 65535);
 
     if(mlElementHandle == 0)
@@ -315,12 +353,17 @@ void cVertexBufferOGL_VBO::CompileSpecific()
 
     glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, mlElementHandle);
 
-    if(mbUse16BitIndices)
+    if(lIndexCount <= 0 || mvIndexArray.empty())
+    {
+        mlIndexBufferSize = 0;
+        glBufferDataARB(GL_ELEMENT_ARRAY_BUFFER_ARB, 0, NULL, usageType);
+    }
+    else if(mbUse16BitIndices)
     {
         //16bit conversion
-        std::vector<unsigned short> shortIndices(GetIndexNum());
+        std::vector<unsigned short> shortIndices(lIndexCount);
 
-        for(int i = 0; i < GetIndexNum(); ++i)
+        for(int i = 0; i < lIndexCount; ++i)
         {
 #ifdef _DEBUG
             if(mvIndexArray[i] > 65535)
@@ -331,7 +374,7 @@ void cVertexBufferOGL_VBO::CompileSpecific()
             shortIndices[i] = (unsigned short)mvIndexArray[i];
         }
 
-        mlIndexBufferSize = GetIndexNum() * sizeof(unsigned short);
+        mlIndexBufferSize = lIndexCount * (int)sizeof(unsigned short);
 
         glBufferDataARB(GL_ELEMENT_ARRAY_BUFFER_ARB, mlIndexBufferSize,
                         &shortIndices[0], usageType);
@@ -339,7 +382,7 @@ void cVertexBufferOGL_VBO::CompileSpecific()
     else
     {
         //Use 32bit
-        mlIndexBufferSize = GetIndexNum() * sizeof(unsigned int);
+        mlIndexBufferSize = lIndexCount * (int)sizeof(unsigned int);
 
         glBufferDataARB(GL_ELEMENT_ARRAY_BUFFER_ARB, mlIndexBufferSize,
                         &mvIndexArray[0], usageType);

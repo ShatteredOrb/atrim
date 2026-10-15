@@ -56,6 +56,10 @@ void cVertexBufferOGL_Array::Draw(eVertexBufferDrawType aDrawType)
         lSize = GetIndexNum();
     }
 
+    if(mvIndexArray.empty() || lSize <= 0)
+    {
+        return;
+    }
     glDrawElements(mode, lSize, GL_UNSIGNED_INT, &mvIndexArray[0]);
 }
 
