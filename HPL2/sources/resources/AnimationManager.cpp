@@ -82,7 +82,10 @@ cAnimation *cAnimationManager::CreateAnimation(const tString& asName)
         cMeshLoaderHandler *pMeshLoadHandler = mpResources->GetMeshLoaderHandler();
         pAnimation = pMeshLoadHandler->LoadAnimation(sPath);
 
-        AddResource(pAnimation);
+        if(pAnimation)
+        {
+            AddResource(pAnimation);
+        }
     }
 
     if(pAnimation)
