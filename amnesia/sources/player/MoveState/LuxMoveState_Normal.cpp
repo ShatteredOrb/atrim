@@ -917,10 +917,20 @@ void cLuxMoveState_Normal::FootSound(eLuxFootSound aType)
             sMoveType = "sneak";
         }
 
+        if(sMaterialStep.empty())
+        {
+            sMaterialStep = "rock";
+        }
+
         sSoundDataName = "step_" + sMoveType + "_" + sMaterialStep;
     }
     else if(aType == eLuxFootSound_Landing)
     {
+        if(sMaterialStep.empty())
+        {
+            sMaterialStep = "rock";
+        }
+
         sSoundDataName = "step_run_" + sMaterialStep;
     }
 
