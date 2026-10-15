@@ -33,13 +33,35 @@ cSoundEntity::cSoundEntity(const tString& asName, cSoundEntityData *apData,
     mbRemoveWhenOver = abRemoveWhenOver;
     mlCreationID = alCreationID;
 
-    //Log("Created sound entity '%s'\n",msName.c_str());
-
     mpSoundHandler = apSoundHandler;
     mpSoundEntityManager = apSoundEntityManager;
     mpWorld = apWorld;
 
     mpData = apData;
+    if(apData == NULL)
+    {
+        Error("Tried to create SoundEntity '%s' with null or invalid data!\n", asName.c_str());
+        
+        mbStarted = true;
+        mbStopped = true;
+        mfVolume = 0;
+        mbSkipStartEnd = true;
+        mbRemoveWhenOver = true;
+        mfMinDistance = 1.0f;
+        mfMaxDistance = 1.0f;
+
+        mBoundingVolume.SetSize(2);
+
+        for(int i = 0; i < 3; i++)
+        {
+            mvSoundEntries[i] = NULL;
+            mvSoundEntryID[i] = -1;
+        }
+
+        mpSoundCallback = NULL;
+        return;
+    }
+
     mpData->PreloadSounds();
 
     for(int i = 0; i < 3; i++)
@@ -108,11 +130,14 @@ cSoundEntity::~cSoundEntity()
         }
     }
 
-    hplDelete(mpSoundCallback);
-
-    //Do _not_ delete sound entity data files now.
-    //Just dec user count and the manager can be cleared of unused files when you want to.
-    mpData->DecUserCount();
+    if(mpSoundCallback)
+    {
+        hplDelete(mpSoundCallback);
+    }
+    if(mpData)
+    {
+        mpData->DecUserCount();
+    }
 }
 
 ///////////////////////////////////////
