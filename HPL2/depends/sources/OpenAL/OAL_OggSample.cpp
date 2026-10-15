@@ -30,84 +30,122 @@ bool cOAL_OggSample::CreateFromFile(const wstring &asFilename)
 	DEF_FUNC_NAME("cOAL_OggSample::Load()");
 	FUNC_USES_AL;
 
-	if(mbStatus==false)
+	if(mbStatus == false)
 		return false;
 
 	Reset();
-	
-	char *pPCMBuffer;
+
+	char *pPCMBuffer = NULL;
 	bool bEOF = false;
 	int lOpenResult;
-	int lCurrent_section;
+	int lCurrent_section = 0;
 	long lDataSize = 0;
 
 	msFilename = asFilename;
 
 	FILE *fileHandle = hpl::cPlatform::OpenFile(asFilename, L"rb");
-	
-	// If no file is present, set the error status and return
 	if(!fileHandle)
 	{
 		mbStatus = false;
 		return false;
 	}
 
-	// If not an Ogg file, set status and exit
 	OggVorbis_File ovFileHandle;
-	if(lOpenResult = ov_open_callbacks(fileHandle, &ovFileHandle, NULL, 0, gCallbacks)<0)	
+	memset(&ovFileHandle, 0, sizeof(ovFileHandle));
+
+	if((lOpenResult = ov_open_callbacks(fileHandle, &ovFileHandle, NULL, 0, gCallbacks)) < 0)
 	{
-		fclose ( fileHandle );
+		fclose(fileHandle);
 		mbStatus = false;
 		return false;
 	}
 
-	// Get file info
-	vorbis_info *viFileInfo = ov_info ( &ovFileHandle, -1 );
-	mlChannels = viFileInfo->channels;
-	mFormat = (mlChannels == 2)?AL_FORMAT_STEREO16:AL_FORMAT_MONO16;
+	vorbis_info *viFileInfo = ov_info(&ovFileHandle, -1);
+	if(viFileInfo == NULL || viFileInfo->channels < 1 || viFileInfo->channels > 2 || viFileInfo->rate <= 0)
+	{
+		ov_clear(&ovFileHandle);
+		mbStatus = false;
+		return false;
+	}
+
+	mlChannels  = viFileInfo->channels;
+	mFormat     = (mlChannels == 2) ? AL_FORMAT_STEREO16 : AL_FORMAT_MONO16;
 	mlFrequency = viFileInfo->rate;
-	mlSamples = (long) ov_pcm_total ( &ovFileHandle, -1 );
-	mfTotalTime = ov_time_total( &ovFileHandle, -1 );
+	mlSamples   = (long)ov_pcm_total(&ovFileHandle, -1);
+	mfTotalTime = ov_time_total(&ovFileHandle, -1);
 
-	// Reserve memory for 'mlChannels' channels of 'mlSamples' * 2 bytes of data each
-	int lSizeInBytes = mlSamples * mlChannels * GetBytesPerSample();
-	pPCMBuffer = (char *) hplMalloc (lSizeInBytes);																
-	memset (pPCMBuffer, 0, lSizeInBytes);
+	if(mlSamples < 0)
+	{
+		ov_clear(&ovFileHandle);
+		mbStatus = false;
+		return false;
+	}
 
-	// Loop which loads chunks of decoded data into a buffer
+	const int kSafetyMargin = STREAMING_BLOCK_SIZE * 8;
+	int lSizeInBytes = (mlSamples > 0 ? mlSamples : 1) * mlChannels * GetBytesPerSample() + kSafetyMargin;
+
+	const long kMaxBytes = 10LL * 60 * 48000 * 2 * 2;
+	if(lSizeInBytes <= 0 || lSizeInBytes > kMaxBytes)
+	{
+		ov_clear(&ovFileHandle);
+		mbStatus = false;
+		return false;
+	}
+
+	pPCMBuffer = (char*)hplMalloc(lSizeInBytes);
+	if(pPCMBuffer == NULL)
+	{
+		ov_clear(&ovFileHandle);
+		mbStatus = false;
+		return false;
+	}
+	memset(pPCMBuffer, 0, lSizeInBytes);
+
 	while(!bEOF)
 	{
-		long lChunkSize = ov_read ( &ovFileHandle			,										
-									pPCMBuffer + lDataSize	, 
-									STREAMING_BLOCK_SIZE	, 
-									SYS_ENDIANNESS			,
-									2, 1, &lCurrent_section );
+		long lRemaining = lSizeInBytes - lDataSize;
+		if(lRemaining <= 0)
+		{
+			bEOF = true;
+			break;
+		}
+
+		long lChunkSize = ov_read(&ovFileHandle,
+		                          pPCMBuffer + lDataSize,
+		                          (lRemaining < STREAMING_BLOCK_SIZE) ? (int)lRemaining : STREAMING_BLOCK_SIZE,
+		                          SYS_ENDIANNESS,
+		                          2, 1, &lCurrent_section);
 
 		if(lChunkSize == 0)
+		{
 			bEOF = true;
-		// If we get a negative value, then something went wrong. Clean up and set error status.
+		}
 		else if(lChunkSize < 0)
 		{
 			hplFree(pPCMBuffer);
 			ov_clear(&ovFileHandle);
-			// ov_clear closes the file handle for us
 			mbStatus = false;
 			return false;
 		}
-		else 
+		else
+		{
 			lDataSize += lChunkSize;
+		}
 	}
 
 	cOAL_Buffer* pBuffer = mvBuffers[0];
-	if(lDataSize)
+	if(lDataSize > 0)
 	{
-		// If something went wrong, set error status. Clean up afterwards.
 		mbStatus = pBuffer->Feed((ALvoid*)pPCMBuffer, lDataSize);
 	}
-	hplFree(pPCMBuffer);																				
-	ov_clear(&ovFileHandle);
-	// ov_clear closes the file handle for us
+	else
+	{
+		mbStatus = false;
+	}
 
-	return true;
+	hplFree(pPCMBuffer);
+	ov_clear(&ovFileHandle);
+
+	return mbStatus;
 }
 
