@@ -1049,20 +1049,6 @@ cSoundEntity *cWorld::CreateSoundEntity(const tString &asName, const tString &as
 
     cSoundEntity *pSound = hplNew( cSoundEntity, (asName, pData, mpResources->GetSoundEntityManager(), this, mpSound->GetSoundHandler(),
                                    abRemoveWhenOver, mlSoundCreationIDCount++));
-    /*cSoundEntity *pSound = NULL;
-    if(mlstSoundEntityPool.empty())
-    {
-        pSound = hplNew( cSoundEntity, (asName,pData,
-                                        mpResources->GetSoundEntityManager(),
-                                        this,
-                                        mpSound->GetSoundHandler(),abRemoveWhenOver,mlSoundCreationIDCount++));
-    }
-    else
-    {
-        pSound = mlstSoundEntityPool.back();
-        pSound->Setup(asName, pData, abRemoveWhenOver);
-        mlstSoundEntityPool.pop_back();
-    }*/
 
     mlstSoundEntities.push_back(pSound);
 
@@ -1071,9 +1057,6 @@ cSoundEntity *cWorld::CreateSoundEntity(const tString &asName, const tString &as
 
 void cWorld::DestroySoundEntity(cSoundEntity* apEntity)
 {
-    //STLFindAndDelete(mlstSoundEntities,apEntity);
-
-    //Only delete if found! (as it is possible that the sound entity is not longer a valid pointer!
     tSoundEntityListIt it = mlstSoundEntities.begin();
     for(; it != mlstSoundEntities.end(); ++it)
     {
@@ -1082,7 +1065,6 @@ void cWorld::DestroySoundEntity(cSoundEntity* apEntity)
         {
             mlstSoundEntities.erase(it);
             hplDelete(pSound);
-            //mlstSoundEntityPool.push_back(apEntity);
             break;
         }
     }
