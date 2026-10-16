@@ -1763,7 +1763,7 @@ void cMeshEntity::HandleAnimationEvent(cAnimationEvent *apEvent)
 
 void cMeshEntity::UpdateSkeletonBounds(cAnimation * apAnimation, cAnimationState* apState)
 {
-    if(mpMesh->GetSkeleton() == NULL)
+    if(apAnimation == NULL || apState == NULL || mpMesh->GetSkeleton() == NULL)
     {
         return;
     }

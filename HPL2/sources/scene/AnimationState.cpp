@@ -348,122 +348,137 @@ cAnimation *cAnimationState::GetAnimation()
 
 //-----------------------------------------------------------------------
 
-
 void cAnimationState::CreateSkeletonBoundsFromMesh(cMeshEntity * apMesh, tBoneStateVec * apvBoneStates)
 {
-    ///////////////////////////
-    // Precaulculates the bounding volume of this animation
-    // only does this once
-    if(mvSkeletonBounds.size() == 0)
+    if(mpAnimation == NULL || apMesh == NULL || apvBoneStates == NULL)
     {
-        float fDeltaTime = 1.0f / 30.0f;
+        return;
+    }
 
-        /////////////////////////
-        // Find the smallest delta time
-        for(int i = 0; i < mpAnimation->GetTrackNum(); i++)
+    if(mvSkeletonBounds.size() != 0)
+    {
+        return;
+    }
+
+    if(apvBoneStates->empty())
+    {
+        return;
+    }
+
+    float fDeltaTime = 1.0f / 30.0f;
+
+    // Find the smallest delta time
+    for(int i = 0; i < mpAnimation->GetTrackNum(); i++)
+    {
+        cAnimationTrack *pTrack = mpAnimation->GetTrack(i);
+        if(pTrack == NULL || pTrack->GetKeyFrameNum() < 2)
         {
-            cAnimationTrack *pTrack = mpAnimation->GetTrack(i);
+            continue;
+        }
 
-            if(pTrack->GetKeyFrameNum() == 0)
+        cKeyFrame* pKeyframe = pTrack->GetKeyFrame(0);
+        if(pKeyframe == NULL)
+        {
+            continue;
+        }
+
+        for(int k = 1; k < pTrack->GetKeyFrameNum(); k++)
+        {
+            cKeyFrame* pNextKeyframe = pTrack->GetKeyFrame(k);
+            if(pNextKeyframe == NULL)
             {
                 continue;
             }
 
-            cKeyFrame* pKeyframe = pTrack->GetKeyFrame(0);
-
-            for(int k = 1; k < pTrack->GetKeyFrameNum(); k++)
+            float fDiff = pNextKeyframe->time - pKeyframe->time;
+            if(fDiff > 0.0f)
             {
-                cKeyFrame* pNextKeyframe = pTrack->GetKeyFrame(k);
-
-                fDeltaTime = cMath::Min(fDeltaTime, pNextKeyframe->time - pKeyframe->time);
-
-                pKeyframe = pNextKeyframe;
+                fDeltaTime = cMath::Min(fDeltaTime, fDiff);
             }
+
+            pKeyframe = pNextKeyframe;
         }
-
-        fDeltaTime = cMath::Max(1.0f / 100.0f, fDeltaTime);
-
-        cMesh * pMesh = apMesh->GetMesh();
-
-        cMatrixf mtxWorldMatrix = apMesh->GetWorldMatrix();
-        apMesh->SetWorldMatrix(cMatrixf::Identity);
-
-        ////////////////////////////////////
-        // Calculates the AABB for the skeleton at a given time and extends the previous AABB the new one is larger
-        for(float fTimePosition = 0.0f; fTimePosition <= GetLength(); fTimePosition += fDeltaTime)
-        {
-            const float fWeight = 1;
-            const int lSize = mpAnimation->GetTrackNum();
-
-            //Reset bone states
-            for(size_t i = 0; i < apvBoneStates->size(); i++)
-            {
-                cNode3D *pState = (*apvBoneStates)[i];
-                cBone* pBone = pMesh->GetSkeleton()->GetBoneByIndex((int)i);
-
-                if(pState->IsActive())
-                {
-                    pState->SetMatrix(pBone->GetLocalTransform(), false);
-                }
-            }
-
-            cAnimationTrack *pTrack;
-            cNode3D* pState;
-            /////////////////////////////////////
-            //Go through all tracks in animation and apply to nodes
-            for(int i = 0; i < lSize; i++)
-            {
-                pTrack = mpAnimation->GetTrack(i);
-
-                if(pTrack->GetNodeIndex() < 0)
-                {
-                    continue;
-                }
-
-                pState = (*apvBoneStates)[pTrack->GetNodeIndex()];
-
-                ///////////////////////////////////
-                //Apply the animation track to node.
-                pTrack->ApplyToNode(pState, fTimePosition, fWeight, true);
-            }
-
-            for(int i = 0; i < (int)apvBoneStates->size(); i++)
-            {
-                (*apvBoneStates)[i]->UpdateMatrix(false);
-            }
-
-            // Save the max bounding volume for every 1/4 seconds
-            int lSkeletonBoundIdx = int(fTimePosition * 4.0f);
-
-            if(int(mvSkeletonBounds.size()) <= lSkeletonBoundIdx)
-            {
-                cVector3f vPos = (*apvBoneStates)[0]->GetWorldPosition();
-
-                cSkeletonAABB bounds = cSkeletonAABB(vPos, vPos);
-                bounds.SetTime(fTimePosition);
-                mvSkeletonBounds.push_back(bounds);
-            }
-
-            size_t lBoneSize = apvBoneStates->size();
-
-            ///////////////////////////////
-            // Create bounding volume at this time
-            for(size_t i = 0; i < lBoneSize; i++)
-            {
-                float fBoundingRadius = pMesh->GetBoneBoundingRadius((int)i);
-
-                cVector3f vPos = (*apvBoneStates)[i]->GetWorldPosition();
-
-                cVector3f vMaxPos = vPos + cVector3f(fBoundingRadius);
-                cVector3f vMinPos = vPos - cVector3f(fBoundingRadius);
-
-                //Expand the current bounding volume for this time
-                mvSkeletonBounds[lSkeletonBoundIdx].Expand(vMinPos, vMaxPos);
-            }
-        }
-
-        apMesh->SetWorldMatrix(mtxWorldMatrix);
     }
+
+    fDeltaTime = cMath::Max(1.0f / 100.0f, fDeltaTime);
+
+    cMesh * pMesh = apMesh->GetMesh();
+    if(pMesh == NULL || pMesh->GetSkeleton() == NULL)
+    {
+        return;
+    }
+
+    cMatrixf mtxWorldMatrix = apMesh->GetWorldMatrix();
+    apMesh->SetWorldMatrix(cMatrixf::Identity);
+
+    const size_t lBoneSize = apvBoneStates->size();
+
+    for(float fTimePosition = 0.0f; fTimePosition <= GetLength() + 0.0001f; fTimePosition += fDeltaTime)
+    {
+        // Reset bone states
+        for(size_t i = 0; i < lBoneSize; i++)
+        {
+            cNode3D *pState = (*apvBoneStates)[i];
+            cBone* pBone = pMesh->GetSkeleton()->GetBoneByIndex((int)i);
+            if(pState && pBone && pState->IsActive())
+            {
+                pState->SetMatrix(pBone->GetLocalTransform(), false);
+            }
+        }
+
+        // Apply tracks ONLY if the node index is valid
+        for(int i = 0; i < mpAnimation->GetTrackNum(); i++)
+        {
+            cAnimationTrack *pTrack = mpAnimation->GetTrack(i);
+            if(pTrack == NULL)
+            {
+                continue;
+            }
+
+            int lNodeIdx = pTrack->GetNodeIndex();
+            if(lNodeIdx < 0 || (size_t)lNodeIdx >= lBoneSize)
+            {
+                continue;
+            }
+
+            cNode3D* pState = (*apvBoneStates)[lNodeIdx];
+            if(pState)
+            {
+                pTrack->ApplyToNode(pState, fTimePosition, 1.0f, true);
+            }
+        }
+
+        for(size_t i = 0; i < lBoneSize; i++)
+        {
+            (*apvBoneStates)[i]->UpdateMatrix(false);
+        }
+
+        int lSkeletonBoundIdx = int(fTimePosition * 4.0f);
+        if(lSkeletonBoundIdx < 0)
+        {
+            lSkeletonBoundIdx = 0;
+        }
+
+        if((int)mvSkeletonBounds.size() <= lSkeletonBoundIdx)
+        {
+            cVector3f vPos = (*apvBoneStates)[0]->GetWorldPosition();
+            cSkeletonAABB bounds = cSkeletonAABB(vPos, vPos);
+            bounds.SetTime(fTimePosition);
+            mvSkeletonBounds.push_back(bounds);
+        }
+
+        // Expand AABB
+        for(size_t i = 0; i < lBoneSize; i++)
+        {
+            float fBoundingRadius = pMesh->GetBoneBoundingRadius((int)i);
+            cVector3f vPos = (*apvBoneStates)[i]->GetWorldPosition();
+            cVector3f vMaxPos = vPos + cVector3f(fBoundingRadius);
+            cVector3f vMinPos = vPos - cVector3f(fBoundingRadius);
+            mvSkeletonBounds[lSkeletonBoundIdx].Expand(vMinPos, vMaxPos);
+        }
+    }
+
+    apMesh->SetWorldMatrix(mtxWorldMatrix);
 }
 
 bool cAnimationState::TryGetBoundingVolumeAtTime(float afTime, cVector3f & avMin, cVector3f & avMax)
