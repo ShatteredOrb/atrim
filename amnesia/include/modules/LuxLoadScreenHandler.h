@@ -38,8 +38,14 @@ public:
     void GameScreenLoadDone(const tString& asEndSound, float afLoadTime);
 
     void DrawGameScreen();
-    void DrawMenuScreen();
+    void DrawMenuScreen(bool abShowProgressBar);
     void DrawBlankScreen();
+
+    /////////////////////
+    // Loading progress bar
+    void SetLoadProgress(float afProgress, bool abForceRedraw = false);
+    void OnMapFileLoaded();
+    void EndLoadProgress();
 
     void ExitPressed();
 
@@ -74,7 +80,11 @@ private:
 
     void UpdateGameState(double adFixedDelta);
     void DrawGameState(double adFrameTime);
-    void DrawGameScreen(cGuiSet *apSet);
+    void DrawGameScreen(cGuiSet *apSet, bool abDrawProgressBar);
+    void DrawMenuScreenContents(cGuiSet *apSet, bool abDrawProgressBar);
+    void DrawProgressBar(cGuiSet *apSet, float afY, float afAlpha);
+    void RedrawLoadScreen();
+    void DestroyMenuImage();
 
     //////////////////
     // Data
@@ -111,6 +121,13 @@ private:
     cColor mpBaseLoadingTextColor;
     cColor mpGameLoadingTextColor;
 
+    bool mbBarEnabled;
+    float mfBarWidth;
+    float mfBarHeight;
+    float mfBarGap;
+    cColor mBarBackColor;
+    cColor mBarFillColor;
+
     //////////////////
     // Variables
     cGuiGfxElement *mpCurrentImage;
@@ -130,6 +147,14 @@ private:
     eLuxLoadScreenState mState;
     tString msCurrentGameScreenTextEntry;
     tString msCurrentGameScreenImage;
+
+    cGuiGfxElement *mpMenuImage;
+
+    bool mbLoadProgressActive;
+    bool mbLoadProgressMenu;
+    float mfBarTarget;
+    float mfBarShown;
+    unsigned long mlLastBarDrawTime;
 };
 
 //----------------------------------------------

@@ -99,6 +99,7 @@ typedef tHplMapShapeBodyList::iterator tHplMapShapeBodyListIt;
 
 //----------------------------------------
 
+typedef void (*tWorldLoadProgressCallback)(float afProgress, void *apUserData);
 
 class cWorldLoaderHplMap : public iWorldLoader
 {
@@ -109,7 +110,13 @@ public:
 
     cWorld *LoadWorld(const tWString& asFile, tWorldLoadFlag aFlags);
 
+    static void SetProgressCallback(tWorldLoadProgressCallback apFunc, void *apUserData);
+
 private:
+    static void ReportProgress(float afProgress);
+    static void ReportProgressRange(float afStart, float afEnd, int alIndex, int alCount);
+    static int CountChildren(cXmlElement *apElement);
+
     void LoadCacheFile(const tWString& asFile);
     void SaveCacheFile(const tWString& asFile);
 

@@ -2396,7 +2396,7 @@ void cLuxPlayerDeath::PostUpdate(double adFixedDelta)
     //////////////////////////
     // Set MainMenu container
     gpBase->mpEngine->GetUpdater()->SetContainer("MainMenu");
-    gpBase->mpLoadScreenHandler->DrawMenuScreen();
+    gpBase->mpLoadScreenHandler->DrawMenuScreen(true);
 
     //Reset game
     gpBase->mpEngine->GetUpdater()->BroadcastMessageToAll(eUpdateableMessage_Reset);

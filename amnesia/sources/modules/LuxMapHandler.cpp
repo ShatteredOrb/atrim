@@ -289,7 +289,7 @@ void cLuxMapHandler::OnQuit()
 {
     gpBase->mpEngine->GetUpdater()->SetContainer("MainMenu");
 
-    gpBase->mpLoadScreenHandler->DrawMenuScreen();
+    gpBase->mpLoadScreenHandler->DrawMenuScreen(true);
 
     //Destroy map
     cLuxMapHandler *mpMapHandler = gpBase->mpMapHandler;
@@ -419,6 +419,8 @@ cLuxMap *cLuxMapHandler::LoadMap(const tString& asFileName, bool abLoadEntities)
     cLuxMap *pMap = hplNew( cLuxMap, ( FileToMapName(asFileName)) );
 
     pMap->LoadFromFile(msMapFolder + asFileName, abLoadEntities);
+
+    gpBase->mpLoadScreenHandler->OnMapFileLoaded();
 
     mlstMaps.push_back(pMap);
 
@@ -652,6 +654,7 @@ void cLuxMapHandler::CheckMapChange(double adFixedDelta)
         //////////////////////
         // Save old map
         mpSavedGame->SaveMap(mpCurrentMap);
+        gpBase->mpLoadScreenHandler->SetLoadProgress(0.05f, true);
 
         //////////////////////
         // Fadeout sounds and disable stop (meaning they will fade even when sound entities are destroyed)
@@ -684,10 +687,12 @@ void cLuxMapHandler::CheckMapChange(double adFixedDelta)
 
         SetCurrentMap(pMap, false, bFirstTime, mMapChangeData.msStartPos);
         DestroyMap(pLastMap, false);
+        gpBase->mpLoadScreenHandler->SetLoadProgress(0.95f);
 
         //////////////////////
         // Load new map data
         mpSavedGame->LoadMap(mpCurrentMap);
+        gpBase->mpLoadScreenHandler->SetLoadProgress(0.98f);
 
         //////////////////////
         // Run enter script! (otherwise a save in oneter will not be correct!)
@@ -721,6 +726,8 @@ void cLuxMapHandler::CheckMapChange(double adFixedDelta)
     }
     else
     {
+        gpBase->mpLoadScreenHandler->EndLoadProgress();
+
         //Play finished sound
         gpBase->mpHelpFuncs->PlayGuiSoundData(mMapChangeData.msSound, eSoundEntryType_Gui);
 

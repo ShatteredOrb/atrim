@@ -199,7 +199,7 @@ void cLuxCredits::Update(double adFixedDelta)
             {
                 gpBase->mpEngine->GetUpdater()->BroadcastMessageToAll(eUpdateableMessage_Reset);
 
-                gpBase->mpLoadScreenHandler->DrawMenuScreen();
+                gpBase->mpLoadScreenHandler->DrawMenuScreen(true);
                 gpBase->mpEngine->GetUpdater()->SetContainer("MainMenu");
             }
             //NExt state

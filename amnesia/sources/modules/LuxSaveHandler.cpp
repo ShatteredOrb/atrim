@@ -371,7 +371,7 @@ void cLuxSaveHandler::LoadSaveGameData(cLuxSaveGame_SaveData *apSave)
 
     //////////////////////////////////////
     // Draw loading screen
-    gpBase->mpLoadScreenHandler->DrawMenuScreen();
+    gpBase->mpLoadScreenHandler->DrawMenuScreen(true);
 
     //////////////////////////////////////
     // Destroy cache data
@@ -495,6 +495,7 @@ void cLuxSaveHandler::LoadSaveGameData(cLuxSaveGame_SaveData *apSave)
     // Destroy cache
     cache.Destroy();
 
+    gpBase->mpLoadScreenHandler->EndLoadProgress();
 }
 
 //-----------------------------------------------------------------------

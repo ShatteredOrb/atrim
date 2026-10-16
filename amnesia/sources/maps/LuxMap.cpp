@@ -13,6 +13,7 @@
 #include "LuxProgressLogHandler.h"
 #include "LuxEffectHandler.h"
 #include "LuxMapHandler.h"
+#include "LuxLoadScreenHandler.h"
 
 #include "LuxEnemy.h"
 #include "LuxEnemyPathfinder.h"
@@ -184,11 +185,13 @@ bool cLuxMap::LoadFromFile(const tString & asFile, bool abLoadEntities)
     }
 
     mpPhysicsWorld = mpWorld->GetPhysicsWorld();
+    gpBase->mpLoadScreenHandler->SetLoadProgress(0.88f);
 
     if(abLoadEntities)
     {
         AfterWorldLoadEntitySetup();
     }
+    gpBase->mpLoadScreenHandler->SetLoadProgress(0.92f);
 
     gpBase->mpCurrentMapLoading = NULL;
 

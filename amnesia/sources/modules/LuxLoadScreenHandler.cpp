@@ -3,6 +3,21 @@
 #include "LuxHelpFuncs.h"
 #include "LuxInputHandler.h"
 
+#include "resources/WorldLoaderHplMap.h"
+
+#include <math.h>
+
+//-----------------------------------------------------------------------
+
+static const float kLoadBarWorldStart = 0.05f;
+static const float kLoadBarWorldRange = 0.80f;
+
+static void WorldLoadProgressCallback(float afProgress, void *apUserData)
+{
+    cLuxLoadScreenHandler *pHandler = static_cast<cLuxLoadScreenHandler*>(apUserData);
+    pHandler->SetLoadProgress(kLoadBarWorldStart + afProgress * kLoadBarWorldRange);
+}
+
 //-----------------------------------------------------------------------
 
 //////////////////////////////////////////////////////////////////////////
@@ -64,12 +79,34 @@ cLuxLoadScreenHandler::cLuxLoadScreenHandler() : iLuxUpdateable("LuxLoadScreenHa
     mpLoadingTextColor     = gpBase->mpMenuCfg->GetColor("LoadScreen", "LoadingTextColor",     cColor(255.0f / 255.0f, 255.0f / 255.0f, 255.0f / 255.0f));
     mpBaseLoadingTextColor = gpBase->mpMenuCfg->GetColor("LoadScreen", "BaseLoadingTextColor", cColor(255.0f / 255.0f, 255.0f / 255.0f, 255.0f / 255.0f));
     mpGameLoadingTextColor = gpBase->mpMenuCfg->GetColor("LoadScreen", "GameLoadingTextColor", cColor(255.0f / 255.0f,  0.0f  / 255.0f,  0.0f  / 255.0f));
+
+    ///////////////////////////////
+    //Progress bar
+    mbBarEnabled = gpBase->mpMenuCfg->GetBool("LoadScreen", "BarEnabled", false);
+    mfBarWidth = gpBase->mpMenuCfg->GetFloat("LoadScreen", "BarWidth", 500.0f);
+    mfBarHeight = gpBase->mpMenuCfg->GetFloat("LoadScreen", "BarHeight", 10.0f);
+    mfBarGap = gpBase->mpMenuCfg->GetFloat("LoadScreen", "BarGap", 12.0f);
+    mBarBackColor = gpBase->mpMenuCfg->GetColor("LoadScreen", "BarBackColor", cColor(0.118f, 0.098f, 0.075f));
+    mBarFillColor = gpBase->mpMenuCfg->GetColor("LoadScreen", "BarFillColor", cColor(0.51f, 0.427f, 0.318f));
+
+    mpMenuImage = NULL;
+    mbLoadProgressActive = false;
+    mbLoadProgressMenu = false;
+    mfBarTarget = 0;
+    mfBarShown = 0;
+    mlLastBarDrawTime = 0;
+
+    ///////////////////////////////
+    //Get progress from the world loader
+    cWorldLoaderHplMap::SetProgressCallback(WorldLoadProgressCallback, this);
 }
 
 //-----------------------------------------------------------------------
 
 cLuxLoadScreenHandler::~cLuxLoadScreenHandler()
 {
+    cWorldLoaderHplMap::SetProgressCallback(NULL, NULL);
+    DestroyMenuImage();
 }
 
 //-----------------------------------------------------------------------
@@ -176,6 +213,8 @@ void cLuxLoadScreenHandler::GameScreenLoadDone(const tString& asEndSound, float 
     mState = eLuxLoadScreenState_Game;
     msGameScreenEndSound = asEndSound;
 
+    EndLoadProgress();
+
     /////////////////////////////
     // Calculate extra time
     if(msCurrentGameScreenTextEntry != "")
@@ -221,7 +260,14 @@ void cLuxLoadScreenHandler::DrawGameScreen()
     msCurrentGameScreenImage = msLoadTextImage;
 
     mfLoadingAlpha = 1.0f;
-    DrawGameScreen(gpBase->mpHelpFuncs->GetSet());
+
+    mbLoadProgressActive = mbBarEnabled;
+    mbLoadProgressMenu = false;
+    mfBarTarget = 0;
+    mfBarShown = 0;
+    mlLastBarDrawTime = cPlatform::GetApplicationTime();
+
+    DrawGameScreen(gpBase->mpHelpFuncs->GetSet(), mbLoadProgressActive);
 
     gpBase->mpHelpFuncs->DrawSetToScreen();
 
@@ -229,35 +275,177 @@ void cLuxLoadScreenHandler::DrawGameScreen()
 
 //-----------------------------------------------------------------------
 
-void cLuxLoadScreenHandler::DrawMenuScreen()
+void cLuxLoadScreenHandler::DrawMenuScreen(bool abShowProgressBar)
+{
+    cGuiSet *pSet = gpBase->mpHelpFuncs->GetSet();
+
+    if(mpMenuImage == NULL)
+    {
+        mpMenuImage = mpGui->CreateGfxTexture("menu_loading_screen.jpg", eGuiMaterial_Alpha, eTextureType_Rect);
+    }
+
+    //////////////////////
+    //Start/stop progress bar
+    mbLoadProgressActive = abShowProgressBar && mbBarEnabled;
+    mbLoadProgressMenu = true;
+    mfBarTarget = 0;
+    mfBarShown = 0;
+    mlLastBarDrawTime = cPlatform::GetApplicationTime();
+
+    //////////////////////
+    //Draw
+    DrawMenuScreenContents(pSet, mbLoadProgressActive);
+    gpBase->mpHelpFuncs->DrawSetToScreen();
+
+    if(abShowProgressBar == false)
+    {
+        DestroyMenuImage();
+    }
+}
+
+//-----------------------------------------------------------------------
+
+void cLuxLoadScreenHandler::DrawMenuScreenContents(cGuiSet *apSet, bool abDrawProgressBar)
 {
     tWString sLoading = kTranslate("General", "Loading");
 
-    cGuiSet *pSet = gpBase->mpHelpFuncs->GetSet();
-
-    //////////////////////
-    //Load Image
-    cGuiGfxElement *pImage = mpGui->CreateGfxTexture("menu_loading_screen.jpg", eGuiMaterial_Alpha, eTextureType_Rect);
-
     //////////////////////
     //Draw Image
-    cVector2f vImageSize = pImage->GetImageSize();
-    float fRatio = vImageSize.x / vImageSize.y;
-    float fRatioMul = fRatio / (4.0f / 3.0f);
+    if(mpMenuImage)
+    {
+        cVector2f vImageSize = mpMenuImage->GetImageSize();
+        float fRatio = vImageSize.x / vImageSize.y;
+        float fRatioMul = fRatio / (4.0f / 3.0f);
 
-    pSet->DrawGfx(pImage, cVector3f(400 * (1 - fRatioMul), 0, 0), cVector2f(800 * fRatioMul, 600), cColor(1, 1));
+        apSet->DrawGfx(mpMenuImage, cVector3f(400 * (1 - fRatioMul), 0, 0), cVector2f(800 * fRatioMul, 600), cColor(1, 1));
+    }
 
     //////////////////////
     //Draw Text
     cVector2f vSize(20);
     cVector3f vPos(400, 530, 1);
-    pSet->DrawFont(sLoading, mpFontDefault, vPos, vSize, cColor(mpBaseLoadingTextColor.r, mpBaseLoadingTextColor.g, mpBaseLoadingTextColor.b, 1.0f), eFontAlign_Center);
-
-    gpBase->mpHelpFuncs->DrawSetToScreen();
+    apSet->DrawFont(sLoading, mpFontDefault, vPos, vSize, cColor(mpBaseLoadingTextColor.r, mpBaseLoadingTextColor.g, mpBaseLoadingTextColor.b, 1.0f), eFontAlign_Center);
 
     //////////////////////
-    //Destroy Image
-    mpGui->DestroyGfx(pImage);
+    // Draw Progress Bar
+    if(abDrawProgressBar)
+    {
+        DrawProgressBar(apSet, vPos.y - mfBarGap - mfBarHeight, 1.0f);
+    }
+}
+
+//-----------------------------------------------------------------------
+
+void cLuxLoadScreenHandler::DestroyMenuImage()
+{
+    if(mpMenuImage)
+    {
+        mpGui->DestroyGfx(mpMenuImage);
+        mpMenuImage = NULL;
+    }
+}
+
+//-----------------------------------------------------------------------
+
+void cLuxLoadScreenHandler::DrawProgressBar(cGuiSet *apSet, float afY, float afAlpha)
+{
+    if(mbBarEnabled == false)
+    {
+        return;
+    }
+
+    float fX = 400 - mfBarWidth * 0.5f;
+
+    // Background
+    apSet->DrawGfx(mpWhiteGfx, cVector3f(fX, afY, 1.5f), cVector2f(mfBarWidth, mfBarHeight),
+                   cColor(mBarBackColor.r, mBarBackColor.g, mBarBackColor.b, 0.8f * afAlpha));
+
+    // Fill
+    float fFillWidth = mfBarWidth * cMath::Clamp(mfBarShown, 0, 1);
+    if(fFillWidth > 0)
+    {
+        apSet->DrawGfx(mpWhiteGfx, cVector3f(fX, afY, 1.6f), cVector2f(fFillWidth, mfBarHeight),
+                       cColor(mBarFillColor.r, mBarFillColor.g, mBarFillColor.b, afAlpha));
+    }
+}
+
+//-----------------------------------------------------------------------
+
+void cLuxLoadScreenHandler::SetLoadProgress(float afProgress, bool abForceRedraw)
+{
+    if(mbLoadProgressActive == false || mbBarEnabled == false)
+    {
+        return;
+    }
+
+    // Should move forward
+    afProgress = cMath::Clamp(afProgress, 0, 1);
+    if(afProgress > mfBarTarget)
+    {
+        mfBarTarget = afProgress;
+    }
+
+    // 60 Hz redraw, unsure if this is too fast...
+    unsigned long lNow = cPlatform::GetApplicationTime();
+    float fDeltaTime = (float)(lNow - mlLastBarDrawTime) / 1000.0f;
+    if(abForceRedraw == false && fDeltaTime < 1.0f / 60.0f)
+    {
+        return;
+    }
+    mlLastBarDrawTime = lNow;
+    if(fDeltaTime > 0.25f)
+    {
+        fDeltaTime = 0.25f;
+    }
+
+    mfBarShown += (mfBarTarget - mfBarShown) * (1.0f - expf(-fDeltaTime * 8.0f));
+
+    RedrawLoadScreen();
+}
+
+//-----------------------------------------------------------------------
+
+void cLuxLoadScreenHandler::RedrawLoadScreen()
+{
+    if(mbLoadProgressMenu)
+    {
+        DrawMenuScreenContents(gpBase->mpHelpFuncs->GetSet(), true);
+    }
+    else
+    {
+        DrawGameScreen(gpBase->mpHelpFuncs->GetSet(), true);
+    }
+
+    gpBase->mpHelpFuncs->DrawSetToScreen();
+}
+
+//-----------------------------------------------------------------------
+
+void cLuxLoadScreenHandler::OnMapFileLoaded()
+{
+    if(mbLoadProgressActive == false || mbLoadProgressMenu == false)
+    {
+        return;
+    }
+
+    mfBarTarget = 1;
+    mfBarShown = 1;
+    RedrawLoadScreen();
+
+    EndLoadProgress();
+}
+
+//-----------------------------------------------------------------------
+
+void cLuxLoadScreenHandler::EndLoadProgress()
+{
+    mbLoadProgressActive = false;
+    mfBarTarget = 1;
+
+    if(mbLoadProgressMenu)
+    {
+        DestroyMenuImage();
+    }
 }
 
 //-----------------------------------------------------------------------
@@ -371,8 +559,15 @@ void cLuxLoadScreenHandler::LoadCurrentImage(const tString &asImage)
 
 void cLuxLoadScreenHandler::UpdateGameState(double adFixedDelta)
 {
-    ////////////////////////////
-    // LoadAlpha
+    if(mfBarShown < 1.0f)
+    {
+        mfBarShown += (float)adFixedDelta * 3.0f;
+        if(mfBarShown > 1.0f)
+        {
+            mfBarShown = 1.0f;
+        }
+    }
+
     if(mfLoadingAlpha > 0)
     {
         mfLoadingAlpha -= (float)adFixedDelta * 0.33f;
@@ -382,16 +577,12 @@ void cLuxLoadScreenHandler::UpdateGameState(double adFixedDelta)
         }
     }
 
-    ////////////////////////////
-    // Update extra time
     if(mfExtraTime > 0)
     {
         mfExtraTime -= (float)adFixedDelta;
         return;
     }
 
-    ////////////////////////////
-    // Alpha
     mfAlpha -= (float)adFixedDelta * (1.0f / mfFadeOutTime);
     if(mfAlpha < 0)
     {
@@ -406,14 +597,14 @@ void cLuxLoadScreenHandler::DrawGameState(double adFrameTime)
 {
     mpGuiSet->DrawGfx(mpWhiteGfx, cVector3f(mvGuiSetStartPos.x, mvGuiSetStartPos.y, -1), mvGuiSetSize, cColor(0, 1));
 
-    DrawGameScreen(mpGuiSet);
+    DrawGameScreen(mpGuiSet, msCurrentGameScreenTextEntry != "");
 
     mpGuiSet->DrawGfx(mpWhiteGfx, cVector3f(mvGuiSetStartPos.x, mvGuiSetStartPos.y, 40), mvGuiSetSize, cColor(0, 1.0f-mfAlpha));
 }
 
 //-----------------------------------------------------------------------
 
-void cLuxLoadScreenHandler::DrawGameScreen(cGuiSet *apSet)
+void cLuxLoadScreenHandler::DrawGameScreen(cGuiSet *apSet, bool abDrawProgressBar)
 {
     //////////////////////
     //Load Image
@@ -457,17 +648,33 @@ void cLuxLoadScreenHandler::DrawGameScreen(cGuiSet *apSet)
         apSet->DrawFont(sLoading, mpFontDefault, vPos, mvLoadingFontSize,
                         cColor(mpGameLoadingTextColor.r, mpGameLoadingTextColor.g, mpGameLoadingTextColor.b, mfLoadingAlpha),
                         eFontAlign_Center);
+
+        ///////////////////
+        //Progress Bar
+        if(abDrawProgressBar)
+        {
+            DrawProgressBar(apSet, mfLoadingY - mfBarGap - mfBarHeight, mfLoadingAlpha);
+        }
     }
     //////////////////////
     //Draw loading only
     else
     {
+        ///////////////////
+        //Loading
         tWString sLoading = kTranslate("General", "Loading");
         cVector3f vPos(400, 300 - mvLoadingFontSize.y / 2, 1);
 
         apSet->DrawFont(sLoading, mpFontDefault, vPos, mvLoadingFontSize,
                         cColor(mpBaseLoadingTextColor.r, mpBaseLoadingTextColor.g, mpBaseLoadingTextColor.b, 1.0f),
                         eFontAlign_Center);
+
+        ///////////////////
+        //Progress Bar
+        if(abDrawProgressBar)
+        {
+            DrawProgressBar(apSet, vPos.y - mfBarGap - mfBarHeight, 1.0f);
+        }
     }
 }
 

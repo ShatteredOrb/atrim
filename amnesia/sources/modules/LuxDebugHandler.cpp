@@ -1389,7 +1389,7 @@ void cLuxDebugHandler::QuickReloadMap()
 
 void cLuxDebugHandler::TestChangeMapSave()
 {
-    gpBase->mpLoadScreenHandler->DrawMenuScreen();
+    gpBase->mpLoadScreenHandler->DrawMenuScreen(true);
 
     ///////////////////
     //Get char variables

@@ -689,7 +689,7 @@ void cLuxMainMenu::OnMenuExit()
     // Quit To Menu
     case eLuxMainMenuExit_QuitToMenu:
     {
-        gpBase->mpLoadScreenHandler->DrawMenuScreen();
+        gpBase->mpLoadScreenHandler->DrawMenuScreen(true);
 
         //Reset game
         gpBase->mpEngine->GetUpdater()->BroadcastMessageToAll(eUpdateableMessage_Reset);
@@ -705,7 +705,7 @@ void cLuxMainMenu::OnMenuExit()
     // Quit And Save
     case eLuxMainMenuExit_QuitAndSave:
     {
-        gpBase->mpLoadScreenHandler->DrawMenuScreen();
+        gpBase->mpLoadScreenHandler->DrawMenuScreen(true);
 
         //Save
         gpBase->mpSaveHandler->AutoSave();

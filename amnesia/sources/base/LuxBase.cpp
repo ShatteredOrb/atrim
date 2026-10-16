@@ -436,7 +436,7 @@ bool cLuxBase::Init(const tString &asCommandline)
     {
         ///////////////////////////////////////
         // Draw loading screen
-        mpLoadScreenHandler->DrawMenuScreen();
+        mpLoadScreenHandler->DrawMenuScreen(true);
 
         mpEngine->GetUpdater()->SetContainer("MainMenu");
     }
@@ -514,7 +514,7 @@ bool cLuxBase::StartGame(const tString& asFile, const tString& asFolder, const t
 {
     ///////////////////////////////////////
     // Draw loading screen
-    mpLoadScreenHandler->DrawMenuScreen();
+    mpLoadScreenHandler->DrawMenuScreen(true);
 
     ///////////////////
     //Reset everything

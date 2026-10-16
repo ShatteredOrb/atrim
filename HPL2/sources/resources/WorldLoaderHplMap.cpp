@@ -142,9 +142,56 @@ cWorldLoaderHplMap::~cWorldLoaderHplMap()
 
 //-----------------------------------------------------------------------
 
+static tWorldLoadProgressCallback gpWorldLoadProgressFunc = NULL;
+static void *gpWorldLoadProgressUserData = NULL;
+
+//-----------------------------------------------------------------------
+
+void cWorldLoaderHplMap::SetProgressCallback(tWorldLoadProgressCallback apFunc, void *apUserData)
+{
+    gpWorldLoadProgressFunc = apFunc;
+    gpWorldLoadProgressUserData = apUserData;
+}
+
+void cWorldLoaderHplMap::ReportProgress(float afProgress)
+{
+    if(gpWorldLoadProgressFunc)
+    {
+        gpWorldLoadProgressFunc(afProgress, gpWorldLoadProgressUserData);
+    }
+}
+
+void cWorldLoaderHplMap::ReportProgressRange(float afStart, float afEnd, int alIndex, int alCount)
+{
+    if(gpWorldLoadProgressFunc == NULL || alCount <= 0)
+    {
+        return;
+    }
+    gpWorldLoadProgressFunc(afStart + (afEnd - afStart) * ((float)alIndex / (float)alCount), gpWorldLoadProgressUserData);
+}
+
+int cWorldLoaderHplMap::CountChildren(cXmlElement *apElement)
+{
+    int lCount = 0;
+    if(apElement == NULL)
+    {
+        return 0;
+    }
+    cXmlNodeListIterator it = apElement->GetChildIterator();
+    while(it.HasNext())
+    {
+        it.Next();
+        ++lCount;
+    }
+    return lCount;
+}
+
+//-----------------------------------------------------------------------
+
 cWorld *cWorldLoaderHplMap::LoadWorld(const tWString& asFile, tWorldLoadFlag aFlags)
 {
     unsigned long lLoadStartTime = cPlatform::GetApplicationTime();
+    ReportProgress(0.0f);
     mlCurrentFlags = aFlags;
     bool bLoadedFromNormalFile = false;
 
@@ -217,6 +264,8 @@ cWorld *cWorldLoaderHplMap::LoadWorld(const tWString& asFile, tWorldLoadFlag aFl
         }
     }
 
+    ReportProgress(0.03f);
+
     ////////////////////////////////
     // Init general vars
     mbLoadedCache = false;
@@ -264,6 +313,7 @@ cWorld *cWorldLoaderHplMap::LoadWorld(const tWString& asFile, tWorldLoadFlag aFl
     ////////////////////////////////////
     // Try loading cache
     LoadCacheFile(asFile);
+    ReportProgress(0.10f);
 
 
     ////////////////////////////////////
@@ -338,16 +388,19 @@ cWorld *cWorldLoaderHplMap::LoadWorld(const tWString& asFile, tWorldLoadFlag aFl
     //////////////////////////////
     // Compile
     lStartTime = cPlatform::GetApplicationTime();
+    ReportProgress(0.86f);
     mpCurrentWorld->Compile(true);
     lDeltaTime = cPlatform::GetApplicationTime() - lStartTime;
     if(gbLogTiming)
     {
         Log("  Compilation: %d ms\n", lDeltaTime);
     }
+    ReportProgress(0.95f);
 
     //////////////////////////////
     // Save cache
     SaveCacheFile(asFile);
+    ReportProgress(0.99f);
 
     //////////////////////////////
     // Final clean up
@@ -374,6 +427,8 @@ cWorld *cWorldLoaderHplMap::LoadWorld(const tWString& asFile, tWorldLoadFlag aFl
     {
         Log(" -------- Loading complete ---------\n");
     }
+
+    ReportProgress(1.0f);
 
     return mpCurrentWorld;
 }
@@ -1088,12 +1143,16 @@ void cWorldLoaderHplMap::LoadStaticObjects(cXmlElement* apXmlContents)
     lStartTime = cPlatform::GetApplicationTime();
     cXmlElement* pXmlStaticObjects = apXmlContents->GetFirstElement("StaticObjects");
     cXmlNodeListIterator it = pXmlStaticObjects->GetChildIterator();
+    int lStaticCount = CountChildren(pXmlStaticObjects);
+    int lStaticIdx = 0;
     while(it.HasNext())
     {
         cXmlElement* pXmlEntity = it.Next()->ToElement();
 
+        ReportProgressRange(0.10f, 0.30f, lStaticIdx++, lStaticCount);
         CreateStaticObjectEntity(pXmlEntity, lstMeshEntities, pTempContainer);
     }
+    ReportProgress(0.30f);
     lDeltaTime = cPlatform::GetApplicationTime() - lStartTime;
     if(gbLogTiming)
     {
@@ -1107,10 +1166,13 @@ void cWorldLoaderHplMap::LoadStaticObjects(cXmlElement* apXmlContents)
     {
         lStartTime = cPlatform::GetApplicationTime();
         cXmlNodeListIterator primIt = pXmlPrimitives->GetChildIterator();
+        int lPrimCount = CountChildren(pXmlPrimitives);
+        int lPrimIdx = 0;
         while(primIt.HasNext())
         {
             cXmlElement* pXmlEntity = primIt.Next()->ToElement();
 
+            ReportProgressRange(0.30f, 0.33f, lPrimIdx++, lPrimCount);
             CreatePrimitive(pXmlEntity, lstMeshEntities, pTempContainer);
         }
         lDeltaTime = cPlatform::GetApplicationTime() - lStartTime;
@@ -1127,10 +1189,13 @@ void cWorldLoaderHplMap::LoadStaticObjects(cXmlElement* apXmlContents)
     {
         lStartTime = cPlatform::GetApplicationTime();
         cXmlNodeListIterator decalIt = pXmlDecals->GetChildIterator();
+        int lDecalCount = CountChildren(pXmlDecals);
+        int lDecalIdx = 0;
         while(decalIt.HasNext())
         {
             cXmlElement* pXmlEntity = decalIt.Next()->ToElement();
 
+            ReportProgressRange(0.33f, 0.36f, lDecalIdx++, lDecalCount);
             CreateDecal(pXmlEntity, lstMeshEntities, pTempContainer);
         }
         lDeltaTime = cPlatform::GetApplicationTime() - lStartTime;
@@ -1153,10 +1218,13 @@ void cWorldLoaderHplMap::LoadStaticObjects(cXmlElement* apXmlContents)
     {
         lStartTime = cPlatform::GetApplicationTime();
         cXmlNodeListIterator comboIt = pXmlObjectCombos->GetChildIterator();
+        int lComboCount = CountChildren(pXmlObjectCombos);
+        int lComboIdx = 0;
         while(comboIt.HasNext())
         {
             cXmlElement* pXmlCombo = comboIt.Next()->ToElement();
 
+            ReportProgressRange(0.36f, 0.40f, lComboIdx++, lComboCount);
             CreateStaticObjectCombo(pXmlCombo, lstMeshEntities, pTempContainer);
         }
         lDeltaTime = cPlatform::GetApplicationTime() - lStartTime;
@@ -1169,6 +1237,7 @@ void cWorldLoaderHplMap::LoadStaticObjects(cXmlElement* apXmlContents)
     ///////////////////////////////////////
     //Compile the container
     //Log(" ==================== COMPILING BEGIN ===========================\n");
+    ReportProgress(0.40f);
     lStartTime = cPlatform::GetApplicationTime();
     pTempContainer->Compile();
     lDeltaTime = cPlatform::GetApplicationTime() - lStartTime;
@@ -1180,8 +1249,10 @@ void cWorldLoaderHplMap::LoadStaticObjects(cXmlElement* apXmlContents)
 
     /////////////////////////////////
     //Go through all leaves of the container, and combine objects found there.
+    ReportProgress(0.42f);
     lStartTime = cPlatform::GetApplicationTime();
     IterateLeafNodesAndBuildMeshes(pTempContainer->GetRoot());
+    ReportProgress(0.50f);
     lDeltaTime = cPlatform::GetApplicationTime() - lStartTime;
     if(gbLogTiming)
     {
@@ -2413,12 +2484,19 @@ void cWorldLoaderHplMap::LoadEntities(cXmlElement* apXmlContents)
     //Iterate all entities in contents
     cXmlElement* pXmlEntities = apXmlContents->GetFirstElement("Entities");
     cXmlNodeListIterator it = pXmlEntities->GetChildIterator();
+
+    //Skip reporting static objects since they already loaded from cache
+    float fEntityProgStart = mbLoadedCache ? 0.10f : 0.50f;
+    int lEntityCount = CountChildren(pXmlEntities);
+    int lEntityIdx = 0;
     while(it.HasNext())
     {
         cXmlElement* pXmlEntity = it.Next()->ToElement();
 
+        ReportProgressRange(fEntityProgStart, 0.85f, lEntityIdx++, lEntityCount);
         CreateLoadedEntity(pXmlEntity, &lstLightBillboardListConnections);
     }
+    ReportProgress(0.85f);
 
     /////////////////////////////////////
     //Set up light and billboard connections

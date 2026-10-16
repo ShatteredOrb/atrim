@@ -355,7 +355,7 @@ void cLuxPreMenu::OnLeaveContainer(const tString& asNewContainer)
 
     mpGuiSet->SetActive(false);
 
-    gpBase->mpLoadScreenHandler->DrawMenuScreen();
+    gpBase->mpLoadScreenHandler->DrawMenuScreen(true);
 }
 
 //-----------------------------------------------------------------------
