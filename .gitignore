@@ -424,3 +424,6 @@ HPL2/sources/impl/PlatformBuildID.cpp
 
 # SDL 1.2.15 Whitelist...
 !HPL2/depends/sources/SDL/**/[Ww][Ii][Nn]32/
+
+# Aftermarket Patches
+*.patch
