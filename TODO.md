@@ -3,8 +3,6 @@
 ### v1.4.6
 - Bloom shader is broken
 - First Waterlurker in Archive Tunnels (`08_cellar_maze`) falls out of the map after spawning
-- Monster animations can sometimes stop at certain points
-- Monsters will T-pose after being spawned
 
 ### v1.4.7 (or v1.4.666+ hotfix)
 - Fast forward for some sounds is behind the speed multipler
