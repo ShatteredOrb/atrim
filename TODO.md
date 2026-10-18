@@ -8,4 +8,5 @@
 - Fast forward for some sounds is behind the speed multipler
 - Interpolate game and engine for monitors over >60 Hz
 - Profiles do not appear to visually refresh their user config values after switching between profiles
+- Replace tinyxml with pugixml, decreasing loading speeds and improving overall memory consumption
 - SSAO shader is inaccurate, unnatural and has visual errors
