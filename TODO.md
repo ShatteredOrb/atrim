@@ -2,7 +2,8 @@
 
 ### v1.4.6
 - Bloom shader is broken
-- First Waterlurker in Archive Tunnels (`08_cellar_maze`) falls out of the map after spawning
+- First Waterlurker in *Archive Tunnels* (`08_cellar_maze`) falls out of the map after spawning
+- Upgrade game logic code with changes from *Amnesia: A Machine for Pigs*
 
 ### v1.4.7 (or v1.4.666+ hotfix)
 - Fast forward for some sounds is behind the speed multipler
