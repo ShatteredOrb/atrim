@@ -99,7 +99,7 @@ void cLuxConfigHandler::LoadMainConfig()
     /////////////////////
     // Sound variables
     mlSoundDevID = gpBase->mpMainConfig->GetInt("Sound", "Device", -1);
-    mlMaxSoundChannels = gpBase->mpMainConfig->GetInt("Sound", "MaxChannels", 32);
+    mlMaxSoundChannels = gpBase->mpMainConfig->GetInt("Sound", "MaxChannels", 128);
     mlSoundStreamBuffers = gpBase->mpMainConfig->GetInt("Sound", "StreamBuffers", 4);
     mlSoundStreamBufferSize = gpBase->mpMainConfig->GetInt("Sound", "StreamBufferSize", 262144);
 }

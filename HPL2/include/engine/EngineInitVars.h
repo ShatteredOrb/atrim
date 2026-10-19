@@ -48,11 +48,11 @@ public:
             mbUseVoiceManagement(true),
             mbLowLevelLogging(false),
             mlStreamUpdateFreq(10),
-            mlMaxChannels(32),
+            mlMaxChannels(128),
             mlMaxMonoChannelsHint(0),
             mlMaxStereoChannelsHint(0),
-            mlStreamBufferSize(524288),
-            mlStreamBufferCount(2)
+            mlStreamBufferSize(262144),
+            mlStreamBufferCount(4)
         {}
 
         int    mlSoundDeviceID;
