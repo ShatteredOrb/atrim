@@ -252,7 +252,6 @@ bool cCharacterBodyRay::OnIntersect(iPhysicsBody *pBody, cPhysicsRayParams *apPa
 
 iCharacterBody::iCharacterBody(const tString &asName, iPhysicsWorld *apWorld, const cVector3f avSize)
 {
-
     /////////////////////////////
     //Set up main properties
     msName = asName;
@@ -262,6 +261,8 @@ iCharacterBody::iCharacterBody(const tString &asName, iPhysicsWorld *apWorld, co
     mvSize = avSize;
 
     mpCallback = NULL;
+
+    mlCollideFlags = eFlagBit_All;
 
     /////////////////////////////
     // Create Shape
@@ -313,8 +314,6 @@ iCharacterBody::iCharacterBody(const tString &asName, iPhysicsWorld *apWorld, co
 
     mfYaw = 0;
     mfPitch = 0;
-
-    mlCollideFlags = eFlagBit_All;
 
     //The maximum angle of a slope (compare to gravity direction) where no sliding occurs
     mfMaxNoSlideSlopeAngleCos = cos(cMath::ToRad(45.0f));
