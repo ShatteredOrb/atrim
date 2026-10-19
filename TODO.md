@@ -1,7 +1,6 @@
 # TODO
 
 ### v1.4.6
-- First Waterlurker in *Archive Tunnels* (`08_cellar_maze`) falls out of the map after spawning
 - Upgrade game logic code with changes from *Amnesia: A Machine for Pigs*
 
 ### v1.4.7 (or v1.4.666+ hotfix)
