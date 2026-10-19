@@ -1018,7 +1018,7 @@ void iRenderFunctions::DrawQuad(    const cVector3f& aPos, const cVector2f& avSi
             avMinUV0.ToString().c_str(),
             avMaxUV0.ToString().c_str(),
             avMinUV1.ToString().c_str(),
-            avMaxUV0.ToString().c_str());
+            avMaxUV1.ToString().c_str());
     }
     cVector2f vFinalMinUv0 = avMinUV0;
     cVector2f vFinalMaxUv0 = avMaxUV0;
@@ -1030,7 +1030,7 @@ void iRenderFunctions::DrawQuad(    const cVector3f& aPos, const cVector2f& avSi
 
     cVector2f vFinalMinUv1 = avMinUV1;
     cVector2f vFinalMaxUv1 = avMaxUV1;
-    if(abInvertY0)
+    if(abInvertY1)
     {
         vFinalMaxUv1.y = avMinUV1.y;
         vFinalMinUv1.y = avMaxUV1.y;

@@ -56,8 +56,8 @@ int cRendererDeferred::mlSSAOBufferSizeDiv = 2;
 float cRendererDeferred::mfSSAOScatterLengthMul = 0.2f;
 float cRendererDeferred::mfSSAOScatterLengthMin = 0.015f;
 float cRendererDeferred::mfSSAOScatterLengthMax = 0.13f;
-float cRendererDeferred::mfSSAODepthDiffMul = 1.5f;
-float cRendererDeferred::mfSSAOSkipEdgeLimit = 3.0f;
+float cRendererDeferred::mfSSAODepthDiffMul = 1.0f;
+float cRendererDeferred::mfSSAOSkipEdgeLimit = 1.0f;
 eDeferredSSAO cRendererDeferred::mSSAOType = eDeferredSSAO_OnColorBuffer;
 bool cRendererDeferred::mbDebugPrevFrameOcclusion = false;
 bool cRendererDeferred::mbDebugRenderLightComplexity = false;
@@ -1243,6 +1243,8 @@ void cRendererDeferred::RenderSSAO()
     SetBlendMode(eMaterialBlendMode_None);
     SetDepthWrite(false);
     SetDepthTest(false);
+
+    SetVertexBuffer(NULL);
 
     SetFlatProjectionMinMax(cVector3f(mfFarLeft, mfFarBottom, -mfFarPlane * 1.5f), cVector3f(mfFarRight, mfFarTop, mfFarPlane * 1.5f));
 

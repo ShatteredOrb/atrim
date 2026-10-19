@@ -2309,10 +2309,6 @@ void cLowLevelGraphicsSDL::SetUpBatchArrays()
 
     glClientActiveTextureARB(GL_TEXTURE0_ARB);
     glTexCoordPointer(3, GL_FLOAT, sizeof(float)*mlBatchStride, &mpVertexArray[7]);
-    glClientActiveTextureARB(GL_TEXTURE1_ARB);
-    glTexCoordPointer(3, GL_FLOAT, sizeof(float)*mlBatchStride, &mpVertexArray[7]);
-    glClientActiveTextureARB(GL_TEXTURE2_ARB);
-    glTexCoordPointer(3, GL_FLOAT, sizeof(float)*mlBatchStride, &mpVertexArray[7]);
 }
 
 //-----------------------------------------------------------------------
