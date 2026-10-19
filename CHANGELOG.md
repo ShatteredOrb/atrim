@@ -7,11 +7,13 @@
 - Added customizable top menu font color settings from version 1.5
 - Added extra checks to ensure the parallax quality setting is applied correctly
 - Added `#include` directive for version 1.5 mod support
+- Added new customizable loading bar, inspired by the *Amnesia: Collection* ports
 - Added new drop-down menu for selecting the type of parallax rendering effect (Simple, Relief)
 - Added new engine build ID (`YYYYMMDDhhmmss`)
 - Added new engine performance metrics (saved to `hpl.log`)
 - Added new flashback intensity slider
 - Added new "Flattened 3D" texture type
+- Added new Infinity Ward-style version watermark for debugging
 - Added new left- and right-handedness options
 - Added new "lite" version of the deferred light shader for ATi Radeon 9xxx video cards
 - Added new modulated illumination rendering type for surface materials
@@ -20,6 +22,7 @@
 - Added new properties for lights and particles
 - Added new sanity drain control script functions
 - Added new setting for changing the player's hand orientation
+- Added new splash screen for the **Shattered Orb** group
 - Added new string localization for hardcoded texts (Finnish and German translations by [@phnxs](https://github.com/phnxs) and Arkhany)
 - Added new "Ultra Low" texture setting for significantly weaker hardware
 - Added new "Ultra" setting for shadow quality and resolution
@@ -37,20 +40,30 @@
 - Decoupled timers and scripts to use their own functions instead of using the same "Run" function
 - Fixed aspect ratio calculation for custom `menu_loading_screen.jpg` images
 - Fixed billboard alphas dividing by zero
+- Fixed bloom and SSAO shader rendering bugs
 - Fixed broken byte order/endianness check so fast little-endian paths are now used
 - Fixed broken node and bone index resolve for mesh entities
 - Fixed buggy enemy collision behavior
 - Fixed character body simulation errors
+- Fixed character collision flag bits being fed with garbage data
 - Fixed crosshair focus for static, non-interactable entities and objects
 - Fixed Custom Story images not being cleared out when another Custom Story was selected
 - Fixed destructive recursive reparse point deletion when a profile is deleted
 - Fixed engine crash from addressing 32-bit memory over 2 GB
 - Fixed excess screen aspect ratio calculation
+- Fixed fatal crash after loading invalid or null animation data
+- Fixed fatal crash due to missing null checks for skeleton bounds
+- Fixed fatal crash when meshes and mesh caches had invalid data
+- Fixed fatal crash while encoding Ogg Vorbis files
 - Fixed game crash when pressing Esc quickly to skip through bootup logos
+- Fixed inactive character bodies being simulated
 - Fixed invalid serialization of coins needed to unlock chests
 - Fixed limit for Tinderboxes not being properly enforced
 - Fixed max amount of game logic updates not scaling properly with Fast Forward (`F3`)
 - Fixed mipmap level detection and image loading
+- Fixed missing material check for player step sounds
+- Fixed missing, null or invalid data check for sound entities
+- Fixed patch language fallback loading for unsupported languages
 - Fixed post effects breaking at >60 FPS
 - Fixed SDL backquote/grave (`` ` ``) key which incorrectly returned as a backslash (`\`)
 - Fixed Shader Model 3 parallax mapping fallback
