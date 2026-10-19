@@ -4,7 +4,6 @@
 - **Ajdino** - Testing
 - **Arkhany** - German/Deutsch localization and testing
 - **auxxci** - Testing
-- **Douglas** - Testing
 - **georgeempy** - Testing
 - **[@phnxs](https://github.com/phnxs)** - Finnish/Suomenkieli localization and testing
 - **[@visadaking](https://github.com/visadaking)** - Testing
