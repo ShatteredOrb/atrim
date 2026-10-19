@@ -56,6 +56,12 @@
         <Entry Name="FreeWarning">atrim on ILMAINEN avoimen lähdekoodin client Amnesia: The Dark Descent -peliin. Jos ostit sen, pyydä rahojenpalautusta välittömästi!</Entry>
     </CATEGORY>
 
+    <!-- PTEST PATCHED STRINGS -->
+
+    <CATEGORY Name="Voice">
+        <Entry Name="hector_idle_03">Isä meidän, joka olet taivaissa. Pyhitetty olkoon sinun nimesi. Tulkoon sinun valtakuntasi. Tapahtukoon sinun tahtosi myös maan päällä niin kuin taivaassa. Tämän maailman valtakunnat ovat tulleet meidän Herramme ja hänen Kristuksensa, Vapahtajamme valtakunniksi.</Entry>
+    </CATEGORY>
+
     <!-- BEGIN HARD MODE STRINGS -->
 
     <CATEGORY Name="MainMenu">
@@ -67,8 +73,8 @@
         <Entry Name="HardModeStartNewGame">Aloita peli vaikealla tilalla?</Entry>
 
         <Entry Name="HardModeSaveCost">Tallentaminen maksaa # tulusta</Entry>
-        <Entry Name="HardModeTinderboxInInventory">sinulla on # tavaraluettelossasi</Entry>
-        <Entry Name="HardModeSavePopup">Tallentaminen poistaa # tulusta tavaraluettelosta</Entry>
+        <Entry Name="HardModeTinderboxInInventory">sinulla on # inventaariossasi</Entry>
+        <Entry Name="HardModeSavePopup">Tallentaminen poistaa # tulusta inventaariosta</Entry>
     </CATEGORY>
 
     <CATEGORY Name="Hints">
@@ -78,6 +84,17 @@
     <!-- END HARD MODE STRINGS -->
 
     <CATEGORY Name="OptionsMenu">
+        <Entry Name="Ultra">Ultra</Entry>
+        <Entry Name="UltraLow">Erittäin matala</Entry>
+
+        <Entry Name="FullScreenTip">Vaihda koko näytön ja ikkunoidun tilan välillä. Jos käytät Windows Vistaa tai 7+:aa ja DWM-koostaja on käytössä, tämä asetus aktivoi reunattoman ikkunoidun tilan.</Entry>
+
+        <Entry Name="HandOrientation">Käden suunta</Entry>
+        <Entry Name="HandOrientationTip">Asetus, jolla voi peilata pelaajan käsien suunnan. Oletuksena pelaaja on vasenkätinen.</Entry>
+
+        <Entry Name="FlashIntensity">Flashback-intensiteetti</Entry>
+        <Entry Name="FlashIntensityTip">Säädä flashback- ja emotion stone -efektien voimakkuutta. Laske tätä, jos sinulla on usein migreeniä tai valoherkkyyttä.</Entry>
+
         <Entry Name="InvertGamepadLook">Käännä oikean sauvan katselua</Entry>
         <Entry Name="InvertGamepadLookTip">Kääntää peliohjaimen analogisen sauvan Y-akselia.</Entry>
         <Entry Name="GamepadLookSensitivity">Sauvan katseluherkkyys</Entry>
@@ -86,7 +103,6 @@
         <Entry Name="Parallax">Parallax</Entry>
         <Entry Name="ParallaxSimple">Yksinkertainen</Entry>
         <Entry Name="ParallaxRelief">Syvyysvaikutelma</Entry>
-        <!-- roozy: phnxs had trouble translating this string so I decided to do it myself. Please correct me if this is inaccurate. -->
         <Entry Name="ParallaxQualityTipNew">Parallaksiefektin kartoituksen laatu. Relief-mappaus on erittäin raskas!</Entry>
 
         <Entry Name="VolumeSound">Äänenvoimakkuus</Entry>
@@ -99,9 +115,9 @@
     </CATEGORY>
 
     <CATEGORY Name="Actions">
-        <Entry Name="Lean">Vasen</Entry>
+        <Entry Name="Lean">Kallista</Entry>
         <Entry Name="LeanTooltip">Kallistaa päätä, minne katseohjain osoittaa. Hyödyllinen nurkkien taakse kurkistamiseen.</Entry>
-        <Entry Name="RotateTooltip">Pyöritä napattua esinettä alaspainamalla ja liikuttamalla oikeaa sauvaa.</Entry>
+        <Entry Name="RotateTooltip">Pidä painettuna ja liikuta hiirtä pyörittääksesi tartuttua esinettä.</Entry>
     </CATEGORY>
 
     <!-- No need to localize these! -->
