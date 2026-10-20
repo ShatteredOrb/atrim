@@ -1,7 +1,6 @@
 # TODO
 
 ### v1.4.6
-- Profiles do not appear to visually refresh their user config values after switching between profiles
 - Upgrade game logic code with changes from *Amnesia: A Machine for Pigs*
 
 ### v1.4.7 (or v1.4.666+ hotfix)
