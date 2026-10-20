@@ -22,7 +22,6 @@
 - Added new properties for lights and particles
 - Added new sanity drain control script functions
 - Added new setting for changing the player's hand orientation
-- Added new splash screen for the **Shattered Orb** group
 - Added new string localization for hardcoded texts (Finnish and German translations by [@phnxs](https://github.com/phnxs) and Arkhany)
 - Added new "Ultra Low" texture setting for significantly weaker hardware
 - Added new "Ultra" setting for shadow quality and resolution
@@ -67,6 +66,7 @@
 - Fixed post effects breaking at >60 FPS
 - Fixed SDL backquote/grave (`` ` ``) key which incorrectly returned as a backslash (`\`)
 - Fixed Shader Model 3 parallax mapping fallback
+- Fixed user settings not refreshing visually after switching between profiles
 - Fixed visual bug with ropes disappearing when they were stretched to a significant degree
 - Improved AI node iterator with changes from Amnesia: A Machine for Pigs
 - Improved Father Hector David's idle reciting of biblical verses (specifically the Lord's Prayer (Matthew 6:9–10) and Revelation 11:15)
