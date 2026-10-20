@@ -1138,7 +1138,7 @@ bool cLuxBase::InitGame()
                            cPlatform::GetPlatformName()
 #if _DEBUG
                            + " Debug";
-#else
+#elif NDEBUG
                            + " Release";
 #endif
 
