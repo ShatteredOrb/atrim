@@ -40,7 +40,7 @@ The contents of this folder should be merged within the root of the *Amnesia: Th
 
     Contains the new Frictional Games logo (`pre_menu/startup_fg_logo.jpg`, extracted from *Amnesia: Collection*) and the aspect ratio-corrected version of the menu loading screen image (`general/menu_loading_screen.jpg`).
 
-- `/models`
+- `/models/hand_objects/lantern`
 
     Contains the *Amnesia: Collection* lantern model texture which was broken as a result of the porting progress, but added back as a visual flair for version 1.4.6.
 
