@@ -173,6 +173,9 @@ cLuxMainMenu_Options::~cLuxMainMenu_Options()
 
 void cLuxMainMenu_Options::CreateGui()
 {
+    mInitialValues = cResourceVarsObject();
+    mCurrentValues = cResourceVarsObject();
+
     CreateMainGui();
 }
 
