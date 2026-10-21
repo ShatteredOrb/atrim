@@ -151,7 +151,6 @@ public:
                                      const cVector2l &avSize, const cVector2l &avTexOffset = 0);
     cBitmap *CopyFrameBufferToBitmap(const cVector2l &avScreenPos = 0, const cVector2l &avScreenSize = -1);
 
-    void WaitAndFinishRendering();
     void FlushRendering();
     void SwapBuffers();
 
