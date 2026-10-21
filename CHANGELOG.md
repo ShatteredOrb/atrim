@@ -18,6 +18,7 @@
 - Added new "lite" version of the deferred light shader for ATi Radeon 9xxx video cards
 - Added new modulated illumination rendering type for surface materials
 - Added new occluder and pathfinding block checks
+- Added new Pirate Speak language. Arr Matey!
 - Added new player body and camera script funcs
 - Added new properties for lights and particles
 - Added new sanity drain control script functions
