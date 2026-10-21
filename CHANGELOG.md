@@ -67,6 +67,7 @@
 - Fixed SDL backquote/grave (`` ` ``) key which incorrectly returned as a backslash (`\`)
 - Fixed Shader Model 3 parallax mapping fallback
 - Fixed user settings not refreshing visually after switching between profiles
+- Fixed visual bug caused by mesh coverage overshoot when an entity was being faded in
 - Fixed visual bug with ropes disappearing when they were stretched to a significant degree
 - Improved AI node iterator with changes from Amnesia: A Machine for Pigs
 - Improved Father Hector David's idle reciting of biblical verses (specifically the Lord's Prayer (Matthew 6:9–10) and Revelation 11:15)
