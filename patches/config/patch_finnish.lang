@@ -140,6 +140,7 @@
         <Entry Name="korean">Korean (Hangugeo)</Entry>
         <Entry Name="mexican_spanish">Español (México)</Entry>
         <Entry Name="norwegian">Norsk</Entry>
+        <Entry Name="pirate">Pirate Speak</entry>
         <Entry Name="polish">Polski</Entry>
         <Entry Name="portugal_portuguese">Português (Portuguesa)</Entry>
         <Entry Name="russian">Russian</Entry>
