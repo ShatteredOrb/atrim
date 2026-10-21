@@ -1,0 +1,315 @@
+<LANGUAGE>
+
+    <!-- Pirate Speak (piPI) Strings for atrim v1.4.6 by RoozerXC -->
+
+    <RESOURCES />
+    <CATEGORY Name="Debug">
+        <Entry Name="None">None</Entry>
+
+        <Entry Name="Debug Toolbar">Debug Toolbar</Entry>
+
+        <Entry Name="Debug texts">Debug texts</Entry>
+
+        <Entry Name="Show FPS">Show FPS</Entry>
+        <Entry Name="Show player info">Show player info</Entry>
+        <Entry Name="Show entity info">Show entity info</Entry>
+        <Entry Name="Show sounds playing">Show sounds playing</Entry>
+        <Entry Name="Show debug messages">Show debug messages</Entry>
+        <Entry Name="Show errors and warnings">Show errors and warnings</Entry>
+        <Entry Name="Inspection mode">Inspection mode</Entry>
+        <Entry Name="Occlusion Culling">Occlusion Culling</Entry>
+        <Entry Name="Draw physics debug">Draw physics debug</Entry>
+        <Entry Name="Resource Logging">Resource Logging</Entry>
+
+        <Entry Name="Print Container Debug Info">Print Container Debug Info</Entry>
+        <Entry Name="Rebuild Dyn Container">Rebuild Dyn Container</Entry>
+
+        <Entry Name="Map">Map</Entry>
+
+        <Entry Name="Load Map">Load Map</Entry>
+        <Entry Name="Recompile Script and Lang">Recompile Script and Lang</Entry>
+        <Entry Name="Reload from current pos">Reload from current pos</Entry>
+        <Entry Name="Fast Physics Load">Fast Physics Load</Entry>
+        <Entry Name="Reload Map">Reload Map</Entry>
+        <Entry Name="Quick Map Reload (F2)">Quick Map Reload (F2)</Entry>
+        <Entry Name="Test Change Map Save">Test Change Map Save</Entry>
+        <Entry Name="Teleport to start pos">Teleport to start pos</Entry>
+        <Entry Name="Map Batch">Map Batch</Entry>
+
+        <Entry Name="Game">Game</Entry>
+
+        <Entry Name="Disable Flashbacks">Disable Flashbacks</Entry>
+        <Entry Name="Reload Insanity Effects">Reload Insanity Effects</Entry>
+        <Entry Name="Start Insanity Effect">Start Insanity Effect</Entry>
+
+        <Entry Name="Fast Forward (F3)">Fast Forward (F3)</Entry>
+        <Entry Name="Fly camera">Fly camera</Entry>
+        <Entry Name="Fly camera speed">Fly camera speed</Entry>
+
+        <Entry Name="Script output for">Script output for</Entry>
+
+        <Entry Name="Inventory">Inventory</Entry>
+        <Entry Name="Global">Global</Entry>
+    </CATEGORY>
+
+    <CATEGORY Name="PreMenu">
+        <Entry Name="FreeWarning">atrim be a FREE and open-source software client fer Amnesia: The Dark Descent. If ye bought it, demand a refund and get yer doubloons back immediately!</Entry>
+    </CATEGORY>
+
+    <!-- PTEST PATCHED STRINGS -->
+
+    <CATEGORY Name="Voice">
+        <Entry Name="hector_idle_03">Our Father who art in heaven, hallowed be thy name. Thy kingdom come, Thy will be done on earth, as it is in heaven. The kingdoms of this world are become the kingdoms of our Lord and of his Christ, our Savior.</Entry>
+    </CATEGORY>
+
+    <!-- BEGIN HARD MODE STRINGS -->
+
+    <CATEGORY Name="MainMenu">
+        <Entry Name="HardMode">Cutthroat Mode</Entry>
+        <Entry Name="NormalMode">Landlubber</Entry>
+
+        <Entry Name="HardModeDescription">Enemies will spot ye more easily. Tinderboxes and oil be harder to come by. Autosave be disabled and stashin' yer game costs tinderboxes. Losin' yer sanity will kill ye.</Entry>
+        <Entry Name="NormalModeDescription">The way the game be meant to be played, matey.</Entry>
+        <Entry Name="HardModeStartNewGame">Set sail on a new voyage in Cutthroat Mode?</Entry>
+
+        <Entry Name="HardModeSaveCost">Stashin' costs # Tinderboxes</Entry>
+        <Entry Name="HardModeTinderboxInInventory">ye have # in yer sea chest</Entry>
+        <Entry Name="HardModeSavePopup">Stashin' will remove # tinderboxes from yer sea chest</Entry>
+    </CATEGORY>
+
+    <CATEGORY Name="Hints">
+        <Entry Name="HardModeDeath">Ye have met Davy Jones...</Entry>
+    </CATEGORY>
+
+    <!-- END HARD MODE STRINGS -->
+
+    <CATEGORY Name="OptionsMenu">
+        <Entry Name="Ultra">Kraken</Entry>
+        <Entry Name="UltraLow">Bilge Rat</Entry>
+
+        <Entry Name="FullScreenTip">Toggle 'twixt fullscreen and windowed mode. If ye be on Windows Vista or 7+ and have the DWM compositor enabled, this setting will activate borderless windowed mode.</Entry>
+
+        <Entry Name="HandOrientation">Hand orientation</Entry>
+        <Entry Name="HandOrientationTip">A setting to flip the orientation o' the player's hands. By default, the player be left-handed.</Entry>
+
+        <Entry Name="FlashIntensity">Flashback intensity</Entry>
+        <Entry Name="FlashIntensityTip">Adjust the intensity o' flashback and emotion stone effects. Lower this if ye frequently suffer migraines or photosensitivity.</Entry>
+
+        <Entry Name="InvertGamepadLook">Invert Right Stick look</Entry>
+        <Entry Name="InvertGamepadLookTip">Inverts the gamepad analog look Y-axis.</Entry>
+        <Entry Name="GamepadLookSensitivity">Stick look sensitivity</Entry>
+        <Entry Name="GamepadLookSensitivityTip">Set how sensitive the gamepad analog look movements should be.</Entry>
+
+        <Entry Name="Parallax">Parallax</Entry>
+        <Entry Name="ParallaxSimple">Simple</Entry>
+        <Entry Name="ParallaxRelief">Relief</Entry>
+        <Entry Name="ParallaxQualityTipNew">The mappin' quality o' the parallax effect. Relief mappin' be very demandin'!</Entry>
+
+        <Entry Name="VolumeSound">Sound Volume</Entry>
+        <Entry Name="VolumeMusic">Shanty Volume</Entry>
+    </CATEGORY>
+
+    <CATEGORY Name="LoadGame">
+        <Entry Name="MissingGame">Save file be missin' or corrupt, arr!</Entry>
+        <Entry Name="SaveIcon">This game features an auto-save mechanism. As long as this icon be showin', do not turn off the system, or ye'll be walkin' the plank!</Entry>
+    </CATEGORY>
+
+    <CATEGORY Name="Actions">
+        <Entry Name="Lean">Lean</Entry>
+        <Entry Name="LeanTooltip">Tilts yer head where the look control points, useful fer peekin' around corners.</Entry>
+        <Entry Name="RotateTooltip">Hold while movin' the mouse to rotate the object ye be grabbin'.</Entry>
+    </CATEGORY>
+
+    <!-- No need to localize these! -->
+
+    <CATEGORY Name="Languages">
+        <Entry Name="basque">Euskara</Entry>
+        <Entry Name="brazilian_portuguese">Português (Brasil)</Entry>
+        <Entry Name="chinese">Chinese (Simplified)</Entry>
+        <Entry Name="czech">[u268]eština</Entry>
+        <Entry Name="danish">Dansk</Entry>
+        <Entry Name="dutch">Nederlands</Entry>
+        <Entry Name="english">English</Entry>
+        <Entry Name="finnish">Suomi</Entry>
+        <Entry Name="french">Français</Entry>
+        <Entry Name="german">Deutsch</Entry>
+        <Entry Name="hungarian">Magyar</Entry>
+        <Entry Name="icelandish">Icelandish</Entry>
+        <Entry Name="italian">Italiano</Entry>
+        <Entry Name="japanese">Japanese</Entry>
+        <Entry Name="korean">Korean (Hangugeo)</Entry>
+        <Entry Name="mexican_spanish">Español (México)</Entry>
+        <Entry Name="norwegian">Norsk</Entry>
+        <Entry Name="pirate">Pirate Speak</Entry>
+        <Entry Name="polish">Polski</Entry>
+        <Entry Name="portugal_portuguese">Português (Portuguesa)</Entry>
+        <Entry Name="russian">Russian</Entry>
+        <Entry Name="slovak">Slovak</Entry>
+        <Entry Name="spanish">Español (España)</Entry>
+        <Entry Name="swedish">Svenska</Entry>
+        <Entry Name="turkish">Türkçe</Entry>
+        <Entry Name="ukrainian">Ukrainian</Entry>
+    </CATEGORY>
+
+    <CATEGORY Name="ButtonNames">
+        <Entry Name="World_0">World 0</Entry>
+        <Entry Name="World_1">World 1</Entry>
+        <Entry Name="World_2">World 2</Entry>
+        <Entry Name="World_3">World 3</Entry>
+        <Entry Name="World_4">World 4</Entry>
+        <Entry Name="World_5">World 5</Entry>
+        <Entry Name="World_6">World 6</Entry>
+        <Entry Name="World_7">World 7</Entry>
+        <Entry Name="World_8">World 8</Entry>
+        <Entry Name="World_9">World 9</Entry>
+        <Entry Name="World_10">World 10</Entry>
+        <Entry Name="World_11">World 11</Entry>
+        <Entry Name="World_12">World 12</Entry>
+        <Entry Name="World_13">World 13</Entry>
+        <Entry Name="World_14">World 14</Entry>
+        <Entry Name="World_15">World 15</Entry>
+        <Entry Name="World_16">World 16</Entry>
+        <Entry Name="World_17">World 17</Entry>
+        <Entry Name="World_18">World 18</Entry>
+        <Entry Name="World_19">World 19</Entry>
+        <Entry Name="World_20">World 20</Entry>
+        <Entry Name="World_21">World 21</Entry>
+        <Entry Name="World_22">World 22</Entry>
+        <Entry Name="World_23">World 23</Entry>
+        <Entry Name="World_24">World 24</Entry>
+        <Entry Name="World_25">World 25</Entry>
+        <Entry Name="World_26">World 26</Entry>
+        <Entry Name="World_27">World 27</Entry>
+        <Entry Name="World_28">World 28</Entry>
+        <Entry Name="World_29">World 29</Entry>
+        <Entry Name="World_30">World 30</Entry>
+        <Entry Name="World_31">World 31</Entry>
+        <Entry Name="World_32">World 32</Entry>
+        <Entry Name="World_33">World 33</Entry>
+        <Entry Name="World_34">World 34</Entry>
+        <Entry Name="World_35">World 35</Entry>
+        <Entry Name="World_36">World 36</Entry>
+        <Entry Name="World_37">World 37</Entry>
+        <Entry Name="World_38">World 38</Entry>
+        <Entry Name="World_39">World 39</Entry>
+        <Entry Name="World_40">World 40</Entry>
+        <Entry Name="World_41">World 41</Entry>
+        <Entry Name="World_42">World 42</Entry>
+        <Entry Name="World_43">World 43</Entry>
+        <Entry Name="World_44">World 44</Entry>
+        <Entry Name="World_45">World 45</Entry>
+        <Entry Name="World_46">World 46</Entry>
+        <Entry Name="World_47">World 47</Entry>
+        <Entry Name="World_48">World 48</Entry>
+        <Entry Name="World_49">World 49</Entry>
+        <Entry Name="World_50">World 50</Entry>
+        <Entry Name="World_51">World 51</Entry>
+        <Entry Name="World_52">World 52</Entry>
+        <Entry Name="World_53">World 53</Entry>
+        <Entry Name="World_54">World 54</Entry>
+        <Entry Name="World_55">World 55</Entry>
+        <Entry Name="World_56">World 56</Entry>
+        <Entry Name="World_57">World 57</Entry>
+        <Entry Name="World_58">World 58</Entry>
+        <Entry Name="World_59">World 59</Entry>
+        <Entry Name="World_60">World 60</Entry>
+        <Entry Name="World_61">World 61</Entry>
+        <Entry Name="World_62">World 62</Entry>
+        <Entry Name="World_63">World 63</Entry>
+        <Entry Name="World_64">World 64</Entry>
+        <Entry Name="World_65">World 65</Entry>
+        <Entry Name="World_66">World 66</Entry>
+        <Entry Name="World_67">World 67</Entry>
+        <Entry Name="World_68">World 68</Entry>
+        <Entry Name="World_69">World 69</Entry>
+        <Entry Name="World_70">World 70</Entry>
+        <Entry Name="World_71">World 71</Entry>
+        <Entry Name="World_72">World 72</Entry>
+        <Entry Name="World_73">World 73</Entry>
+        <Entry Name="World_74">World 74</Entry>
+        <Entry Name="World_75">World 75</Entry>
+        <Entry Name="World_76">World 76</Entry>
+        <Entry Name="World_77">World 77</Entry>
+        <Entry Name="World_78">World 78</Entry>
+        <Entry Name="World_79">World 79</Entry>
+        <Entry Name="World_80">World 80</Entry>
+        <Entry Name="World_81">World 81</Entry>
+        <Entry Name="World_82">World 82</Entry>
+        <Entry Name="World_83">World 83</Entry>
+        <Entry Name="World_84">World 84</Entry>
+        <Entry Name="World_85">World 85</Entry>
+        <Entry Name="World_86">World 86</Entry>
+        <Entry Name="World_87">World 87</Entry>
+        <Entry Name="World_88">World 88</Entry>
+        <Entry Name="World_89">World 89</Entry>
+        <Entry Name="World_90">World 90</Entry>
+        <Entry Name="World_91">World 91</Entry>
+        <Entry Name="World_92">World 92</Entry>
+        <Entry Name="World_93">World 93</Entry>
+        <Entry Name="World_94">World 94</Entry>
+        <Entry Name="World_95">World 95</Entry>
+
+        <!-- DirectInput/SDL Basic mapping names -->
+        <Entry Name="Axis 0.Negative">LStick Left</Entry>
+        <Entry Name="Axis 0.Positive">LStick Right</Entry>
+        <Entry Name="Axis 1.Negative">LStick Up</Entry>
+        <Entry Name="Axis 1.Positive">LStick Down</Entry>
+        <Entry Name="Axis 2.Negative">Button RT</Entry>
+        <Entry Name="Axis 2.Positive">Button LT</Entry>
+        <Entry Name="Axis 3.Negative">RStick Up</Entry>
+        <Entry Name="Axis 3.Positive">RStick Down</Entry>
+        <Entry Name="Axis 4.Negative">RStick Left</Entry>
+        <Entry Name="Axis 4.Positive">RStick Right</Entry>
+        <Entry Name="Hat 0.Up">DPad Up</Entry>
+        <Entry Name="Hat 0.Right">DPad Right</Entry>
+        <Entry Name="Hat 0.Down">DPad Down</Entry>
+        <Entry Name="Hat 0.Left">DPad Left</Entry>
+        <Entry Name="Button 0">Button A</Entry>
+        <Entry Name="Button 1">Button B</Entry>
+        <Entry Name="Button 2">Button X</Entry>
+        <Entry Name="Button 3">Button Y</Entry>
+        <Entry Name="Button 4">Button LB</Entry>
+        <Entry Name="Button 5">Button RB</Entry>
+        <Entry Name="Button 6">Back</Entry>
+        <Entry Name="Button 7">Start</Entry>
+        <Entry Name="Button 8">Button LStick</Entry>
+        <Entry Name="Button 9">Button RStick</Entry>
+        <Entry Name="Button 10">Button x5</Entry>
+        <Entry Name="Button 11">Button x6</Entry>
+
+        <!-- SDL2 mapping names -->
+        <Entry Name="Axis LeftX.Negative">LStick Left</Entry>
+        <Entry Name="Axis LeftX.Positive">LStick Right</Entry>
+        <Entry Name="Axis LeftY.Negative">LStick Up</Entry>
+        <Entry Name="Axis LeftY.Positive">LStick Down</Entry>
+        <Entry Name="Axis RightTrigger.Positive">Button RT</Entry>
+        <Entry Name="Axis LeftTrigger.Positive">Button LT</Entry>
+        <Entry Name="Axis RightX.Negative">RStick Up</Entry>
+        <Entry Name="Axis RightX.Positive">RStick Down</Entry>
+        <Entry Name="Axis RightY.Negative">RStick Left</Entry>
+        <Entry Name="Axis RightY.Positive">RStick Right</Entry>
+        <Entry Name="Button DpadUp">DPad Up</Entry>
+        <Entry Name="Button DpadRight">DPad Right</Entry>
+        <Entry Name="Button DpadDown">DPad Down</Entry>
+        <Entry Name="Button DpadLeft">DPad Left</Entry>
+        <Entry Name="Button A">Button A</Entry>
+        <Entry Name="Button B">Button B</Entry>
+        <Entry Name="Button X">Button X</Entry>
+        <Entry Name="Button Y">Button Y</Entry>
+        <Entry Name="Button LeftShoulder">Button LB</Entry>
+        <Entry Name="Button RightShoulder">Button RB</Entry>
+        <Entry Name="Button Back">Back</Entry>
+        <Entry Name="Button Start">Start</Entry>
+        <Entry Name="Button LeftStick">Button LStick</Entry>
+        <Entry Name="Button RightStick">Button RStick</Entry>
+        <Entry Name="Button Guide">Guide</Entry>
+    </CATEGORY>
+
+    <!-- No need to localize these unless your mod has custom key codes! -->
+
+    <CATEGORY Name="SecretCodes">
+        <Entry Name="CodeA">tyr299</Entry>
+        <Entry Name="CodeB">odn314</Entry>
+        <Entry Name="CodeC">lke271</Entry>
+    </CATEGORY>
+</LANGUAGE>
