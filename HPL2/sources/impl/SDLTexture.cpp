@@ -932,7 +932,19 @@ void cSDLTexture::GenerateMipMaps(    GLenum aGLTarget, ePixelFormat aPixelForma
     }
     else if(PixelFormatIsCompressed(aPixelFormat) == false)
     {
-        if(mType == eTextureType_1D)
+        const bool bHwMipMaps = (GLEW_VERSION_1_4 || GLEW_SGIS_generate_mipmap) &&
+                                (mType == eTextureType_2D || mType == eTextureType_CubeMap) &&
+                                apData != NULL;
+        if(bHwMipMaps)
+        {
+            glTexParameteri(aGLTarget, GL_GENERATE_MIPMAP_SGIS, GL_TRUE);
+            glTexImage2D(    mType == eTextureType_CubeMap ?
+                             GL_TEXTURE_CUBE_MAP_POSITIVE_X_ARB + alFaceNum : aGLTarget,
+                             0, GLInternalFormat, avSize.x, avSize.y, 0,
+                             GLFormat, GL_UNSIGNED_BYTE, apData);
+            glTexParameteri(aGLTarget, GL_GENERATE_MIPMAP_SGIS, GL_FALSE);
+        }
+        else if(mType == eTextureType_1D)
         {
             gluBuild1DMipmaps(    aGLTarget, GLInternalFormat, avSize.x,
                                   GLFormat, GL_UNSIGNED_BYTE,
