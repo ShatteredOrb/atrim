@@ -15,6 +15,27 @@ namespace hpl
 
 #define BUFFER_OFFSET(i) ((void*)(i*sizeof(float)))
 
+static GLuint gBoundElementBuffer = 0;
+
+static inline void BindElementBuffer(GLuint alHandle)
+{
+    if(gBoundElementBuffer == alHandle)
+    {
+        return;
+    }
+    gBoundElementBuffer = alHandle;
+    glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, alHandle);
+}
+
+static inline void ReleaseElementBuffer()
+{
+    if(gBoundElementBuffer != 0)
+    {
+        gBoundElementBuffer = 0;
+        glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, 0);
+    }
+}
+
 #ifndef HPL_VBO_MASKED_REPACK
 #define HPL_VBO_MASKED_REPACK 1
 #endif
@@ -83,6 +104,10 @@ cVertexBufferOGL_VBO::~cVertexBufferOGL_VBO()
 
     if(mlElementHandle)
     {
+        if(gBoundElementBuffer == (GLuint)mlElementHandle)
+        {
+            gBoundElementBuffer = 0;
+        }
         glDeleteBuffersARB(1, (GLuint*)&mlElementHandle);
     }
 }
@@ -168,7 +193,7 @@ void cVertexBufferOGL_VBO::UpdateData(tVertexElementFlag aTypes, bool abIndices)
     //Create the VBO index array
     if(abIndices && mlElementHandle != 0)
     {
-        glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, mlElementHandle);
+        BindElementBuffer(mlElementHandle);
 
         const int lIndexCount = GetIndexNum();
         if(lIndexCount <= 0 || mvIndexArray.empty())
@@ -206,7 +231,7 @@ void cVertexBufferOGL_VBO::UpdateData(tVertexElementFlag aTypes, bool abIndices)
                             mlIndexBufferSize, &mvIndexArray[0], usageType);
         }
 
-        glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, 0);
+        BindElementBuffer(0);
     }
 }
 
@@ -234,12 +259,11 @@ void cVertexBufferOGL_VBO::Draw(eVertexBufferDrawType aDrawType)
         return; // nothing to draw (empty/broken mesh)
     }
 
-    glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, mlElementHandle);
+    BindElementBuffer(mlElementHandle);
 
     GLenum indexType = mbUse16BitIndices ? GL_UNSIGNED_SHORT : GL_UNSIGNED_INT;
 
     glDrawElements(mode, lSize, indexType, (char*)NULL);
-    glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, 0);
 }
 
 //-----------------------------------------------------------------------
@@ -253,7 +277,8 @@ void cVertexBufferOGL_VBO::DrawIndices(unsigned int *apIndices, int alCount, eVe
     GLenum mode = GetDrawModeFromDrawType(drawType);
 
     //////////////////////////////////
-    //Bind and draw the buffer
+    //Client side indices can not be used while an index buffer is bound
+    ReleaseElementBuffer();
     glDrawElements(mode, alCount, GL_UNSIGNED_INT, apIndices);
 }
 
@@ -310,6 +335,7 @@ static void SetClientArrayEnabled(int alKey, bool abEnabled)
 void cVertexBufferOGL_VBO::InvalidateClientStateCache()
 {
     gClientArrayMaskKnown = false;
+    ReleaseElementBuffer();
 }
 
 //-----------------------------------------------------------------------
@@ -324,6 +350,7 @@ void cVertexBufferOGL_VBO::Bind()
 void cVertexBufferOGL_VBO::UnBind()
 {
     glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
+    ReleaseElementBuffer();
 
     const unsigned int lAllMask = (1u << kClientArrayKeyNum) - 1;
     const unsigned int lToDisable = gClientArrayMaskKnown ? gClientArrayMask : lAllMask;
@@ -443,7 +470,7 @@ void cVertexBufferOGL_VBO::CompileSpecific()
         glGenBuffersARB(1, (GLuint*)&mlElementHandle);
     }
 
-    glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, mlElementHandle);
+    BindElementBuffer(mlElementHandle);
 
     if(lIndexCount <= 0 || mvIndexArray.empty())
     {
@@ -480,7 +507,7 @@ void cVertexBufferOGL_VBO::CompileSpecific()
                         &mvIndexArray[0], usageType);
     }
 
-    glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, 0);
+    BindElementBuffer(0);
 }
 
 //-----------------------------------------------------------------------

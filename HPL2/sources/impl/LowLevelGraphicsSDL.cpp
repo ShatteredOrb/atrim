@@ -41,6 +41,17 @@
 namespace hpl
 {
 
+static int glCurrentActiveTextureUnit = -1;
+static inline void SetGLActiveTextureUnit(unsigned int alUnit)
+{
+    if(glCurrentActiveTextureUnit == (int)alUnit)
+    {
+        return;
+    }
+    glCurrentActiveTextureUnit = (int)alUnit;
+    glActiveTextureARB(GL_TEXTURE0_ARB + alUnit);
+}
+
 //////////////////////////////////////////////////////////////////////////
 // CONSTRUCTORS
 //////////////////////////////////////////////////////////////////////////
@@ -333,6 +344,7 @@ void cLowLevelGraphicsSDL::SetupGL()
     glEnable(GL_CULL_FACE);
     glCullFace(GL_BACK);
     glFrontFace(GL_CW);
+    glCurrentActiveTextureUnit = -1;
 
     glDisable(GL_SCISSOR_TEST);
     glScissor(mvScissorPos.x, (mvScissorSize.y - mvScissorPos.y - 1) - mvScissorSize.y, mvScissorSize.x, mvScissorSize.y);
@@ -1206,8 +1218,6 @@ void cLowLevelGraphicsSDL::SetCullActive(bool abX)
     {
         glDisable(GL_CULL_FACE);
     }
-
-    glCullFace(GL_BACK);
 }
 
 void cLowLevelGraphicsSDL::SetCullMode(eCullMode aMode)
@@ -1218,8 +1228,6 @@ void cLowLevelGraphicsSDL::SetCullMode(eCullMode aMode)
     }
 
     mCullMode = aMode;
-
-    glCullFace(GL_BACK);
 
     if(aMode == eCullMode_Clockwise)
     {
@@ -1440,7 +1448,6 @@ void cLowLevelGraphicsSDL::PopMatrix(eMatrix aMtxType)
 void cLowLevelGraphicsSDL::SetMatrix(eMatrix aMtxType, const cMatrixf& a_mtxA)
 {
     SetMatrixMode(aMtxType);
-    glLoadIdentity();
     cMatrixf mtxTranpose = a_mtxA.GetTranspose();
     glLoadMatrixf(mtxTranpose.v);
 }
@@ -1502,7 +1509,7 @@ void cLowLevelGraphicsSDL::SetTexture(unsigned int alUnit, iTexture* apTex)
     // Check if multi texturing is supported.
     if(GLEW_ARB_multitexture)
     {
-        glActiveTextureARB(GL_TEXTURE0_ARB + alUnit);
+        SetGLActiveTextureUnit(alUnit);
     }
 
     // Disable the old target if its different
@@ -1554,7 +1561,7 @@ void cLowLevelGraphicsSDL::ClearTextureHandle(GLuint aHandle)
 
 void cLowLevelGraphicsSDL::SetActiveTextureUnit(unsigned int alUnit)
 {
-    glActiveTextureARB(GL_TEXTURE0_ARB + alUnit);
+    SetGLActiveTextureUnit(alUnit);
 }
 
 //-----------------------------------------------------------------------
