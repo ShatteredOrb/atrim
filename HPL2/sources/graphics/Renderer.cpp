@@ -326,6 +326,68 @@ int cRenderSettings::RetrieveOcclusionObjectSamples(iRenderer *apRenderer, void 
 
 //-----------------------------------------------------------------------
 
+bool cRenderSettings::TryRetrieveOcclusionObjectSamples(iRenderer *apRenderer, void *apSource, int alCustomIndex, int &alSamples)
+{
+    tOcclusionQueryObjectMapIt it = m_setOcclusionObjects.find(apSource);
+    if(it == m_setOcclusionObjects.end())
+    {
+        if(mbLog)
+        {
+            Log(" Could not find source %d custom index %d in occlusion objects set!\n", apSource, alCustomIndex);
+        }
+        alSamples = 0;
+        return true;
+    }
+
+    //////////////////////////////////////
+    //Get the number of objects with key and get the one with right custom ID
+    size_t lCount = m_setOcclusionObjects.count(apSource);
+    cOcclusionQueryObject* pObject = NULL;
+    for(size_t i = 0; i < lCount; ++i)
+    {
+        cOcclusionQueryObject* pTestObject = it->second;
+        if(pTestObject->mlCustomID == alCustomIndex)
+        {
+            pObject = pTestObject;
+            break;
+        }
+        it++;
+    }
+    if(pObject == NULL)
+    {
+        if(mbLog)
+        {
+            Log(" Found source %d but could NOT find custom index %d in occlusion objects set!\n", apSource, alCustomIndex);
+        }
+        alSamples = 0;
+        return true;
+    }
+
+    //////////////////////////////////////
+    // Get the query and wait (if needed) for result to come in
+    iOcclusionQuery *pQuery = pObject->mpQuery;
+
+    if(pQuery == NULL)
+    {
+        alSamples = pObject->mlSampleResults;
+        return true;
+    }
+
+    if(pQuery->FetchResults() == false)
+    {
+        return false;
+    }
+
+    pObject->mlSampleResults = pQuery->GetSampleCount();
+    pObject->mpQuery = NULL;
+    apRenderer->ReleaseOcclusionQuery(pQuery);
+
+    alSamples = pObject->mlSampleResults;
+    return true;
+}
+
+//-----------------------------------------------------------------------
+
 void cRenderSettings::WaitAndRetrieveAllOcclusionQueries(iRenderer *apRenderer)
 {
     for(int i = 0; i < mlCurrentOcclusionObject; ++i)
@@ -540,6 +602,11 @@ int iRenderer::RetrieveOcclusionObjectSamples(void *apSource, int alCustomIndex)
     }
 
     return lSamples;
+}
+
+bool iRenderer::TryRetrieveOcclusionObjectSamples(void *apSource, int alCustomIndex, int &alSamples)
+{
+    return mpCurrentSettings->TryRetrieveOcclusionObjectSamples(this, apSource, alCustomIndex, alSamples);
 }
 
 void iRenderer::WaitAndRetrieveAllOcclusionQueries()
@@ -2194,7 +2261,7 @@ void iRenderer::RetrieveAllLightOcclusionPair(bool abWaitForResult)
         //Wait for results if specfied.
         if(abWaitForResult)
         {
-            while(pQuery->FetchResults());
+            while(pQuery->FetchResults() == false);
         }
 
         //Get result and set resulting samples

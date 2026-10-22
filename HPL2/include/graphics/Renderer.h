@@ -108,6 +108,7 @@ public:
 
     void AssignOcclusionObject(iRenderer *apRenderer, void *apSource, int alCustomIndex, iVertexBuffer *apVtxBuffer, cMatrixf *apMatrix, bool abDepthTest);
     int RetrieveOcclusionObjectSamples(iRenderer *apRenderer, void *apSource, int alCustomIndex);
+    bool TryRetrieveOcclusionObjectSamples(iRenderer *apRenderer, void *apSource, int alCustomIndex, int &alSamples);
     void ClearOcclusionObjects(iRenderer *apRenderer);
     void WaitAndRetrieveAllOcclusionQueries(iRenderer *apRenderer);
 
@@ -287,6 +288,11 @@ public:
 
     void AssignOcclusionObject(void *apSource, int alCustomIndex, iVertexBuffer *apVtxBuffer, cMatrixf *apMatrix, bool abDepthTest);
     int RetrieveOcclusionObjectSamples(void *apSource, int alCustomIndex);
+    /**
+     * Like RetrieveOcclusionObjectSamples but never waits for the GPU.
+     * \return false if the query result is not ready yet (alSamples is then not set).
+     */
+    bool TryRetrieveOcclusionObjectSamples(void *apSource, int alCustomIndex, int &alSamples);
     /**
     * Retrieves number of samples for all active occlusion queries. It does not release the queries, but the values are gotten and stored in query.
     */

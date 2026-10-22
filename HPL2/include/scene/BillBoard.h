@@ -138,6 +138,9 @@ private:
     float mfForwardOffset;
     cColor mColor;
     float mfHaloAlpha;
+
+    int mlLastHaloSamples;
+    int mlLastHaloMaxSamples;
 };
 
 };

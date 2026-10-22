@@ -20,6 +20,10 @@
 
 #include "engine/Engine.h"
 
+#ifndef HPL_OCCLUSION_NONBLOCKING
+#define HPL_OCCLUSION_NONBLOCKING 1
+#endif
+
 namespace hpl
 {
 
@@ -41,6 +45,8 @@ cBillboard::cBillboard(const tString asName, const cVector2f& avSize, eBillboard
     mColor = cColor(1, 1, 1, 1);
     mfForwardOffset = 0;
     mfHaloAlpha = 1.0f;
+    mlLastHaloSamples = -1;
+    mlLastHaloMaxSamples = -1;
 
     mType = aType;
 
@@ -437,8 +443,32 @@ bool cBillboard::RetrieveOcculsionQuery(iRenderer *apRenderer)
         return  true;
     }
 
-    int lSamples = apRenderer->RetrieveOcclusionObjectSamples(this, 0);
-    int lMaxSamples = apRenderer->RetrieveOcclusionObjectSamples(this, 1);
+    int lSamples = 0;
+    int lMaxSamples = 0;
+
+#if HPL_OCCLUSION_NONBLOCKING
+    if(apRenderer->TryRetrieveOcclusionObjectSamples(this, 0, lSamples) &&
+       apRenderer->TryRetrieveOcclusionObjectSamples(this, 1, lMaxSamples))
+    {
+        mlLastHaloSamples = lSamples;
+        mlLastHaloMaxSamples = lMaxSamples;
+    }
+    else if(mlLastHaloMaxSamples >= 0)
+    {
+        lSamples = mlLastHaloSamples;
+        lMaxSamples = mlLastHaloMaxSamples;
+    }
+    else
+    {
+        lSamples = apRenderer->RetrieveOcclusionObjectSamples(this, 0);
+        lMaxSamples = apRenderer->RetrieveOcclusionObjectSamples(this, 1);
+        mlLastHaloSamples = lSamples;
+        mlLastHaloMaxSamples = lMaxSamples;
+    }
+#else
+    lSamples = apRenderer->RetrieveOcclusionObjectSamples(this, 0);
+    lMaxSamples = apRenderer->RetrieveOcclusionObjectSamples(this, 1);
+#endif
 
     ////////////////////////////
     // Samples are visible
