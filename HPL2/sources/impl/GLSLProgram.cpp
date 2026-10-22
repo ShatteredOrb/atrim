@@ -81,6 +81,11 @@ bool cGLSLProgram::Link()
         return false;
     }
 
+    for(size_t i = 0; i < mvParameters.size(); ++i)
+    {
+        mvParameters[i].ClearCache();
+    }
+
     ///////////////////////////////////////
     //Set up sampler units
     iGpuShader* pFragShader = mpShader[eGpuShaderType_Fragment];
@@ -152,6 +157,14 @@ bool cGLSLProgram::SetSamplerToUnit(const tString& asSamplerName, int alUnit)
     Bind();
     glUniform1i(lVarHandle, alUnit);
     UnBind();
+
+    for(size_t i = 0; i < mvParameters.size(); ++i)
+    {
+        if(mvParameters[i].mlId == lVarHandle)
+        {
+            mvParameters[i].ClearCache();
+        }
+    }
 
     return true;
 }
@@ -240,6 +253,7 @@ bool cGLSLProgram::GetVariableAsId(const tString& asName, int alId)
     // add it.
     mvParameters[alId].mlId = lHandle;
     mvParameters[alId].msName = asName;
+    mvParameters[alId].ClearCache();
 
     return true;
 }
@@ -258,7 +272,15 @@ bool cGLSLProgram::SetInt(int alVarId, int alX)
         Bind();
     }
 
-    glUniform1i(mvParameters[alVarId].mlId, alX);
+    cGLSLParam &param = mvParameters[alVarId];
+    if(param.mCacheType == eGLSLParamCache_Int && param.mlCacheInt == alX)
+    {
+        return true;
+    }
+    param.mCacheType = eGLSLParamCache_Int;
+    param.mlCacheInt = alX;
+
+    glUniform1i(param.mlId, alX);
 
     return true;
 }
@@ -278,7 +300,15 @@ bool  cGLSLProgram::SetFloat(int alVarId, float afX)
         Bind();
     }
 
-    glUniform1f(mvParameters[alVarId].mlId, afX);
+    cGLSLParam &param = mvParameters[alVarId];
+    if(param.mCacheType == eGLSLParamCache_Float && param.mfCache[0] == afX)
+    {
+        return true;
+    }
+    param.mCacheType = eGLSLParamCache_Float;
+    param.mfCache[0] = afX;
+
+    glUniform1f(param.mlId, afX);
 
     return true;
 }
@@ -297,7 +327,16 @@ bool  cGLSLProgram::SetVec2f(int alVarId, float afX, float afY)
         Bind();
     }
 
-    glUniform2f(mvParameters[alVarId].mlId, afX, afY);
+    cGLSLParam &param = mvParameters[alVarId];
+    if(param.mCacheType == eGLSLParamCache_Vec2 && param.mfCache[0] == afX && param.mfCache[1] == afY)
+    {
+        return true;
+    }
+    param.mCacheType = eGLSLParamCache_Vec2;
+    param.mfCache[0] = afX;
+    param.mfCache[1] = afY;
+
+    glUniform2f(param.mlId, afX, afY);
 
     return true;
 }
@@ -316,7 +355,18 @@ bool  cGLSLProgram::SetVec3f(int alVarId, float afX, float afY, float afZ)
         Bind();
     }
 
-    glUniform3f(mvParameters[alVarId].mlId, afX, afY, afZ);
+    cGLSLParam &param = mvParameters[alVarId];
+    if(param.mCacheType == eGLSLParamCache_Vec3 &&
+       param.mfCache[0] == afX && param.mfCache[1] == afY && param.mfCache[2] == afZ)
+    {
+        return true;
+    }
+    param.mCacheType = eGLSLParamCache_Vec3;
+    param.mfCache[0] = afX;
+    param.mfCache[1] = afY;
+    param.mfCache[2] = afZ;
+
+    glUniform3f(param.mlId, afX, afY, afZ);
 
     return true;
 }
@@ -335,7 +385,20 @@ bool  cGLSLProgram::SetVec4f(int alVarId, float afX, float afY, float afZ, float
         Bind();
     }
 
-    glUniform4f(mvParameters[alVarId].mlId, afX, afY, afZ, afW);
+    cGLSLParam &param = mvParameters[alVarId];
+    if(param.mCacheType == eGLSLParamCache_Vec4 &&
+       param.mfCache[0] == afX && param.mfCache[1] == afY &&
+       param.mfCache[2] == afZ && param.mfCache[3] == afW)
+    {
+        return true;
+    }
+    param.mCacheType = eGLSLParamCache_Vec4;
+    param.mfCache[0] = afX;
+    param.mfCache[1] = afY;
+    param.mfCache[2] = afZ;
+    param.mfCache[3] = afW;
+
+    glUniform4f(param.mlId, afX, afY, afZ, afW);
 
     return true;
 }
@@ -354,7 +417,15 @@ bool cGLSLProgram::SetMatrixf(int alVarId, const cMatrixf& aMtx)
         Bind();
     }
 
-    glUniformMatrix4fv(mvParameters[alVarId].mlId, 1, true, aMtx.v);
+    cGLSLParam &param = mvParameters[alVarId];
+    if(param.mCacheType == eGLSLParamCache_Matrix && memcmp(param.mfCache, aMtx.v, sizeof(float) * 16) == 0)
+    {
+        return true;
+    }
+    param.mCacheType = eGLSLParamCache_Matrix;
+    memcpy(param.mfCache, aMtx.v, sizeof(float) * 16);
+
+    glUniformMatrix4fv(param.mlId, 1, true, aMtx.v);
 
     return true;
 }

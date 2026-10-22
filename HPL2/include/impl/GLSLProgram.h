@@ -10,20 +10,47 @@
 #include "graphics/GPUProgram.h"
 
 #include <GL/glew.h>
+#include <string.h>
 
 namespace hpl
 {
 
 //-----------------------------------------------------
 
+enum eGLSLParamCache
+{
+    eGLSLParamCache_None,
+    eGLSLParamCache_Int,
+    eGLSLParamCache_Float,
+    eGLSLParamCache_Vec2,
+    eGLSLParamCache_Vec3,
+    eGLSLParamCache_Vec4,
+    eGLSLParamCache_Matrix
+};
+
 class cGLSLParam
 {
 public:
-    cGLSLParam() : mlId(-1), msName("") {}
-    cGLSLParam(GLint alId, const tString& asName) : mlId(alId), msName(asName) {}
+    cGLSLParam() : msName(""), mlId(-1), mCacheType(eGLSLParamCache_None), mlCacheInt(0)
+    {
+        memset(mfCache, 0, sizeof(mfCache));
+    }
+    cGLSLParam(GLint alId, const tString& asName) : msName(asName), mlId(alId), mCacheType(eGLSLParamCache_None), mlCacheInt(0)
+    {
+        memset(mfCache, 0, sizeof(mfCache));
+    }
+
+    void ClearCache()
+    {
+        mCacheType = eGLSLParamCache_None;
+    }
 
     tString msName;
     GLint mlId;
+
+    eGLSLParamCache mCacheType;
+    int mlCacheInt;
+    float mfCache[16];
 };
 
 //-----------------------------------------------------
