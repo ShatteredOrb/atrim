@@ -177,6 +177,9 @@ bool cLuxHelpFuncs::PlayGuiSoundData(const tString& asName, eSoundEntryType aDes
 
 void cLuxHelpFuncs::DrawSetToScreen(bool abClearScreen, const cColor& aCol, cGuiSet* apSet)
 {
+    // Keep this frame OUT of gameplay statistics !!!
+    gpBase->mpEngine->MarkFrameAsNonGameplay();
+
     ///////////////////////////
     // Clear screen
     if(abClearScreen)

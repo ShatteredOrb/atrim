@@ -94,6 +94,15 @@ public:
     void Exit();
     bool GetGameIsDone();
 
+    /**
+     * Call when current frame is not a real gameplay frame (loading screens etc).
+     * Frame should be left out of the 1% / 0.1% average low statistics.
+     */
+    void MarkFrameAsNonGameplay()
+    {
+        mbNonGameplayFrame = true;
+    }
+
     cScene *GetScene()
     {
         return mpScene;
@@ -200,6 +209,7 @@ public:
     }
 private:
     volatile bool mbGameIsDone;
+    bool mbNonGameplayFrame;
     bool mbPaused;
 
     const int iMaxGameUpdates;

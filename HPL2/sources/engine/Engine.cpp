@@ -204,6 +204,7 @@ cEngine::cEngine(iLowLevelEngineSetup *apGameSetup, tFlag alHplSetupFlags, cEngi
     : mbGameIsDone(false)
     , mbPaused(false)
     , iMaxGameUpdates(6)
+    , mbNonGameplayFrame(false)
     , kMaxFrameTime(0.25)
     , kFixedDelta(1.0 / 60.0)
     , iUpdatesOnCurrentFrame(0)
@@ -388,6 +389,7 @@ void cEngine::Run()
     const double kLogClearedInterval = 1.0;
 
     size_t iTotalFrames = 0; // Every frame i saw in the game!
+    size_t iGameplayFrames = 0; // Only frames actually drawn during gameplay
 
     unsigned int iFrameTimeHg[1000] = {0};
     double dTempTime = cPlatform::GetApplicationTimeX();
@@ -419,8 +421,10 @@ void cEngine::Run()
 
         ++iTotalFrames;
 
-        if(dRawFrameTime > 0.0)
+        if(dRawFrameTime > 0.0 && mbNonGameplayFrame == false)
         {
+            ++iGameplayFrames;
+
             int iFrameMs = (int)(dRawFrameTime * 1000.0);
 
             if(iFrameMs < 0)
@@ -434,6 +438,8 @@ void cEngine::Run()
 
             iFrameTimeHg[iFrameMs]++;
         }
+        mbNonGameplayFrame = false;
+
         dFrameTime = std::max(0.0, dRawFrameTime);
 
         // Clamp the game frame time and prevent huge single wallclock jump
@@ -557,13 +563,13 @@ void cEngine::Run()
     Log(" Average FrameTime: %.1f ms\n", (1.0 / dAverageFPS) * 1000.0);
     Log(" Average Framerate: %.1f FPS\n", dAverageFPS);
 
-    if(iTotalFrames > 0)
+    if(iGameplayFrames > 0)
     {
         // Count both 1 and .1% low frame times of the whole session
-        size_t iWorstCount01  = std::max((size_t)1, (size_t)(iTotalFrames * 0.01));
+        size_t iWorstCount01  = std::max((size_t)1, (size_t)(iGameplayFrames * 0.01));
         double dWorstSum01 = 0.0;
 
-        size_t iWorstCount001 = std::max((size_t)1, (size_t)(iTotalFrames * 0.001));
+        size_t iWorstCount001 = std::max((size_t)1, (size_t)(iGameplayFrames * 0.001));
         double dWorstSum001 = 0.0;
 
         size_t iCountedFrames = 0;
