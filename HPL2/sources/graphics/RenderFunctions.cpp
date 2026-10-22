@@ -769,7 +769,13 @@ void iRenderFunctions::SetVertexBuffer(iVertexBuffer *apVtxBuffer)
 
     if(mpCurrentVtxBuffer)
     {
-        mpCurrentVtxBuffer->UnBind();
+        const bool bSkipUnBind =    apVtxBuffer != NULL &&
+                                    mpCurrentVtxBuffer->GetType() == eVertexBufferType_Hardware &&
+                                    apVtxBuffer->GetType() == eVertexBufferType_Hardware;
+        if(bSkipUnBind == false)
+        {
+            mpCurrentVtxBuffer->UnBind();
+        }
     }
     if(apVtxBuffer)
     {
