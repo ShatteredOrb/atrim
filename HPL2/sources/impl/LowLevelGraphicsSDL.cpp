@@ -306,6 +306,7 @@ void cLowLevelGraphicsSDL::SetupGL()
     //Disable the once not used.
     glDisableClientState(GL_INDEX_ARRAY); //color index
     glDisableClientState(GL_EDGE_FLAG_ARRAY);
+    cVertexBufferOGL_VBO::InvalidateClientStateCache();
 
     ///// END BATCH ARRAY STUFF ///////////////
 
@@ -2315,6 +2316,8 @@ void cLowLevelGraphicsSDL::SetUpBatchArrays()
 
 void cLowLevelGraphicsSDL::SetVtxBatchStates(tVtxBatchFlag aFlags)
 {
+    cVertexBufferOGL_VBO::InvalidateClientStateCache();
+
     if(aFlags & eVtxBatchFlag_Position)
     {
         glEnableClientState(GL_VERTEX_ARRAY );

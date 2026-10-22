@@ -4,6 +4,7 @@
 #include "math/Math.h"
 
 #include "impl/LowLevelGraphicsSDL.h"
+#include "impl/VertexBufferOGL_VBO.h"
 
 #include <GL/glew.h>
 
@@ -82,6 +83,7 @@ void cVertexBufferOGL_Array::DrawIndices(    unsigned int *apIndices, int alCoun
 
 void cVertexBufferOGL_Array::Bind()
 {
+    cVertexBufferOGL_VBO::InvalidateClientStateCache();
     SetVertexStates();
 }
 

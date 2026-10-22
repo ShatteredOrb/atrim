@@ -260,6 +260,60 @@ void cVertexBufferOGL_VBO::DrawIndices(unsigned int *apIndices, int alCount, eVe
 
 //-----------------------------------------------------------------------
 
+enum { kClientArrayKeyNum = 9 }; //Position, Normal, Color0, Color1, Texture 0-4
+
+static const eVertexBufferElement gvClientArrayElements[kClientArrayKeyNum] = {
+    eVertexBufferElement_Position, eVertexBufferElement_Normal,
+    eVertexBufferElement_Color0, eVertexBufferElement_Color1,
+    eVertexBufferElement_Texture0, eVertexBufferElement_Texture1, eVertexBufferElement_Texture2,
+    eVertexBufferElement_Texture3, eVertexBufferElement_Texture4 };
+
+static unsigned int gClientArrayMask = 0;
+static bool gClientArrayMaskKnown = false;
+
+static int GetClientArrayKey(eVertexBufferElement aType)
+{
+    switch(aType)
+    {
+    case eVertexBufferElement_Position:          return 0;
+    case eVertexBufferElement_Normal:            return 1;
+    case eVertexBufferElement_Color0:            return 2;
+    case eVertexBufferElement_Color1:            return 3;
+    case eVertexBufferElement_Texture0:          return 4;
+    case eVertexBufferElement_Texture1:
+    case eVertexBufferElement_Texture1Tangent:   return 5;
+    case eVertexBufferElement_Texture2:          return 6;
+    case eVertexBufferElement_Texture3:          return 7;
+    case eVertexBufferElement_Texture4:          return 8;
+    }
+    return -1;
+}
+
+static void SetClientArrayEnabled(int alKey, bool abEnabled)
+{
+    if(alKey >= 4)
+    {
+        glClientActiveTextureARB(GL_TEXTURE0_ARB + (alKey - 4));
+    }
+
+    GLenum glArray = GetGLArrayFromVertexElement(gvClientArrayElements[alKey]);
+    if(abEnabled)
+    {
+        glEnableClientState(glArray);
+    }
+    else
+    {
+        glDisableClientState(glArray);
+    }
+}
+
+void cVertexBufferOGL_VBO::InvalidateClientStateCache()
+{
+    gClientArrayMaskKnown = false;
+}
+
+//-----------------------------------------------------------------------
+
 void cVertexBufferOGL_VBO::Bind()
 {
     SetVertexStates();
@@ -271,21 +325,20 @@ void cVertexBufferOGL_VBO::UnBind()
 {
     glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
 
-    for(size_t i = 0; i < mvElementArrays.size(); ++i)
+    const unsigned int lAllMask = (1u << kClientArrayKeyNum) - 1;
+    const unsigned int lToDisable = gClientArrayMaskKnown ? gClientArrayMask : lAllMask;
+
+    for(int k = 0; k < kClientArrayKeyNum; ++k)
     {
-        cVtxBufferGLElementArray *pElement = mvElementArrays[i];
-
-        //Log("Unbinding %d handle %d, type: %d\n",i,pElement->mlGLHandle, pElement->mType);
-
-        int lTextureUnit = GetVertexElementTextureUnit(pElement->mType);
-        if(lTextureUnit >= 0)
+        if(lToDisable & (1u << k))
         {
-            glClientActiveTextureARB(GL_TEXTURE0_ARB + lTextureUnit);
+            SetClientArrayEnabled(k, false);
         }
-
-        glDisableClientState( GetGLArrayFromVertexElement(pElement->mType) );
     }
     glClientActiveTextureARB(GL_TEXTURE0_ARB);
+
+    gClientArrayMask = 0;
+    gClientArrayMaskKnown = true;
 }
 
 //-----------------------------------------------------------------------
@@ -444,13 +497,40 @@ iVertexBufferOpenGL *cVertexBufferOGL_VBO::CreateDataCopy(tVertexElementFlag aFl
 void cVertexBufferOGL_VBO::SetVertexStates()
 {
     ////////////////////////////////////////
+    // Work out which arrays this buffer needs and disable the stale ones
+    unsigned int lNeeded = 0;
+    for(size_t i = 0; i < mvElementArrays.size(); ++i)
+    {
+        int lKey = GetClientArrayKey(mvElementArrays[i]->mType);
+        if(lKey >= 0)
+        {
+            lNeeded |= (1u << lKey);
+        }
+    }
+
+    const unsigned int lAllMask = (1u << kClientArrayKeyNum) - 1;
+    const unsigned int lEnabled = gClientArrayMaskKnown ? gClientArrayMask : 0;
+    const unsigned int lToDisable = gClientArrayMaskKnown ? (gClientArrayMask & ~lNeeded) : (lAllMask & ~lNeeded);
+
+    bool bTouchedTextureUnit = false;
+    for(int k = 0; k < kClientArrayKeyNum; ++k)
+    {
+        if(lToDisable & (1u << k))
+        {
+            SetClientArrayEnabled(k, false);
+            if(k >= 4)
+            {
+                bTouchedTextureUnit = true;
+            }
+        }
+    }
+
+    ////////////////////////////////////////
     // Bind the interleaved buffer designated for drawing
     glBindBufferARB(GL_ARRAY_BUFFER_ARB, mlInterleavedHandle[mlCurrentInterleaved]);
 
     ////////////////////////////////////////
     // Set all vertices except position
-    bool bHadExtraTextureUnit = false;
-
     for(size_t i = 0; i < mvElementArrays.size(); ++i)
     {
         cVtxBufferGLElementArray *pElement = mvElementArrays[i];
@@ -462,17 +542,21 @@ void cVertexBufferOGL_VBO::SetVertexStates()
         GLenum GLType = GetGLTypeFromVertexFormat(pElement->mFormat);
         int lSize = pElement->mlElementNum;
 
-        int lTextureUnit = GetVertexElementTextureUnit(pElement->mType);
-        if(lTextureUnit >= 0)
+        int lKey = GetClientArrayKey(pElement->mType);
+        if(lKey < 0)
         {
-            if(lTextureUnit > 0)
-            {
-                bHadExtraTextureUnit = true;
-            }
-            glClientActiveTextureARB(GL_TEXTURE0_ARB + lTextureUnit);
+            continue;
         }
 
-        glEnableClientState( GetGLArrayFromVertexElement(pElement->mType) );
+        if(lKey >= 4)
+        {
+            glClientActiveTextureARB(GL_TEXTURE0_ARB + (lKey - 4));
+            bTouchedTextureUnit = true;
+        }
+        if((lEnabled & (1u << lKey)) == 0)
+        {
+            glEnableClientState( GetGLArrayFromVertexElement(pElement->mType) );
+        }
 
         const char *offset = (const char*)NULL + mvElementOffsets[i];
 
@@ -500,7 +584,7 @@ void cVertexBufferOGL_VBO::SetVertexStates()
             break;
         }
     }
-    if(bHadExtraTextureUnit)
+    if(bTouchedTextureUnit)
     {
         glClientActiveTextureARB(GL_TEXTURE0_ARB);
     }
@@ -518,13 +602,19 @@ void cVertexBufferOGL_VBO::SetVertexStates()
         GLenum GLType = GetGLTypeFromVertexFormat(pElement->mFormat);
         int lSize = pElement->mlElementNum;
 
-        glEnableClientState( GetGLArrayFromVertexElement(pElement->mType) );
+        if((lEnabled & 1u) == 0)
+        {
+            glEnableClientState( GetGLArrayFromVertexElement(pElement->mType) );
+        }
 
         const char *offset = (const char*)NULL + mvElementOffsets[i];
         glVertexPointer(lSize, GLType, (GLsizei)mlInterleavedStride, offset);
     }
 
     glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
+
+    gClientArrayMask = lNeeded;
+    gClientArrayMaskKnown = true;
 }
 
 //-----------------------------------------------------------------------

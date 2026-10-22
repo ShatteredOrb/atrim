@@ -24,6 +24,8 @@ public:
     void Bind();
     void UnBind();
 
+    static void InvalidateClientStateCache();
+
 private:
     void CompileSpecific();
     iVertexBufferOpenGL *CreateDataCopy(tVertexElementFlag aFlags, eVertexBufferDrawType aDrawType,
