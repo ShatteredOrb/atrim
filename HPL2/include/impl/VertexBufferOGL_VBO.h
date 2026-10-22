@@ -42,6 +42,8 @@ private:
 
     size_t mlLastUploadedBytes[2];
 
+    std::vector<char> mvInterleavedShadow;
+
     bool mbUse16BitIndices;
     unsigned int mlIndexBufferSize;
 };

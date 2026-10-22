@@ -15,6 +15,33 @@ namespace hpl
 
 #define BUFFER_OFFSET(i) ((void*)(i*sizeof(float)))
 
+#ifndef HPL_VBO_MASKED_REPACK
+#define HPL_VBO_MASKED_REPACK 1
+#endif
+
+static inline void PackElementStrided(char *apDst, size_t alDstStride, const char *apSrc,
+                                      size_t alElementBytes, int alCount)
+{
+    switch(alElementBytes)
+    {
+    case 4:
+        for(int v = 0; v < alCount; ++v) { memcpy(apDst, apSrc, 4); apDst += alDstStride; apSrc += 4; }
+        break;
+    case 8:
+        for(int v = 0; v < alCount; ++v) { memcpy(apDst, apSrc, 8); apDst += alDstStride; apSrc += 8; }
+        break;
+    case 12:
+        for(int v = 0; v < alCount; ++v) { memcpy(apDst, apSrc, 12); apDst += alDstStride; apSrc += 12; }
+        break;
+    case 16:
+        for(int v = 0; v < alCount; ++v) { memcpy(apDst, apSrc, 16); apDst += alDstStride; apSrc += 16; }
+        break;
+    default:
+        for(int v = 0; v < alCount; ++v) { memcpy(apDst, apSrc, alElementBytes); apDst += alDstStride; apSrc += alElementBytes; }
+        break;
+    }
+}
+
 //////////////////////////////////////////////////////////////////////////
 // CONSTRUCTORS
 //////////////////////////////////////////////////////////////////////////
@@ -91,15 +118,27 @@ void cVertexBufferOGL_VBO::UpdateData(tVertexElementFlag aTypes, bool abIndices)
             int lUpdateIdx = 1 - mlCurrentInterleaved;
             unsigned int lHandle = mlInterleavedHandle[lUpdateIdx];
 
-            static std::vector<char> temp; // Temporary buffer
-            if(temp.size() < lTotalBytes)
+            bool bFullRepack = false;
+            if(mvInterleavedShadow.size() != lTotalBytes)
             {
-                temp.resize(lTotalBytes);
+                mvInterleavedShadow.resize(lTotalBytes);
+                bFullRepack = true;
             }
+
+#if HPL_VBO_MASKED_REPACK
+            const tVertexElementFlag lPackMask = bFullRepack ? (tVertexElementFlag)~0 : aTypes;
+#else
+            const tVertexElementFlag lPackMask = (tVertexElementFlag)~0;
+#endif
 
             for(size_t i = 0; i < mvElementArrays.size(); ++i)
             {
                 cVtxBufferGLElementArray *pElement = mvElementArrays[i];
+                if((pElement->mFlag & lPackMask) == 0)
+                {
+                    continue; // not changed
+                }
+
                 const size_t lElementBytes = pElement->mlElementNum * GetVertexFormatByteSize(pElement->mFormat);
                 const char *src = (const char*)pElement->GetArrayPtr();
                 if(src == NULL)
@@ -107,11 +146,8 @@ void cVertexBufferOGL_VBO::UpdateData(tVertexElementFlag aTypes, bool abIndices)
                     continue; // empty element
                 }
 
-                for(int v = 0; v < lVertexCount; ++v)
-                {
-                    char *dst = &temp[(size_t)v * mlInterleavedStride + mvElementOffsets[i]];
-                    memcpy(dst, src + (size_t)v * lElementBytes, lElementBytes);
-                }
+                PackElementStrided(&mvInterleavedShadow[0] + mvElementOffsets[i], mlInterleavedStride,
+                                   src, lElementBytes, lVertexCount);
             }
 
             glBindBufferARB(GL_ARRAY_BUFFER_ARB, lHandle);
@@ -122,7 +158,7 @@ void cVertexBufferOGL_VBO::UpdateData(tVertexElementFlag aTypes, bool abIndices)
                 mlLastUploadedBytes[lUpdateIdx] = lTotalBytes;
             }
 
-            glBufferSubDataARB(GL_ARRAY_BUFFER_ARB, 0, (GLsizeiptr)lTotalBytes, &temp[0]);
+            glBufferSubDataARB(GL_ARRAY_BUFFER_ARB, 0, (GLsizeiptr)lTotalBytes, &mvInterleavedShadow[0]);
             glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
 
             mlCurrentInterleaved = lUpdateIdx;
@@ -299,7 +335,14 @@ void cVertexBufferOGL_VBO::CompileSpecific()
     // Pack into temp buffer (skip when there is no vertex data)
     if(lTotalBytes > 0 && mlInterleavedStride > 0)
     {
-        std::vector<char> temp(lTotalBytes);
+        std::vector<char> localTemp;
+        const bool bKeepShadow = (mUsageType != eVertexBufferUsageType_Static);
+        std::vector<char> &temp = bKeepShadow ? mvInterleavedShadow : localTemp;
+        temp.assign(lTotalBytes, 0);
+        if(bKeepShadow == false)
+        {
+            mvInterleavedShadow.clear();
+        }
 
         for(size_t i = 0; i < mvElementArrays.size(); ++i)
         {
@@ -312,11 +355,7 @@ void cVertexBufferOGL_VBO::CompileSpecific()
                 continue; // empty element
             }
 
-            for(int v = 0; v < lVertexCount; ++v)
-            {
-                char *dst = &temp[(size_t)v * mlInterleavedStride + mvElementOffsets[i]];
-                memcpy(dst, src + (size_t)v * lElementBytes, lElementBytes);
-            }
+            PackElementStrided(&temp[0] + mvElementOffsets[i], mlInterleavedStride, src, lElementBytes, lVertexCount);
         }
 
         for(int b = 0; b < 2; ++b)
