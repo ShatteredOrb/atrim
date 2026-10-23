@@ -56,7 +56,7 @@ cLuxEnemyMover::cLuxEnemyMover(iLuxEnemy *apEnemy, iCharacterBody *apCharBody)
         mvPrecalcSampleDirs.resize(200);
         std::vector<int> vPartionCount;
         vPartionCount.resize(kNumOfDirectionPartitions, 0);
-        int lMaxPartCount = mvPrecalcSampleDirs.size() / kNumOfDirectionPartitions;
+        size_t lMaxPartCount = mvPrecalcSampleDirs.size() / kNumOfDirectionPartitions;
         int lPartionsFull=0;
 
         float TopZ = sin(cMath::ToRad(60));
@@ -858,7 +858,7 @@ void cLuxEnemyMover::UpdateWallAvoidance(double adFixedDelta)
 
         bool bIntersect = false;
         float fSamples  = (float)mvSampleRays.size();
-        int lNumOfPartAngles = mvPrecalcSampleDirs.size() / kNumOfDirectionPartitions;
+        size_t lNumOfPartAngles = mvPrecalcSampleDirs.size() / kNumOfDirectionPartitions;
 
         cMatrixf mtxMoveRot = GetMovementDirectionMatrix();
 
@@ -889,8 +889,8 @@ void cLuxEnemyMover::UpdateWallAvoidance(double adFixedDelta)
             {
                 /////////////////////////////////////////////
                 // Get the angle ID and make sure it is not used
-                int lAngleIdx = cMath::RandRectl(0, mvPrecalcSampleDirs.size()-1);
-                int lPart = lAngleIdx  / lNumOfPartAngles;
+                size_t lAngleIdx = cMath::RandRectl(0, (int)mvPrecalcSampleDirs.size() - 1);
+                size_t lPart = lAngleIdx  / lNumOfPartAngles;
                 while(vParitionUsageCount[lPart]==mlSampleMaxPartCount)
                 {
                     lAngleIdx += lNumOfPartAngles;
@@ -911,7 +911,7 @@ void cLuxEnemyMover::UpdateWallAvoidance(double adFixedDelta)
 
                 mvSampleRays[i] = vDir;
                 mvSampleRaysAmount[i] = fUpdateTime;
-                mvSamplePartitionUsed[i] = lPart;
+                mvSamplePartitionUsed[i] = (int)lPart;
             }
             else
             {

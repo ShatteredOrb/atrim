@@ -1781,7 +1781,7 @@ void cLuxEffectHandler::Reset()
 
     /////////////////////////
     // World sound mul
-    for(size_t i=0; i<eLuxGlobalVolumeType_LastEnum; ++i)
+    for(int i=0; i<eLuxGlobalVolumeType_LastEnum; ++i)
     {
         gpBase->mpEngine->GetSound()->GetSoundHandler()->SetGlobalSpeed(1, eSoundEntryType_World, i);
         gpBase->mpEngine->GetSound()->GetSoundHandler()->SetGlobalVolume(1, eSoundEntryType_World, i);
