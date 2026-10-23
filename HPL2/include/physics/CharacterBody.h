@@ -184,6 +184,15 @@ public:
     void SetPosition(const cVector3f& avPos, bool abSmooth = false);
     const cVector3f &GetPosition();
     const cVector3f &GetLastPosition();
+    void SetLastPosition(const cVector3f& avPos)
+    {
+        mvLastPosition = avPos;
+
+        // quite hacky, but necessary.
+        // Last position is used to determine velocity.
+        // If we want to teleport a pig and maintain its
+        // velocity, we need to fix up the last position too.
+    };
     void SetFeetPosition(const cVector3f& avPos, bool abSmooth = false);
     cVector3f GetFeetPosition();
 
