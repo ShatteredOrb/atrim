@@ -142,6 +142,15 @@ public:
         return mbCollideCharacter;
     }
 
+    void SetCollideStaticVolatile(bool abX)
+    {
+        mbCollideStaticVolatile = abX;
+    }
+    bool GetCollideStaticVolatile()
+    {
+        return mbCollideStaticVolatile;
+    }
+
     void SetTestCollision(bool abX);
     bool GetTestCollision()
     {
@@ -637,6 +646,7 @@ protected:
     bool mbActive;
 
     bool mbCollideCharacter;
+    bool mbCollideStaticVolatile;
 
     bool mbTestCollision;
 
