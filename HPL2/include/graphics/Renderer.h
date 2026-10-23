@@ -244,10 +244,11 @@ public:
         ++mlRenderFrameCount;
     }
 
-    float GetTimeCount()
-    {
-        return mfTimeCount;
-    }
+    /**
+     * Simulated time in seconds (follows the game speed), at the point in time the
+     * current (interpolated) frame represents, so shader animation is smooth at any frame rate.
+     */
+    float GetTimeCount();
 
     virtual bool LoadData() = 0;
     virtual void DestroyData() = 0;
@@ -537,7 +538,7 @@ protected:
     tRenderableVec mvShadowCasters;
 
     static int mlRenderFrameCount;
-    float mfTimeCount;
+    double mdTimeCount;
 
     bool mbOcclusionPlanesActive;
     tPlanefVec mvCurrentOcclusionPlanes;

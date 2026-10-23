@@ -94,10 +94,10 @@ void cLuxCredits::Reset()
 
     mbActive = false;
 
-    mfYPos = 600;
+    mfYPos.Snap(600);
     mlState = 0;
     mfTime = 0;
-    mfFadeAlpha = 0;
+    mfFadeAlpha.Snap(0);
 
     mKeyBuffer.Clear();
 }
@@ -284,9 +284,10 @@ void cLuxCredits::OnDraw(double adFrameTime)
 
     //////////////////////////////////////////////
     // Fade
-    if(mfFadeAlpha > 0)
+    float fFadeAlpha = mfFadeAlpha.Get();
+    if(fFadeAlpha > 0)
     {
-        mpGuiSet->DrawGfx(mpBlackGfx, mvGuiSetStartPos + cVector3f(0, 0, 20), mvGuiSetSize, cColor(1, mfFadeAlpha));
+        mpGuiSet->DrawGfx(mpBlackGfx, mvGuiSetStartPos + cVector3f(0, 0, 20), mvGuiSetSize, cColor(1, fFadeAlpha));
     }
 
     //////////////////////////////////////////////
@@ -294,7 +295,7 @@ void cLuxCredits::OnDraw(double adFrameTime)
     if(mlState == 0 || mlState == 1)
     {
         float fRowAdd[2] = {mvNormalFontSize.y + 2, mvHeaderFontSize.y + 2};
-        float fY = mfYPos;
+        float fY = mfYPos.Get();
         for(size_t i = 0; i < mvTextRows.size(); ++i)
         {
             int lSize = 0;

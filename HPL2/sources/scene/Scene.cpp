@@ -1,4 +1,5 @@
 #include "scene/Scene.h"
+#include "scene/RenderInterpolation.h"
 
 #include "scene/Viewport.h"
 #include "scene/Camera.h"
@@ -174,6 +175,9 @@ void cScene::Render(double adFrameTime, tFlag alFlags)
     //Increase the frame count (do this at top, so render count is valid until this Render is called again!)
     iRenderer::IncRenderFrameCount();
 
+    //Present the world between the last two ticks (restored again at the end)
+    cRenderInterpolation::BeginRender();
+
     ///////////////////////////////////////////
     // Iterate all viewports and render
     tViewportListIt viewIt = mlstViewports.begin();
@@ -258,6 +262,9 @@ void cScene::Render(double adFrameTime, tFlag alFlags)
             STOP_TIMING(RenderGUI)
         }
     }
+
+    //Back to the exact simulation state
+    cRenderInterpolation::EndRender();
 }
 
 //-----------------------------------------------------------------------

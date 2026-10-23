@@ -78,11 +78,19 @@ public:
 
     inline void SetSmoothPosition(const cVector3f& avPos)
     {
+        //Keep the previous tick's position for render interpolation
+        mvRenderPrevSmoothPosition = mbSmoothPositionValid ? mvSmoothPosition : avPos;
+        mbSmoothPositionValid = true;
+
         mvSmoothPosition = avPos;
     }
     inline const cVector3f &GetSmoothPosition() const
     {
         return mvSmoothPosition;
+    }
+    inline const cVector3f &GetRenderPrevSmoothPosition() const
+    {
+        return mvRenderPrevSmoothPosition;
     }
 
     void SetInvMass(float afInvMass)
@@ -100,6 +108,8 @@ private:
     cVector3f mvPosition;
     cVector3f mvPrevPosition;
     cVector3f mvSmoothPosition;
+    cVector3f mvRenderPrevSmoothPosition;
+    bool mbSmoothPositionValid;
     float mfInvMass;
 };
 

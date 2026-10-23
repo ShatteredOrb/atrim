@@ -462,6 +462,8 @@ void cLuxMapHandler::SetCurrentMap(cLuxMap* apMap, bool abRunScript, bool abFirs
 
     mpCurrentMap = apMap;
 
+    cRenderInterpolation::SnapAll();
+
     //////////////////////////////////
     //Setup stuff for previous map
     if(mpCurrentMap)

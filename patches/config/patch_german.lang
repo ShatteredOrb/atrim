@@ -45,6 +45,7 @@
         <Entry Name="Fast Forward (F3)">Schneller Vorlauf (F3)</Entry>
         <Entry Name="Fly camera">Kameraflug</Entry>
         <Entry Name="Fly camera speed">Kameraflug-Geschwindigkeit</Entry>
+        <Entry Name="Render interpolation">Render-Interpolation</Entry>
 
         <Entry Name="Script output for">Skriptausgabe für</Entry>
 

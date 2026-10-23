@@ -62,6 +62,7 @@ public:
 
     void OnStart();
     void Update(double adFixedDelta);
+    void OnFrameInput(double adFrameTime);
     void Reset();
 
     tWString GetInputName(const tString& asActionName);
@@ -127,6 +128,8 @@ public:
     void ResetSmoothMousePos();
     cVector2f GetSmoothMousePos(const cVector2f& avRelPosMouse);
 
+    bool FrameMouseLookActive();
+
 #if USE_GAMEPAD
     bool IsGamepadPresent();
 
@@ -154,6 +157,9 @@ private:
     void UpdateLoadScreenInput();
 
     bool CurrentStateSendsInputToGui();
+
+    cVector2f GetFrameSmoothMouseDelta(const cVector2f& avDelta, float afFrameTime);
+    void ResetFrameSmoothMouse();
 
     void CreateActions();
 
@@ -188,6 +194,17 @@ private:
     tVector2fList mlstSmoothMousePos;
 
     cVector2l mvLastAbsMousePos;
+
+    class cFrameMouseSample
+    {
+    public:
+        cVector2f mvVelocity;
+        float mfDuration;
+    };
+    std::list<cFrameMouseSample> mlstFrameMouseSamples;
+    bool mbFrameLookWasActive;
+
+    cVector2l mvLastFrameGuiMousePos;
 
 #if USE_GAMEPAD
     float mfGamepadWalkSensitivity;

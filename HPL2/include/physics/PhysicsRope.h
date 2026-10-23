@@ -297,6 +297,15 @@ protected:
     float mfStiffness;
 
     bool mbHasUpdated;
+
+public:
+    /** Tick in which the smooth positions were last calculated (for render interpolation). */
+    int GetRenderInterpTick()
+    {
+        return mlRenderInterpTick;
+    }
+private:
+    int mlRenderInterpTick;
 };
 };
 #endif // HPL_PHYSICS_ROPE_H

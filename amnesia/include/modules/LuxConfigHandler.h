@@ -37,6 +37,8 @@ public:
     cVector2l mvScreenSize;
     bool mbFullscreen;
     bool mbVSync;
+    bool mbRenderInterpolation;
+    bool mbFrameRateMouseLook;
     int mlTextureQuality;
     int mlTextureFilter;
     float mfTextureAnisotropy;

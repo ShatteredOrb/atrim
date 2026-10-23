@@ -32,6 +32,9 @@ public:
      */
     cVector2l GetRelPosition();
 
+    void FrameUpdate();
+    cVector2l GetFrameRelPosition();
+
     void Reset();
 
     static float GetMousePointerSpeed();
@@ -41,6 +44,10 @@ private:
 
     cVector2l mvMouseAbsPos;
     cVector2l mvMouseRelPos;
+
+    cVector2l mvTickRelAccum;
+    cVector2l mvFrameRelAccum;
+    bool mbFrameRelRead;
 
     std::vector<bool> mvMButtonArray;
 

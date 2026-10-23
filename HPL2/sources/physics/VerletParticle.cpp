@@ -73,6 +73,9 @@ cVerletParticle::cVerletParticle(iVerletParticleContainer *apContainer)
 
     mvPosition = 0;
     mvPrevPosition = 0;
+    mvSmoothPosition = 0;
+    mvRenderPrevSmoothPosition = 0;
+    mbSmoothPositionValid = false;
     mfInvMass = 1;
 }
 
@@ -82,6 +85,9 @@ cVerletParticle::cVerletParticle(iVerletParticleContainer *apContainer, const cV
 
     mvPosition = avPos;
     mvPrevPosition = avPos;
+    mvSmoothPosition = avPos;
+    mvRenderPrevSmoothPosition = avPos;
+    mbSmoothPositionValid = false;
     mfInvMass = afInvMass;
 }
 

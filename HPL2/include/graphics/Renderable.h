@@ -86,10 +86,7 @@ public:
     }
     virtual void OnChangeVisible() {}
 
-    virtual void SetIlluminationAmount(float afX)
-    {
-        mfIlluminationAmount = afX;
-    }
+    virtual void SetIlluminationAmount(float afX);
     inline float GetIlluminationAmount()const
     {
         return mfIlluminationAmount;
@@ -212,6 +209,16 @@ public:
     }
 
 protected:
+    bool OnRenderInterpSnapshot(bool abSnap);
+    void OnRenderInterpApply(float afT);
+    void OnRenderInterpRestore();
+
+    float mfInterpPrevCoverage;
+    float mfInterpCurrCoverage;
+    float mfInterpPrevIllumination;
+    float mfInterpCurrIllumination;
+    bool mbInterpFadeActive;
+
     cMatrixf m_mtxInvModel;
     cMatrixf m_mtxPrevious;
     cMatrixf *mpModelMatrix;

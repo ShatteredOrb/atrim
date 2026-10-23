@@ -45,6 +45,12 @@ class cSoundEntity : public iEntity3D
 #endif
     friend class cSoundEntityChannelCallback;
 public:
+    //Not drawn
+    bool IsRenderInterpolated()
+    {
+        return false;
+    }
+
     cSoundEntity(const tString& asName, cSoundEntityData *apData,
                  cSoundEntityManager *apSoundEntityManager,
                  cWorld *apWorld,

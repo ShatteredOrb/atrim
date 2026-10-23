@@ -147,8 +147,8 @@ public:
 
     void Update(double adFixedDelta);
 
-    float AddAndGetYawAdd(float afX);
-    float AddAndGetPitchAdd(float afX);
+    float AddAndGetYawAdd(float afX, bool abFrameInput = false);
+    float AddAndGetPitchAdd(float afX, bool abFrameInput = false);
 
 private:
     void SetSwayActive(bool abX);

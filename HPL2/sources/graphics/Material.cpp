@@ -1,4 +1,7 @@
 #include "graphics/Material.h"
+#include "scene/RenderInterpolation.h"
+
+#include <cmath>
 
 #include "system/LowLevelSystem.h"
 #include "system/String.h"
@@ -321,6 +324,12 @@ void cMaterial::UpdateAnimations(double adFixedDelta)
 {
     m_mtxUV = cMatrixf::Identity;
 
+    //Animation time is simulated game time at the moment the frame represents.
+    //This is smooth at any frame rate and follows the game speed (fast forward, slow motion),
+    //instead of the old real-time accumulation.
+    const double dTime = cRenderInterpolation::GetRenderGameTime();
+    mfAnimTime = (float)dTime;
+
     for(size_t i = 0; i < mvUvAnimations.size(); ++i)
     {
         cMaterialUvAnimation *pAnim = &mvUvAnimations[i];
@@ -331,7 +340,10 @@ void cMaterial::UpdateAnimations(double adFixedDelta)
         {
             cVector3f vDir = GetAxisVector(pAnim->mAxis);
 
-            cMatrixf mtxAdd = cMath::MatrixTranslate(vDir * pAnim->mfSpeed * mfAnimTime);
+            //Wrap at whole texture repeats, so precision does not degrade over a long session.
+            float fOffset = (float)fmod((double)pAnim->mfSpeed * dTime, 1.0);
+
+            cMatrixf mtxAdd = cMath::MatrixTranslate(vDir * fOffset);
             m_mtxUV = cMath::MatrixMul(m_mtxUV, mtxAdd);
         }
         ///////////////////////////
@@ -340,7 +352,9 @@ void cMaterial::UpdateAnimations(double adFixedDelta)
         {
             cVector3f vDir = GetAxisVector(pAnim->mAxis);
 
-            cMatrixf mtxAdd = cMath::MatrixTranslate(vDir * sin(mfAnimTime * pAnim->mfSpeed) * pAnim->mfAmp);
+            float fSin = (float)sin(dTime * (double)pAnim->mfSpeed);
+
+            cMatrixf mtxAdd = cMath::MatrixTranslate(vDir * fSin * pAnim->mfAmp);
             m_mtxUV = cMath::MatrixMul(m_mtxUV, mtxAdd);
         }
         ///////////////////////////
@@ -349,12 +363,12 @@ void cMaterial::UpdateAnimations(double adFixedDelta)
         {
             cVector3f vDir = GetAxisVector(pAnim->mAxis);
 
-            cMatrixf mtxRot = cMath::MatrixRotate(vDir * pAnim->mfSpeed * mfAnimTime, eEulerRotationOrder_XYZ);
+            float fAngle = (float)fmod((double)pAnim->mfSpeed * dTime, 2.0 * 3.14159265358979323846);
+
+            cMatrixf mtxRot = cMath::MatrixRotate(vDir * fAngle, eEulerRotationOrder_XYZ);
             m_mtxUV = cMath::MatrixMul(m_mtxUV, mtxRot);
         }
     }
-
-    mfAnimTime += (float)adFixedDelta;
 }
 
 //-----------------------------------------------------------------------

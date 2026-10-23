@@ -1,4 +1,5 @@
 #include "physics/PhysicsRope.h"
+#include "scene/RenderInterpolation.h"
 
 #include "physics/PhysicsWorld.h"
 #include "physics/PhysicsBody.h"
@@ -26,6 +27,8 @@ namespace hpl
 iPhysicsRope::iPhysicsRope(const tString &asName, iPhysicsWorld *apWorld, const cVector3f &avStartPos, const cVector3f &avEndPos)
     : iVerletParticleContainer(asName, apWorld)
 {
+    mlRenderInterpTick = -1;
+
     //Add start and end particles.
     mlstParticles.push_front(    hplNew( cVerletParticle, (this, avStartPos, 0) ) );
     mlstParticles.push_back(    hplNew( cVerletParticle, (this, avEndPos, 1) ) );
@@ -587,6 +590,8 @@ void iPhysicsRope::UpdateConstraints(double adFixedDelta)
 
 void iPhysicsRope::CalculateSmoothPositions(double adFixedDelta)
 {
+    mlRenderInterpTick = cRenderInterpolation::IsInsideTick() ? cRenderInterpolation::GetTick() : -1;
+
     cVector3f vBasePos[2] = { GetStartParticle()->GetPosition(), GetEndParticle()->GetPosition()};
     cVector3f vAddPos[2] = {0, 0};
     for(int i = 0; i < 2; ++i)

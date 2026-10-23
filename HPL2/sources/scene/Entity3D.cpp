@@ -1,5 +1,6 @@
 #include "scene/Entity3D.h"
 #include "scene/Node3D.h"
+#include "scene/RenderInterpolation.h"
 #include "math/Math.h"
 
 #include "system/LowLevelSystem.h"
@@ -37,10 +38,22 @@ iEntity3D::iEntity3D(tString asName)
 
     mbIsSaved = true;
     mlUniqueID = -1;
+
+    mlInterpTouchIdx = -1;
+    mlInterpActiveIdx = -1;
+    mbInterpSnap = false;
+    mpInterpCamera = NULL;
+
+    //Register so the world transform is resolved before any rendering happens
+    //(a fresh entity has no interpolation history, so it is never interpolated on its first tick).
+    cRenderInterpolation::TouchEntity(this);
 }
 
 iEntity3D::~iEntity3D()
 {
+    SetRenderInterpCamera(NULL);
+    cRenderInterpolation::RemoveEntity(this);
+
     if(mpParentNode)
     {
         mpParentNode->RemoveEntity(this);
@@ -154,6 +167,10 @@ void iEntity3D::SetWorldMatrix(const cMatrixf& a_mtxWorldTransform)
 
 void iEntity3D::SetTransformUpdated(bool abUpdateCallbacks)
 {
+    //Must be done before the transform is flagged as dirty: the first touch in a tick
+    //records the world matrix as it was after the previous tick.
+    cRenderInterpolation::TouchEntity(this);
+
     mbTransformUpdated = true;
     mlCount++;
 
@@ -181,6 +198,92 @@ void iEntity3D::SetTransformUpdated(bool abUpdateCallbacks)
         return;
     }
 
+    tEntityCallbackListIt it = mlstCallbacks.begin();
+    for(; it != mlstCallbacks.end(); ++it)
+    {
+        iEntityCallback* pCallback = *it;
+        pCallback->OnTransformUpdate(this);
+    }
+}
+
+//-----------------------------------------------------------------------
+
+void iEntity3D::SnapRenderInterpolation()
+{
+    mbInterpSnap = true;
+    cRenderInterpolation::TouchEntity(this);
+}
+
+//-----------------------------------------------------------------------
+
+void iEntity3D::SetRenderInterpCamera(cCamera *apCamera)
+{
+    if(mpInterpCamera == apCamera)
+    {
+        return;
+    }
+
+    if(mpInterpCamera)
+    {
+        cRenderInterpolation::mlViewModelEntityCount--;
+    }
+    mpInterpCamera = apCamera;
+    if(mpInterpCamera)
+    {
+        cRenderInterpolation::mlViewModelEntityCount++;
+    }
+
+    SnapRenderInterpolation();
+}
+
+//-----------------------------------------------------------------------
+
+cCamera *iEntity3D::FindRenderInterpCamera()
+{
+    iEntity3D *pEntity = this;
+    for(int lGuard = 0; pEntity && lGuard < 64; ++lGuard)
+    {
+        if(pEntity->mpInterpCamera)
+        {
+            return pEntity->mpInterpCamera;
+        }
+
+        if(pEntity->mpParentNode)
+        {
+            //Walk up through nodes (bones) to the entity that owns them
+            cNode3D *pNode = pEntity->mpParentNode;
+            int lNodeGuard = 0;
+            while(pNode && pNode->mpEntityParent == NULL && lNodeGuard < 256)
+            {
+                pNode = pNode->mpParent;
+                ++lNodeGuard;
+            }
+            pEntity = pNode ? pNode->mpEntityParent : NULL;
+        }
+        else
+        {
+            pEntity = pEntity->mpParent;
+        }
+    }
+
+    return NULL;
+}
+
+//-----------------------------------------------------------------------
+
+void iEntity3D::SetRenderWorldMatrix(const cMatrixf& a_mtxWorld)
+{
+    m_mtxWorldTransform = a_mtxWorld;
+    mbTransformUpdated = false;
+
+    //New count so every cache keyed on the transform count (BV, inverse matrices,
+    //light frustums, shadow caster caches...) is rebuilt.
+    mlCount++;
+    mbUpdateBoundingVolume = true;
+
+    OnTransformUpdated();
+
+    //Callbacks are engine side only (renderable containers, beams), safe while rendering.
     tEntityCallbackListIt it = mlstCallbacks.begin();
     for(; it != mlstCallbacks.end(); ++it)
     {

@@ -264,8 +264,43 @@ public:
         return m_mtxPrevProjection;
     }
 
+    //////////////////////////////////////////////////
+    ////////// RENDER INTERPOLATION //////////////////
+    //////////////////////////////////////////////////
+
+    /**
+     * The next frame shows the camera exactly where it is (use after teleports and cuts).
+     */
+    void SnapRenderInterpolation();
+
+    /**
+     * Only for cRenderInterpolation. The camera interpolates the change made during
+     * the last fixed tick. Changes made between ticks (per frame mouse look) are shown
+     * right away, so they add no latency.
+     */
+    void InterpBeginTick();
+    void InterpEndTick(int alTick, bool abSnap, float afSnapDistance);
+    void InterpApply(float afT, int alCurrentTick);
+    void InterpRestore();
+
+    /** View matrix at the end of the last tick, and of the tick before (for view model entities). */
+    const cMatrixf &GetInterpTickEndView()
+    {
+        return m_mtxInterpTickEndView;
+    }
+    const cMatrixf &GetInterpPrevTickEndView()
+    {
+        return m_mtxInterpPrevTickEndView;
+    }
+    /** True if the previous tick end view belongs to the tick right before alTick. */
+    bool GetInterpPrevTickEndViewValid(int alTick)
+    {
+        return mlInterpPrevTickEndViewTick == alTick - 1;
+    }
+
 private:
     void UpdateMoveMatrix();
+    void SetAllUpdated();
 
     cVector3f mvPosition;
 
@@ -308,6 +343,33 @@ private:
     bool mbProjectionUpdated;
     bool mbMoveUpdated;
     bool mbFrustumUpdated;
+
+    //Render interpolation
+    class cInterpState
+    {
+    public:
+        cVector3f mvPosition;
+        float mfPitch;
+        float mfYaw;
+        float mfRoll;
+        float mfFOV;
+        float mfAspect;
+        cMatrixf m_mtxRotation;
+    };
+    void InterpGetState(cInterpState &aState);
+    void InterpSetState(const cInterpState &aState);
+
+    cInterpState mInterpTickStart;
+    cInterpState mInterpTickEnd;
+    cInterpState mInterpSaved;
+    int mlInterpTick;
+    bool mbInterpApplied;
+    bool mbInterpSnapPending;
+
+    cMatrixf m_mtxInterpTickEndView;
+    cMatrixf m_mtxInterpPrevTickEndView;
+    int mlInterpTickEndViewTick;
+    int mlInterpPrevTickEndViewTick;
 };
 
 };

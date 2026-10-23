@@ -102,7 +102,7 @@ private:
     float mfFadeOutDuration;
     float mfFadeTimer;
     float mfScale;
-    float mfCurrentFade;
+    cInterpolatedFloat mfCurrentFade;
 };
 
 //----------------------------------------------
@@ -129,14 +129,14 @@ private:
     iFontData *mpFont;
     cVector2f mvFontSize;
 
-    float mfAlpha;
+    cInterpolatedFloat mfAlpha;
 
     float mfFlashIntensity;
 
     int mlStep;
     float mfCount;
 
-    float mfTextAlpha;
+    cInterpolatedFloat mfTextAlpha;
     float mfTextTime;
     tWStringVec mvTextRows;
 };
@@ -301,7 +301,7 @@ private:
     cGuiGfxElement *mpWhiteGfx;
 
     float mfGoalAlpha;
-    float mfAlpha;
+    cInterpolatedFloat mfAlpha;
     float mfFadeSpeed;
 };
 
@@ -325,7 +325,7 @@ public:
 private:
     cGuiGfxElement *mpWhiteGfx;
 
-    float mfAlpha;
+    cInterpolatedFloat mfAlpha;
 
     int mlStep;
     float mfCount;
@@ -357,7 +357,7 @@ public:
 private:
     cGuiGfxElement *mpWhiteGfx;
 
-    float mfAlpha;
+    cInterpolatedFloat mfAlpha;
 
     float mfFlashIntensity;
 

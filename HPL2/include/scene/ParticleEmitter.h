@@ -86,7 +86,7 @@ typedef struct
 class cParticle
 {
 public:
-    cParticle() {}
+    cParticle() : mfSpin(0), mfRenderPrevSpin(0), mbRenderSnap(true) {}
 
     cVector3f mvPos;
     cVector3f mvLastPos;
@@ -133,8 +133,13 @@ public:
     int mlHighFreqPoints;
     std::vector<cVector3f> mvBeamPoints;
 
-    // ---
+    // Render interpolation: state before the last update
 
+    cVector3f mvRenderPrevPos;
+    cVector2f mvRenderPrevSize;
+    cColor mRenderPrevColor;
+    float mfRenderPrevSpin;
+    bool mbRenderSnap;
 };
 
 //-------------------------------------------------------------------
@@ -228,6 +233,10 @@ public:
 protected:
     void SwapRemove(unsigned int alIndex);
     cParticle *CreateParticle();
+
+    void SaveRenderInterpState();
+    void FixSpawnedRenderInterpState();
+    int mlRenderInterpTick;
 
     virtual void UpdateMotion(double adFixedDelta) = 0;
     virtual void SetParticleDefaults(cParticle *apParticle) = 0;

@@ -474,6 +474,10 @@ void cLuxPlayerHands::CreateHandEntity(cLuxMap *apMap)
     mpHandsEntity->Stop();
     mpHandsEntity->SetRenderFlagBit(eRenderableFlag_ShadowCaster, false);
     mpHandsEntity->SetRenderFlagBit(eRenderableFlag_VisibleInReflection, false);
+
+    //View model: the hands (and the lantern and lights attached to them) are drawn glued to the
+    //camera as it is rendered, so they follow per frame mouse look without lagging behind.
+    mpHandsEntity->SetRenderInterpCamera(mpPlayer->GetCamera());
 }
 
 void cLuxPlayerHands::DestroyHandEntity(cLuxMap *apMap)

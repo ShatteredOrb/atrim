@@ -19,6 +19,12 @@ public:
 
     virtual void OnDraw(double adFrameTime) {}
 
+    /**
+     * Called once every rendered frame, after the fixed updates and right before OnDraw,
+     * with freshly sampled input. Use for things that must react at frame rate (mouse look, cursors).
+     */
+    virtual void OnFrameInput(double adFrameTime) {}
+
     virtual void PreUpdate(double adFixedDelta) {}
     virtual void Update(double adFixedDelta) {}
     virtual void PostUpdate(double adFixedDelta) {}
@@ -104,6 +110,10 @@ public:
             break;
         case eUpdateableMessage_AppDeviceWasRemoved:
             AppDeviceWasRemoved();
+            break;
+
+        case eUpdateableMessage_OnFrameInput:
+            OnFrameInput(adX);
             break;
         };
     }

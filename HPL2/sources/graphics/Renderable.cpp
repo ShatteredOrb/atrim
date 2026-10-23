@@ -1,4 +1,5 @@
 #include "graphics/Renderable.h"
+#include "scene/RenderInterpolation.h"
 
 #include "math/Math.h"
 #include "math/Frustum.h"
@@ -49,6 +50,10 @@ iRenderable::iRenderable(const tString &asName) : iEntity3D(asName)
     mpRenderableUserData = NULL;
 
     mfShaderTimer = 0.0f;
+
+    mfInterpPrevCoverage = mfInterpCurrCoverage = mfCoverageAmount;
+    mfInterpPrevIllumination = mfInterpCurrIllumination = mfIlluminationAmount;
+    mbInterpFadeActive = false;
 }
 
 //-----------------------------------------------------------------------
@@ -108,6 +113,59 @@ cMatrixf *iRenderable::GetInvModelMatrix()
     }
 
     return &m_mtxInvModel;
+}
+
+//-----------------------------------------------------------------------
+
+void iRenderable::SetIlluminationAmount(float afX)
+{
+    if(mfIlluminationAmount == afX)
+    {
+        return;
+    }
+
+    mfIlluminationAmount = afX;
+
+    //Let render interpolation pick up the fade.
+    cRenderInterpolation::TouchEntity(this);
+}
+
+//-----------------------------------------------------------------------
+
+bool iRenderable::OnRenderInterpSnapshot(bool abSnap)
+{
+    mfInterpPrevCoverage = abSnap ? mfCoverageAmount : mfInterpCurrCoverage;
+    mfInterpCurrCoverage = mfCoverageAmount;
+
+    mfInterpPrevIllumination = abSnap ? mfIlluminationAmount : mfInterpCurrIllumination;
+    mfInterpCurrIllumination = mfIlluminationAmount;
+
+    mbInterpFadeActive = mfInterpPrevCoverage != mfInterpCurrCoverage ||
+                         mfInterpPrevIllumination != mfInterpCurrIllumination;
+
+    return mbInterpFadeActive;
+}
+
+void iRenderable::OnRenderInterpApply(float afT)
+{
+    if(mbInterpFadeActive == false)
+    {
+        return;
+    }
+
+    mfCoverageAmount = cRenderInterpolation::Lerp(mfInterpPrevCoverage, mfInterpCurrCoverage, afT);
+    mfIlluminationAmount = cRenderInterpolation::Lerp(mfInterpPrevIllumination, mfInterpCurrIllumination, afT);
+}
+
+void iRenderable::OnRenderInterpRestore()
+{
+    if(mbInterpFadeActive == false)
+    {
+        return;
+    }
+
+    mfCoverageAmount = mfInterpCurrCoverage;
+    mfIlluminationAmount = mfInterpCurrIllumination;
 }
 
 //-----------------------------------------------------------------------

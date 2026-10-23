@@ -279,7 +279,7 @@ private:
     //////////////
     // Variables
     bool mbActive;
-    float mfAlpha;
+    cInterpolatedFloat mfAlpha;
     bool mbDisabled;
 
     bool mbForceInstantExit;

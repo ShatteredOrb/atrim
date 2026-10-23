@@ -120,6 +120,7 @@
 #include "scene/RopeEntity.h"
 #include "scene/FogArea.h"
 #include "scene/DummyRenderable.h"
+#include "scene/RenderInterpolation.h"
 
 #include "sound/Sound.h"
 #include "sound/SoundChannel.h"

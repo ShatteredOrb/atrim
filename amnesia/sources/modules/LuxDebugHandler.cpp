@@ -947,7 +947,7 @@ void cLuxDebugHandler::CreateScriptOutputWindow()
 
     ///////////////////////////
     //Window
-    cVector2f vSize = cVector2f(700, 550);
+    cVector2f vSize = cVector2f(700, 560);
     cVector3f vPos = cVector3f(mpGuiSet->GetVirtualSize().x / 2 - vSize.x / 2, 50, 10);
     mpScriptOutputWindow = mpGuiSet->CreateWidgetWindow(0, vPos, vSize, _W("Script output") );
 
@@ -1039,7 +1039,7 @@ void cLuxDebugHandler::CreateGuiWindow()
 
     ///////////////////////////
     //Window
-    cVector2f vSize = cVector2f(320, 780);
+    cVector2f vSize = cVector2f(320, 800);
     vGroupSize.x = vSize.x - 20;
     cVector3f vPos = cVector3f(mpGuiSet->GetVirtualSize().x - vSize.x - 10, 10, 0);
     mpDebugWindow = mpGuiSet->CreateWidgetWindow(0, vPos, vSize, kTranslate("Debug", "Debug Toolbar") );
@@ -1193,8 +1193,6 @@ void cLuxDebugHandler::CreateGuiWindow()
         pButton->AddCallback(eGuiMessage_ButtonPressed, this, kGuiCallback(PressBatchLoad));
         vGroupPos.y += 22;
 
-
-
         //Group end
         vGroupSize.y = vGroupPos.y + 15;
         pGroup->SetSize(vGroupSize);
@@ -1254,6 +1252,12 @@ void cLuxDebugHandler::CreateGuiWindow()
         pSlider->AddCallback(eGuiMessage_SliderMove, this, kGuiCallback(ChangeDebugText));
         vGroupPos.y += 22;
 
+        //Render interpolation
+        pCheckBox = mpGuiSet->CreateWidgetCheckBox(vGroupPos, vSize, kTranslate("Debug", "Render interpolation"), pGroup);
+        pCheckBox->SetChecked(cRenderInterpolation::IsEnabled(), false);
+        pCheckBox->SetUserValue(30);
+        pCheckBox->AddCallback(eGuiMessage_CheckChange, this, kGuiCallback(ChangeDebugText));
+        vGroupPos.y += 22;
 
         //Group end
         vGroupSize.y = vGroupPos.y + 15;
@@ -1745,6 +1749,11 @@ bool cLuxDebugHandler::ChangeDebugText(iWidget* apWidget, const cGuiMessageData&
     else if(lNum == 17)
     {
         SetFastForward(bActive);
+    }
+    else if(lNum == 30)
+    {
+        cRenderInterpolation::SetEnabled(bActive);
+        gpBase->mpConfigHandler->mbRenderInterpolation = bActive;
     }
 
 

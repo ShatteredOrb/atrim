@@ -18,6 +18,7 @@
 #include "scene/World.h"
 
 #include "scene/ParticleSystem.h"
+#include "scene/RenderInterpolation.h"
 
 
 namespace hpl
@@ -152,6 +153,8 @@ iParticleEmitter::iParticleEmitter(tString asName, tMaterialVec *avMaterials,
 
     mlAxisDrawUpdateCount = -1;
 
+    mlRenderInterpTick = -1;
+
     mbApplyTransformToBV = false;
 
     mBoundingVolume.SetSize(0);
@@ -218,13 +221,52 @@ void iParticleEmitter::SetSubDivUV(const cVector2l &avSubDiv)
 
 //-----------------------------------------------------------------------
 
-//Seems like this fucntion is never called any more...
+void iParticleEmitter::SaveRenderInterpState()
+{
+    for(unsigned int i = 0; i < mlNumOfParticles; ++i)
+    {
+        cParticle *pParticle = mvParticles[i];
+        pParticle->mvRenderPrevPos = pParticle->mvPos;
+        pParticle->mvRenderPrevSize = pParticle->mvSize;
+        pParticle->mRenderPrevColor = pParticle->mColor;
+        pParticle->mfRenderPrevSpin = pParticle->mfSpin;
+        pParticle->mbRenderSnap = false;
+    }
+
+    mlRenderInterpTick = cRenderInterpolation::IsInsideTick() ? cRenderInterpolation::GetTick() : -1;
+}
+
+void iParticleEmitter::FixSpawnedRenderInterpState()
+{
+    for(unsigned int i = 0; i < mlNumOfParticles; ++i)
+    {
+        cParticle *pParticle = mvParticles[i];
+        if(pParticle->mbRenderSnap == false)
+        {
+            continue;
+        }
+
+        //Newly (re)spawned: no history, show where it is.
+        pParticle->mvRenderPrevPos = pParticle->mvPos;
+        pParticle->mvRenderPrevSize = pParticle->mvSize;
+        pParticle->mRenderPrevColor = pParticle->mColor;
+        pParticle->mfRenderPrevSpin = pParticle->mfSpin;
+        pParticle->mbRenderSnap = false;
+    }
+}
+
+//-----------------------------------------------------------------------
+
+//Called every tick by cParticleSystem::UpdateLogic
 void iParticleEmitter::UpdateLogic(double adFixedDelta)
 {
     if(IsActive() == false)
     {
         return;
     }
+
+    //Remember the state before this update, so drawing can interpolate between them.
+    SaveRenderInterpState();
 
     //////////////////////////////
     // Update sleep
@@ -262,6 +304,8 @@ void iParticleEmitter::UpdateLogic(double adFixedDelta)
     }
 
     UpdateMotion(adFixedDelta);
+
+    FixSpawnedRenderInterpState();
 
     SetTransformUpdated();
 }
@@ -383,6 +427,11 @@ bool iParticleEmitter::UpdateGraphicsForViewport(cFrustum *apFrustum, double adF
     }
 
     //////////////////////////////
+    // Render interpolation (between the state before and after the last tick)
+    const bool bInterp = cRenderInterpolation::ShouldInterpolate(mlRenderInterpTick);
+    const float fT = bInterp ? cRenderInterpolation::GetAlpha() : 1.0f;
+
+    //////////////////////////////
     // RENDERING
 
     if ( mPEType == ePEType_Beam)
@@ -458,7 +507,7 @@ bool iParticleEmitter::UpdateGraphicsForViewport(cFrustum *apFrustum, double adF
                 cParticle *pParticle = mvParticles[i];
 
                 //This is not the fastest thing possible...
-                cVector3f vParticlePos = pParticle->mvPos;
+                cVector3f vParticlePos = bInterp ? cRenderInterpolation::Lerp(pParticle->mvRenderPrevPos, pParticle->mvPos, fT) : pParticle->mvPos;
 
                 if(mCoordSystem == eParticleEmitterCoordSystem_Local)
                 {
@@ -466,7 +515,7 @@ bool iParticleEmitter::UpdateGraphicsForViewport(cFrustum *apFrustum, double adF
                 }
 
                 cVector3f vPos = cMath::MatrixMul(apFrustum->GetViewMatrix(), vParticlePos);
-                cColor finalColor = pParticle->mColor * colorMul;
+                cColor finalColor = (bInterp ? cRenderInterpolation::Lerp(pParticle->mRenderPrevColor, pParticle->mColor, fT) : pParticle->mColor) * colorMul;
 
                 SetPos(&pPosArray[i * lVtxQuadSize + 0 * lVtxStride], vPos + vAdd[0]);
                 SetCol(&pColArray[i * 16 + 0 * 4], finalColor);
@@ -510,7 +559,7 @@ bool iParticleEmitter::UpdateGraphicsForViewport(cFrustum *apFrustum, double adF
                 cParticle *pParticle = mvParticles[i];
 
                 //This is not the fastest thing possible
-                cVector3f vParticlePos = pParticle->mvPos;
+                cVector3f vParticlePos = bInterp ? cRenderInterpolation::Lerp(pParticle->mvRenderPrevPos, pParticle->mvPos, fT) : pParticle->mvPos;
 
 
                 if(mCoordSystem == eParticleEmitterCoordSystem_Local)
@@ -523,12 +572,14 @@ bool iParticleEmitter::UpdateGraphicsForViewport(cFrustum *apFrustum, double adF
 
                 // NEW
 
-                cVector3f vParticleSize = pParticle->mvSize;
-                cColor finalColor = pParticle->mColor * colorMul;
+                cVector2f vSize2D = bInterp ? cRenderInterpolation::Lerp(pParticle->mvRenderPrevSize, pParticle->mvSize, fT) : pParticle->mvSize;
+                cVector3f vParticleSize = vSize2D;
+                cColor finalColor = (bInterp ? cRenderInterpolation::Lerp(pParticle->mRenderPrevColor, pParticle->mColor, fT) : pParticle->mColor) * colorMul;
 
                 if ( mbUsePartSpin )
                 {
-                    cMatrixf mtxRotationMatrix = cMath::MatrixRotateZ(pParticle->mfSpin);
+                    float fSpin = bInterp ? cRenderInterpolation::LerpAngle(pParticle->mfRenderPrevSpin, pParticle->mfSpin, fT) : pParticle->mfSpin;
+                    cMatrixf mtxRotationMatrix = cMath::MatrixRotateZ(fSpin);
 
 
                     SetPos(&pPosArray[i * lVtxQuadSize + 0 * lVtxStride], vPos + cMath::MatrixMul(mtxRotationMatrix, vAdd[0]*vParticleSize));
@@ -578,6 +629,12 @@ bool iParticleEmitter::UpdateGraphicsForViewport(cFrustum *apFrustum, double adF
 
                 cVector3f vParticlePos1 = pParticle->mvPos;
                 cVector3f vParticlePos2 = pParticle->mvLastPos;
+                if(bInterp)
+                {
+                    //Move the whole streak, keep its length.
+                    vParticlePos1 = cRenderInterpolation::Lerp(pParticle->mvRenderPrevPos, pParticle->mvPos, fT);
+                    vParticlePos2 = vParticlePos1 - (pParticle->mvPos - pParticle->mvLastPos);
+                }
 
                 if(mCoordSystem == eParticleEmitterCoordSystem_Local)
                 {
@@ -604,15 +661,16 @@ bool iParticleEmitter::UpdateGraphicsForViewport(cFrustum *apFrustum, double adF
                     vDirX.Normalize();
                 }
 
-                vDirX = vDirX * mvDrawSize.x * pParticle->mvSize.x;
-                vDirY = vDirY * mvDrawSize.y * pParticle->mvSize.y;
+                cVector2f vLineSize = bInterp ? cRenderInterpolation::Lerp(pParticle->mvRenderPrevSize, pParticle->mvSize, fT) : pParticle->mvSize;
+                vDirX = vDirX * mvDrawSize.x * vLineSize.x;
+                vDirY = vDirY * mvDrawSize.y * vLineSize.y;
 
                 if(apFrustum->GetInvertsCullMode())
                 {
                     vDirY = vDirY * -1;
                 }
 
-                cColor finalColor = pParticle->mColor * colorMul;
+                cColor finalColor = (bInterp ? cRenderInterpolation::Lerp(pParticle->mRenderPrevColor, pParticle->mColor, fT) : pParticle->mColor) * colorMul;
 
                 SetPos(&pPosArray[i * lVtxQuadSize + 0 * lVtxStride], vPos2 + vDirY * -1 + vDirX);
                 SetCol(&pColArray[i * 16 + 0 * 4], finalColor);
@@ -656,7 +714,7 @@ bool iParticleEmitter::UpdateGraphicsForViewport(cFrustum *apFrustum, double adF
                 cParticle *pParticle = mvParticles[i];
 
                 //This is not the fastest thing possible
-                cVector3f vParticlePos = pParticle->mvPos;
+                cVector3f vParticlePos = bInterp ? cRenderInterpolation::Lerp(pParticle->mvRenderPrevPos, pParticle->mvPos, fT) : pParticle->mvPos;
 
 
                 if(mCoordSystem == eParticleEmitterCoordSystem_Local)
@@ -665,14 +723,14 @@ bool iParticleEmitter::UpdateGraphicsForViewport(cFrustum *apFrustum, double adF
                 }
 
                 cVector3f vPos = vParticlePos;//cMath::MatrixMul(apCamera->GetViewMatrix(), vParticlePos);
-                cVector2f &vSize = pParticle->mvSize;
+                cVector2f vSize = bInterp ? cRenderInterpolation::Lerp(pParticle->mvRenderPrevSize, pParticle->mvSize, fT) : pParticle->mvSize;
 
                 vAdd[0] = mvRight    * vSize.x     +    mvForward * vSize.y;
                 vAdd[1] = mvRight * -vSize.x     +    mvForward * vSize.y;
                 vAdd[2] = mvRight * -vSize.x     +    mvForward * -vSize.y;
                 vAdd[3] = mvRight    * vSize.x     +    mvForward * -vSize.y;
 
-                cColor finalColor = pParticle->mColor * colorMul;
+                cColor finalColor = (bInterp ? cRenderInterpolation::Lerp(pParticle->mRenderPrevColor, pParticle->mColor, fT) : pParticle->mColor) * colorMul;
 
                 SetPos(&pPosArray[i * lVtxQuadSize + 0 * lVtxStride], vPos + vAdd[0]);
                 SetCol(&pColArray[i * 16 + 0 * 4], finalColor);

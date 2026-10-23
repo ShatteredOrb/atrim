@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "engine/Engine.h"
+#include "scene/RenderInterpolation.h"
 
 #include "system/System.h"
 #include "physics/Physics.h"
@@ -412,6 +413,9 @@ void cEngine::Run()
     // Should return seconds natively instead of SDL_GetTicks divided by 1000.
     dCurrentTime = cPlatform::GetApplicationTimeX();
 
+    // Render interpolation works in fixed ticks
+    cRenderInterpolation::SetFixedDelta(kFixedDelta);
+
     while(!GetGameIsDone())
     {
         ///////////////////////////////////////
@@ -502,9 +506,11 @@ void cEngine::Run()
 
             // Run Update callback in updater
             START_TIMING(FixedUpdate)
+            cRenderInterpolation::BeginTick();
             mpUpdater->RunMessage(eUpdateableMessage_PreUpdate, kFixedDelta);
             mpUpdater->RunMessage(eUpdateableMessage_Update, kFixedDelta);
             mpUpdater->RunMessage(eUpdateableMessage_PostUpdate, kFixedDelta);
+            cRenderInterpolation::EndTick();
             STOP_TIMING(FixedUpdate)
 
             // If log update is active, clear it regularly.
@@ -528,8 +534,19 @@ void cEngine::Run()
             dAccumulator = std::fmod(dAccumulator, kFixedDelta);
         }
 
-        // Make alpha dividing the accumulated time by the fixed delta timestep
+        // Make alpha dividing the accumulated time by the fixed delta timestep.
+        // Rendering shows the world this far between the last two ticks.
         dRenderAlpha = dAccumulator / kFixedDelta;
+        if(dRenderAlpha > 1.0)
+        {
+            dRenderAlpha = 1.0;
+        }
+        cRenderInterpolation::SetFrameAlpha(dRenderAlpha);
+
+        // Read the very latest mouse/input state right before drawing, so things
+        // driven every frame (mouse look, GUI cursor) use input that is as fresh as possible.
+        mpInput->FrameUpdate();
+        mpUpdater->RunMessage(eUpdateableMessage_OnFrameInput, dFrameTime);
 
         START_TIMING(OnDraw)
         mpUpdater->RunMessage(eUpdateableMessage_OnDraw, dFrameTime);

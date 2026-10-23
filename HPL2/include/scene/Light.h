@@ -387,6 +387,17 @@ protected:
     void OnFlickerOn();
     void OnSetDiffuse();
 
+    //Render interpolation of fades and flicker (colour and radius)
+    bool OnRenderInterpSnapshot(bool abSnap);
+    void OnRenderInterpApply(float afT);
+    void OnRenderInterpRestore();
+
+    cColor mInterpPrevColor;
+    cColor mInterpCurrColor;
+    float mfInterpPrevRadius;
+    float mfInterpCurrRadius;
+    bool mbInterpLightActive;
+
     virtual void ExtraXMLProperties(TiXmlElement *apMainElem) {}
     virtual void UpdateBoundingVolume() = 0;
 

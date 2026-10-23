@@ -2440,6 +2440,14 @@
 				>
 			</File>
 			<File
+				RelativePath=".\sources\scene\RenderInterpolation.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\include\scene\RenderInterpolation.h"
+				>
+			</File>
+			<File
 				RelativePath=".\sources\scene\RopeEntity.cpp"
 				>
 			</File>

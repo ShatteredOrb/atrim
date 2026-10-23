@@ -180,7 +180,7 @@ void cLuxJournalStateData::Update(double adFixedDelta)
     {
         iWidget *pWidget = *it;
         cColor col = pWidget->GetColorMul();
-        col.a = mpJournal->mfAlpha * mfAlpha;
+        col.a = mpJournal->mfAlpha.Get() * mfAlpha;
         pWidget->SetColorMul(col);
     }
 }
@@ -189,7 +189,7 @@ void cLuxJournalStateData::Update(double adFixedDelta)
 
 void cLuxJournalStateData::OnDraw(double adFrameTime)
 {
-    float fAlpha = mfAlpha * mpJournal->mfAlpha;
+    float fAlpha = mfAlpha * mpJournal->mfAlpha.Get();
 
     ///////////////////////
     //Note open
@@ -592,14 +592,14 @@ void cLuxJournal::OnDraw(double adFrameTime)
 {
     ////////////////////////
     //Draw background
-    if(mpScreenGfx && mfAlpha < 1)
+    if(mpScreenGfx && mfAlpha.Get() < 1)
     {
         mpGuiSet->DrawGfx(mpScreenGfx, mvGuiSetStartPos, mvGuiSetSize);
     }
 
     if(mpScreenBgGfx)
     {
-        mpGuiSet->DrawGfx(mpScreenBgGfx, mvGuiSetStartPos + cVector3f(0, 0, 0.2f), mvGuiSetSize, cColor(1, mfAlpha));
+        mpGuiSet->DrawGfx(mpScreenBgGfx, mvGuiSetStartPos + cVector3f(0, 0, 0.2f), mvGuiSetSize, cColor(1, mfAlpha.Get()));
     }
 
 
@@ -615,7 +615,7 @@ void cLuxJournal::OnDraw(double adFrameTime)
     //Fade
     if(mbOpenedFromInventory)
     {
-        mpGuiSet->DrawGfx(mpWhiteGfx, mvGuiSetStartPos + cVector3f(0, 0, 20), mvGuiSetSize, cColor(0, 1.0f - mfAlpha * mfAlpha));
+        mpGuiSet->DrawGfx(mpWhiteGfx, mvGuiSetStartPos + cVector3f(0, 0, 20), mvGuiSetSize, cColor(0, 1.0f - mfAlpha.Get() * mfAlpha.Get()));
     }
 
     ////////////////////////

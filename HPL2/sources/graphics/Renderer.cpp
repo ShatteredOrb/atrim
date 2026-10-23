@@ -1,4 +1,5 @@
 #include "graphics/Renderer.h"
+#include "scene/RenderInterpolation.h"
 
 #include "math/Math.h"
 #include "math/BoundingVolume.h"
@@ -497,7 +498,7 @@ iRenderer::iRenderer(const tString& asName, cGraphics *apGraphics, cResources* a
 
     mpCallbackFunctions = hplNew( cRendererCallbackFunctions, (this) );
 
-    mfTimeCount = 0;
+    mdTimeCount = 0;
 
     mlActiveOcclusionQueryNum = 0;
 
@@ -559,7 +560,16 @@ void iRenderer::Render(double adFrameTime, cFrustum *apFrustum, cWorld *apWorld,
 
 void iRenderer::Update(double adFixedDelta)
 {
-    mfTimeCount += (float)adFixedDelta;
+    mdTimeCount += adFixedDelta;
+}
+
+//-----------------------------------------------------------------------
+
+float iRenderer::GetTimeCount()
+{
+    //Same offset as the interpolated world (the frame shows a moment between the last two ticks).
+    double dOffset = cRenderInterpolation::GetRenderGameTime() - cRenderInterpolation::GetGameTime();
+    return (float)(mdTimeCount + dOffset);
 }
 
 //-----------------------------------------------------------------------

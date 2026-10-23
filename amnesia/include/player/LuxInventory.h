@@ -645,7 +645,7 @@ private:
 
     ///////////////////////
     // Variables
-    float mfAlpha;
+    cInterpolatedFloat mfAlpha;
     bool mbActive;
     bool mbDisabled;
     bool mbExitToJournal;

@@ -1,4 +1,5 @@
 #include "scene/Light.h"
+#include "scene/RenderInterpolation.h"
 
 #include "system/String.h"
 
@@ -77,6 +78,10 @@ iLight::iLight(tString asName, cResources *apResources) : iRenderable(asName)
 
     mfFadeTime = 0;
 
+    mInterpPrevColor = mInterpCurrColor = mDiffuseColor;
+    mfInterpPrevRadius = mfInterpCurrRadius = mfRadius;
+    mbInterpLightActive = false;
+
     ///////////////////////////////
     //Data init
     mpFalloffMap = mpTextureManager->Create1D("core_falloff_linear", false);
@@ -149,6 +154,9 @@ void iLight::SetDiffuseColor(cColor aColor)
     bool bWasVisble = IsVisible();
 
     mDiffuseColor = aColor;
+
+    //Let render interpolation pick up fades and flickering.
+    cRenderInterpolation::TouchEntity(this);
 
     bool bVisible = IsVisible();
 
@@ -394,6 +402,63 @@ void iLight::SetRadius(float afX)
     //This is so that the render container is updated.
     SetTransformUpdated();
 }
+//-----------------------------------------------------------------------
+
+bool iLight::OnRenderInterpSnapshot(bool abSnap)
+{
+    bool bRenderableActive = iRenderable::OnRenderInterpSnapshot(abSnap);
+
+    mInterpPrevColor = abSnap ? mDiffuseColor : mInterpCurrColor;
+    mInterpCurrColor = mDiffuseColor;
+
+    mfInterpPrevRadius = abSnap ? mfRadius : mfInterpCurrRadius;
+    mfInterpCurrRadius = mfRadius;
+
+    mbInterpLightActive = (mInterpPrevColor == mInterpCurrColor) == false ||
+                          mfInterpPrevRadius != mfInterpCurrRadius;
+
+    return bRenderableActive || mbInterpLightActive;
+}
+
+void iLight::OnRenderInterpApply(float afT)
+{
+    iRenderable::OnRenderInterpApply(afT);
+
+    if(mbInterpLightActive == false)
+    {
+        return;
+    }
+
+    mDiffuseColor = cRenderInterpolation::Lerp(mInterpPrevColor, mInterpCurrColor, afT);
+
+    float fRadius = cRenderInterpolation::Lerp(mfInterpPrevRadius, mfInterpCurrRadius, afT);
+    if(fRadius != mfRadius)
+    {
+        mfRadius = fRadius;
+        mbUpdateBoundingVolume = true;
+        mlCount++; //Radius is part of the light volume, invalidate caches keyed on transform count.
+    }
+}
+
+void iLight::OnRenderInterpRestore()
+{
+    iRenderable::OnRenderInterpRestore();
+
+    if(mbInterpLightActive == false)
+    {
+        return;
+    }
+
+    mDiffuseColor = mInterpCurrColor;
+
+    if(mfRadius != mfInterpCurrRadius)
+    {
+        mfRadius = mfInterpCurrRadius;
+        mbUpdateBoundingVolume = true;
+        mlCount++;
+    }
+}
+
 //-----------------------------------------------------------------------
 
 void iLight::UpdateLogic(double adFixedDelta)
