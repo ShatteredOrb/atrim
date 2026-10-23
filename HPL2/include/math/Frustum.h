@@ -39,6 +39,7 @@ public:
     eCollision CollideBoundingVolume(cBoundingVolume* apBV);
     eCollision CollideNode(iRenderableContainerNode* apNode);
     eCollision CollideFrustum(cFrustum *apFrustum);
+    eCollision CollideSphere(const cVector3f& avCenter, float afRadius, int alMaxPlanes = 6);
 
     inline const cMatrixf &GetProjectionMatrix() const
     {
@@ -116,7 +117,6 @@ public:
 private:
     eCollision CollideFustrumSphere(const cVector3f& avCenter, float afRadius);
 
-    eCollision CollideSphere(const cVector3f& avCenter, float afRadius, int alMaxPlanes = 6);
     eCollision CollideAABB(const cVector3f& avMin, const cVector3f& avMax, int alMaxPlanes = 6);
 
 
