@@ -192,44 +192,7 @@ void cLuxProp_Item::UpdatePropSpecific(double adFixedDelta)
         return;
     }
 
-    /////////////////////////////////
-    // If near player, flash
-    cCamera *pCam =  gpBase->mpPlayer->GetCamera();
-    cVector3f vCameraPos = pCam->GetPosition();
-    cVector3f vBodyPos = mvBodies[0]->GetLocalPosition();
-    vCameraPos.y = 0;
-    vBodyPos.y = 0;
-
-    float fDistSqrt = cMath::Vector3DistSqr(vCameraPos, vBodyPos);
-    if(fDistSqrt < 4.0f * 4.0f)
-    {
-        mfFlashAlpha += (float)adFixedDelta;
-        if(mfFlashAlpha > 1)
-        {
-            mfFlashAlpha = 1;
-        }
-    }
-    else
-    {
-        mfFlashAlpha  -= (float)adFixedDelta;
-        if(mfFlashAlpha < 0)
-        {
-            mfFlashAlpha = 0;
-        }
-    }
-
-    if(mfFlashAlpha > 0)
-    {
-        for(int i = 0; i < mpMeshEntity->GetSubMeshEntityNum(); ++i)
-        {
-            cSubMeshEntity *pSubEnt = mpMeshEntity->GetSubMeshEntity(i);
-
-            if(pCam->GetFrustum()->CollideBoundingVolume(pSubEnt->GetBoundingVolume()) != eCollision_Outside)
-            {
-                gpBase->mpEffectRenderer->AddFlashObject(pSubEnt, mfFlashAlpha);
-            }
-        }
-    }
+    FlashIfNearPlayer(adFixedDelta);
 }
 
 //-----------------------------------------------------------------------

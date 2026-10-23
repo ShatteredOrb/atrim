@@ -836,7 +836,10 @@ void cLuxInventory::OnEnterContainer(const tString& asOldContainer)
 
     /////////////////////
     //Effects
-    gpBase->mpMapHandler->GetCurrentMap()->GetPhysicsWorld()->FadeoutAllLoopSounds(1.0f);
+    if(gpBase->mpMapHandler->GetCurrentMap())
+    {
+        gpBase->mpMapHandler->GetCurrentMap()->GetPhysicsWorld()->FadeoutAllLoopSounds(1.0f);
+    }
     gpBase->mpPlayer->StopTerrorSound();
 
     ///////////////////////////

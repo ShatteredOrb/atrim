@@ -17,6 +17,7 @@ iLuxEntity::iLuxEntity(const tString &asName, int alID, cLuxMap *apMap, eLuxEnti
     mEntityType = aEntityType;
     mlID = alID;
     mbActive = true;
+    mbStartsActive = true;
     mbFullGameSave = false;
 
     msCallbackFunc = "";
@@ -153,6 +154,18 @@ void iLuxEntity::SetActive(bool abX)
 
 //-----------------------------------------------------------------------
 
+void iLuxEntity::SetStartsActive(bool abX)
+{
+    if(mbStartsActive == abX)
+    {
+        return;
+    }
+
+    mbStartsActive = abX;
+}
+
+//-----------------------------------------------------------------------
+
 void iLuxEntity::AddCollideCallbackParent(iLuxCollideCallbackContainer* apCallback)
 {
     mlstCollideCallbackParents.push_back(apCallback);
@@ -217,7 +230,7 @@ void iLuxEntity::UpdatePlayerLookAt(double adFixedDelta)
         mfLookAtCount -= (float)adFixedDelta;
         return;
     }
-    mfLookAtCount = 0.3f;
+    mfLookAtCount = 0.15f;
 
     //////////////////////////////////////
     // Iterate bodies and check frustum and then line of sight
@@ -472,12 +485,17 @@ kBeginSerializeBaseVirtual(iLuxEntity_SaveData)
 kSerializeVar(msName, eSerializeType_String)
 kSerializeVar(mbFullGameSave, eSerializeType_Bool)
 kSerializeVar(mbActive, eSerializeType_Bool)
+kSerializeVar(mbStartsActive,eSerializeType_Bool)
 kSerializeVar(mlEntityType, eSerializeType_Int32)
 kSerializeVar(mlID, eSerializeType_Int32)
 
 kSerializeVar(mfMaxFocusDistance, eSerializeType_Float32)
 
 kSerializeVar(mbInteractionDisabled, eSerializeType_Bool)
+
+kSerializeVar(mbIsCriticalEntity, eSerializeType_Bool)
+kSerializeVar(msCriticalRootName, eSerializeType_String)
+kSerializeVar(mfCriticalEntityRadius, eSerializeType_Float32)
 
 kSerializeVar(msCallbackFunc, eSerializeType_String)
 kSerializeVar(msConnectionStateChangeCallback, eSerializeType_String)
@@ -503,6 +521,7 @@ void iLuxEntity::SaveToSaveData(iLuxEntity_SaveData* apSaveData)
     kCopyToVar(apSaveData, msName);
     kCopyToVar(apSaveData, mbFullGameSave);
     kCopyToVar(apSaveData, mbActive);
+    kCopyToVar(apSaveData, mbStartsActive);
     kCopyToVar(apSaveData, mlID);
     kCopyToVar(apSaveData, mbInteractionDisabled);
 
@@ -541,6 +560,7 @@ void iLuxEntity::LoadFromSaveData(iLuxEntity_SaveData* apSaveData)
     kCopyFromVar(apSaveData, msName);
     kCopyFromVar(apSaveData, mbFullGameSave);
     SetActive(apSaveData->mbActive);
+    SetStartsActive(apSaveData->mbStartsActive);
     kCopyFromVar(apSaveData, mlID);
     kCopyFromVar(apSaveData, mbInteractionDisabled);
 

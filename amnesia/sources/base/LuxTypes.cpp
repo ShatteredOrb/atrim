@@ -496,15 +496,37 @@ kEndSerialize()
 //////////////////////////////////////////////////////////////////////////
 
 //-----------------------------------------------------------------------
+kBeginSerializeBase(cTextQueueEntry)
+kSerializeVar(msTextEntry, eSerializeType_WString)
+kSerializeVar(mfDelay, eSerializeType_Float32)
+kEndSerialize()
+
+//-----------------------------------------------------------------------
 kBeginSerializeBase(cLuxVoiceData)
 
 kSerializeVar(msText, eSerializeType_WString)
+kSerializeVar(mfTextDelay, eSerializeType_Float32)
+kSerializeVar(msText2, eSerializeType_WString)
+kSerializeVar(mfText2Delay, eSerializeType_Float32)
+kSerializeVar(msText3, eSerializeType_WString)
+kSerializeVar(mfText3Delay, eSerializeType_Float32)
+kSerializeVar(msText4, eSerializeType_WString)
+kSerializeVar(mfText4Delay, eSerializeType_Float32)
+kSerializeVar(msText5, eSerializeType_WString)
+kSerializeVar(mfText5Delay, eSerializeType_Float32)
+kSerializeVar(msText6, eSerializeType_WString)
+kSerializeVar(mfText6Delay, eSerializeType_Float32)
+kSerializeVar(msText7, eSerializeType_WString)
+kSerializeVar(mfText7Delay, eSerializeType_Float32)
 kSerializeVar(msVoiceFile, eSerializeType_String)
 kSerializeVar(msEffectFile, eSerializeType_String)
 kSerializeVar(mbUsePosition, eSerializeType_Bool)
 kSerializeVar(mvPosition, eSerializeType_Vector3f)
 kSerializeVar(mfMinDistance, eSerializeType_Float32)
 kSerializeVar(mfMaxDistance, eSerializeType_Float32)
+kSerializeVar(mlPriority, eSerializeType_Int32)
+//mfCurrentTime / mfInterruptedAt are doubles and there is no Float64 serialize type,
+//they fall back to the constructor defaults on load (voice starts from the beginning).
 
 kEndSerialize()
 

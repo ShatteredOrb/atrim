@@ -1,4 +1,3 @@
-#if LUX_ENEMY_MANPIG
 #include "LuxEnemy_ManPig.h"
 
 #include "LuxEnemyMover.h"
@@ -37,20 +36,20 @@ void cLuxEnemyLoader_ManPig::LoadVariables(iLuxEnemy *apEnemy, cXmlElement *apRo
 {
     cLuxEnemy_ManPig *pManPig = static_cast<cLuxEnemy_ManPig *>(apEnemy);
 
-    pManPig->mfDefaultForwardSpeed[eLuxEnemyPoseType_Quadruped][eLuxEnemyMoveSpeed_Walk] =    GetVarFloat("Quadruped_Walk_ForwardSpeed", 0);
-    pManPig->mfDefaultBackwardSpeed[eLuxEnemyPoseType_Quadruped][eLuxEnemyMoveSpeed_Walk] =    GetVarFloat("Quadruped_Walk_BackwardSpeed", 0);
-    pManPig->mfDefaultForwardAcc[eLuxEnemyPoseType_Quadruped][eLuxEnemyMoveSpeed_Walk] =        GetVarFloat("Quadruped_Walk_ForwardAcc", 0);
-    pManPig->mfDefaultForwardDeacc[eLuxEnemyPoseType_Quadruped][eLuxEnemyMoveSpeed_Walk] =    GetVarFloat("Quadruped_Walk_ForwardDeacc", 0);
+    pManPig->mfDefaultForwardSpeed[eLuxEnemyPoseType_Quadruped][eLuxEnemyMoveSpeed_Walk] =    GetVarFloat("WalkQuadruped_ForwardSpeed", 0);
+    pManPig->mfDefaultBackwardSpeed[eLuxEnemyPoseType_Quadruped][eLuxEnemyMoveSpeed_Walk] =    GetVarFloat("WalkQuadruped_BackwardSpeed", 0);
+    pManPig->mfDefaultForwardAcc[eLuxEnemyPoseType_Quadruped][eLuxEnemyMoveSpeed_Walk] =        GetVarFloat("WalkQuadruped_ForwardAcc", 0);
+    pManPig->mfDefaultForwardDeacc[eLuxEnemyPoseType_Quadruped][eLuxEnemyMoveSpeed_Walk] =    GetVarFloat("WalkQuadruped_ForwardDeacc", 0);
 
-    pManPig->mfDefaultForwardSpeed[eLuxEnemyPoseType_Quadruped][eLuxEnemyMoveSpeed_Run] =        GetVarFloat("Quadruped_Run_ForwardSpeed", 0);
-    pManPig->mfDefaultBackwardSpeed[eLuxEnemyPoseType_Quadruped][eLuxEnemyMoveSpeed_Run] =    GetVarFloat("Quadruped_Run_BackwardSpeed", 0);
-    pManPig->mfDefaultForwardAcc[eLuxEnemyPoseType_Quadruped][eLuxEnemyMoveSpeed_Run] =        GetVarFloat("Quadruped_Run_ForwardAcc", 0);
-    pManPig->mfDefaultForwardDeacc[eLuxEnemyPoseType_Quadruped][eLuxEnemyMoveSpeed_Run] =        GetVarFloat("Quadruped_Run_ForwardDeacc", 0);
+    pManPig->mfDefaultForwardSpeed[eLuxEnemyPoseType_Quadruped][eLuxEnemyMoveSpeed_Run] =        GetVarFloat("RunQuadruped_ForwardSpeed", 0);
+    pManPig->mfDefaultBackwardSpeed[eLuxEnemyPoseType_Quadruped][eLuxEnemyMoveSpeed_Run] =    GetVarFloat("RunQuadruped_BackwardSpeed", 0);
+    pManPig->mfDefaultForwardAcc[eLuxEnemyPoseType_Quadruped][eLuxEnemyMoveSpeed_Run] =        GetVarFloat("RunQuadruped_ForwardAcc", 0);
+    pManPig->mfDefaultForwardDeacc[eLuxEnemyPoseType_Quadruped][eLuxEnemyMoveSpeed_Run] =        GetVarFloat("RunQuadruped_ForwardDeacc", 0);
 
-    pManPig->mfStoppedToWalkSpeed[eLuxEnemyPoseType_Quadruped] =    GetVarFloat("Quadruped_StoppedToWalkSpeed", 0);
-    pManPig->mfWalkToStoppedSpeed[eLuxEnemyPoseType_Quadruped] =    GetVarFloat("Quadruped_WalkToStoppedSpeed", 0);
-    pManPig->mfWalkToRunSpeed[eLuxEnemyPoseType_Quadruped] =        GetVarFloat("Quadruped_WalkToRunSpeed", 0);
-    pManPig->mfRunToWalkSpeed[eLuxEnemyPoseType_Quadruped] =        GetVarFloat("Quadruped_RunToWalkSpeed", 0);
+    pManPig->mfStoppedToWalkSpeed[eLuxEnemyPoseType_Quadruped] =    GetVarFloat("StoppedToWalkSpeed_Quadruped", 0);
+    pManPig->mfWalkToStoppedSpeed[eLuxEnemyPoseType_Quadruped] =    GetVarFloat("WalkToStoppedSpeed_Quadruped", 0);
+    pManPig->mfWalkToRunSpeed[eLuxEnemyPoseType_Quadruped] =        GetVarFloat("WalkToRunSpeed_Quadruped", 0);
+    pManPig->mfRunToWalkSpeed[eLuxEnemyPoseType_Quadruped] =        GetVarFloat("RunToWalkSpeed_Quadruped", 0);
 
     pManPig->msNoticeSound = GetVarString("NoticeSound");
     pManPig->msGiveUpNoticeSound = GetVarString("GiveUpNoticeSound");
@@ -171,8 +170,6 @@ cLuxEnemy_ManPig::cLuxEnemy_ManPig(const tString &asName, int alID, cLuxMap *apM
     mbFleeFromPlayer = false;
     mIdleBehavior = eLuxIdleBehavior_None;
 
-    mCurrentMoveType = eLuxEnemyMoveType_Normal;
-
     mfDamageMul = 1.0f;
     mfRunSpeedMul = 1.0f;
 
@@ -187,11 +184,13 @@ cLuxEnemy_ManPig::cLuxEnemy_ManPig(const tString &asName, int alID, cLuxMap *apM
         eLuxEnemyPoseType pose = eLuxEnemyPoseType_Biped;
         msIdleAnimationName[i][pose] = "IdleBiped";
         msWalkAnimationName[i][pose] = "WalkBiped";
+        msJogAnimationName[i][pose] = "JogBiped";
         msRunAnimationName[i][pose] =  i == eLuxEnemyMoveType_Normal ? "RunBiped" : "FleeBiped";;
 
         pose = eLuxEnemyPoseType_Quadruped;
         msIdleAnimationName[i][pose] = "IdleQuadruped";
         msWalkAnimationName[i][pose] = "WalkQuadruped";
+        msJogAnimationName[i][pose] = "JogQuadruped";
         msRunAnimationName[i][pose] = i == eLuxEnemyMoveType_Normal ? "RunQuadruped" : "FleeQuadruped";
     }
 }
@@ -216,10 +215,86 @@ cLuxEnemy_ManPig::~cLuxEnemy_ManPig()
 
 void cLuxEnemy_ManPig::OnSetupAfterLoad(cWorld *apWorld)
 {
+    ////////////////////////////////////////
+    // Wall avoidance
+    mpMover->SetupWallAvoidance(0.9f, 8, 4);
+    mpMover->SetWallAvoidanceActive(true);
+
     if(mbIsTelsa)
     {
         mpMeshEntity->SetVisible(false);
     }
+
+    ////////////////////////////////////////
+    // Walk start transition
+    AddTransitionAnimation("WalkBiped", "WalkStartBiped", "IdleBiped");
+    AddTransitionAnimation("WalkBiped", "WalkStartBiped", "IdleBipedExtra1");
+    AddTransitionAnimation("WalkBiped", "WalkStartBiped", "IdleBipedExtra2");
+    AddTransitionAnimation("WalkBiped", "WalkStartBiped", "NoticeBiped");
+
+    AddTransitionAnimation("IdleBiped", "WalkStopBiped", "WalkBiped");
+    AddTransitionAnimation("IdleBiped", "WalkStopBiped", "RunBiped");
+    AddTransitionAnimation("IdleBiped", "WalkStopBiped", "FleeBiped");
+    AddTransitionAnimation("IdleBiped", "WalkStopBiped", "ChargeBiped");
+
+    AddTransitionAnimation("WalkQuadruped", "WalkStartQuadruped", "IdleQuadruped");
+    AddTransitionAnimation("WalkQuadruped", "WalkStartQuadruped", "IdleQuadrupedExtra1");
+    AddTransitionAnimation("WalkQuadruped", "WalkStartQuadruped", "IdleQuadrupedExtra2");
+    AddTransitionAnimation("WalkQuadruped", "WalkStartQuadruped", "NoticeQuadruped");
+
+    AddTransitionAnimation("IdleQuadruped", "WalkStopQuadruped", "WalkQuadruped");
+    AddTransitionAnimation("IdleQuadruped", "WalkStopQuadruped", "JogQuadruped");
+    AddTransitionAnimation("IdleQuadruped", "WalkStopQuadruped", "RunQuadruped");
+
+    //////////////////////////////
+    //Threat transition stuff
+    AddTransitionAnimation("ThreatLoopBiped", "ThreatStartBiped", "IdleBiped");
+    AddTransitionAnimation("ThreatLoopBiped", "ThreatStartBiped", "IdleBipedExtra1");
+    AddTransitionAnimation("ThreatLoopBiped", "ThreatStartBiped", "IdleBipedExtra2");
+    //AddTransitionAnimation("ThreatLoop", "ThreatStartBiped", "NoticeBiped"); //bad blend
+    AddTransitionAnimation("ThreatLoopBiped", "ThreatStartBiped", "WalkBiped");
+    AddTransitionAnimation("ThreatLoopBiped", "ThreatStartBiped", "JogBiped");
+    AddTransitionAnimation("ThreatLoopBiped", "ThreatStartBiped", "RunBiped");
+
+    AddTransitionAnimation("ThreatLoopQuadruped", "ThreatStartQuadruped", "IdleQuadruped");
+    AddTransitionAnimation("ThreatLoopQuadruped", "ThreatStartQuadruped", "IdleQuadrupedExtra1");
+    AddTransitionAnimation("ThreatLoopQuadruped", "ThreatStartQuadruped", "IdleQuadrupedExtra2");
+    //AddTransitionAnimation("ThreatLoop", "ThreatStartQuadruped", "NoticeQuadruped");//bad blend
+    AddTransitionAnimation("ThreatLoopQuadruped", "ThreatStartQuadruped", "WalkQuadruped");
+    AddTransitionAnimation("ThreatLoopQuadruped", "ThreatStartQuadruped", "JogQuadruped");
+    AddTransitionAnimation("ThreatLoopQuadruped", "ThreatStartQuadruped", "RunQuadruped");
+
+    AddTransitionAnimation("WalkBiped", "ThreatEndBiped", "ThreatLoopBiped");
+    AddTransitionAnimation("IdleBiped", "ThreatEndBiped", "ThreatLoopBiped");
+    AddTransitionAnimation("RunBiped", "ThreatEndBiped", "ThreatLoopBiped");
+
+    AddTransitionAnimation("IdleQuadruped", "ThreatEndQuadruped", "ThreatLoopQuadruped");
+    AddTransitionAnimation("WalkQuadruped", "ThreatEndQuadruped", "ThreatLoopQuadruped");
+    AddTransitionAnimation("JogQuadruped", "ThreatEndQuadruped", "ThreatLoopQuadruped");
+    AddTransitionAnimation("RunQuadruped", "ThreatEndQuadruped", "ThreatLoopQuadruped");
+
+    //////////////////////////////
+    //Pose change transitions
+    AddTransitionAnimation("WalkBiped", "IdleQuadrupedToBiped", "WalkQuadruped");
+    AddTransitionAnimation("RunBiped", "IdleQuadrupedToBiped", "RunQuadruped");
+    AddTransitionAnimation("JogBiped", "IdleQuadrupedToBiped", "WalkQuadruped");
+    AddTransitionAnimation("IdleBiped", "IdleQuadrupedToBiped", "IdleQuadruped");
+    AddTransitionAnimation("IdleBiped", "IdleQuadrupedToBiped", "WalkQuadruped");
+    AddTransitionAnimation("IdleBiped", "IdleQuadrupedToBiped", "RunQuadruped");
+    AddTransitionAnimation("IdleBipedExtra1", "IdleQuadrupedToBiped", "IdleQuadruped");
+    AddTransitionAnimation("IdleBipedExtra2", "IdleQuadrupedToBiped", "IdleQuadruped");
+    AddTransitionAnimation("NoticeBiped", "IdleQuadrupedToBiped", "IdleQuadruped");
+
+    AddTransitionAnimation("WalkQuadruped", "IdleBipedToQuadruped", "WalkBiped");
+    AddTransitionAnimation("JogQuadruped", "IdleBipedToQuadruped", "JogBiped");
+    AddTransitionAnimation("RunQuadruped", "IdleBipedToQuadruped", "RunBiped");
+    AddTransitionAnimation("IdleQuadruped", "IdleBipedToQuadruped", "IdleBiped");
+    AddTransitionAnimation("IdleQuadruped", "IdleBipedToQuadruped", "WalkQuadruped");
+    AddTransitionAnimation("IdleQuadruped", "IdleBipedToQuadruped", "JogQuadruped");
+    AddTransitionAnimation("IdleQuadruped", "IdleBipedToQuadruped", "RunQuadruped");
+    AddTransitionAnimation("IdleQuadrupedExtra1", "IdleBipedToQuadruped", "IdleBiped");
+    AddTransitionAnimation("IdleQuadrupedExtra2", "IdleBipedToQuadruped", "IdleBiped");
+    AddTransitionAnimation("NoticeQuadruped", "IdleBipedToQuadruped", "IdleBiped");
 }
 
 
@@ -246,49 +321,6 @@ void cLuxEnemy_ManPig::UpdateEnemySpecific(double adFixedDelta)
     }
 
     UpdateCheckInLantern(adFixedDelta);
-}
-
-//-----------------------------------------------------------------------
-
-void cLuxEnemy_ManPig::ChangePose(eLuxEnemyPoseType aPose, bool abSendMessage)
-{
-    if(mCurrentPose == aPose)
-    {
-        return;
-    }
-
-    //Make sure the enemy is still and stays so for 0.5 seconds, and animation is updated for that.
-    mpCharBody->StopMovement();
-    mpCharBody->SetMoveDelay(0.5);
-    mpMover->UpdateMoveAnimation(0.001f);
-
-    //Set new pose state
-    eLuxEnemyPoseType prevPose = mCurrentPose;
-    mCurrentPose = aPose;
-
-    //Make sure that the correct animation is set.
-    mpMover->mMoveState = eLuxEnemyMoveState_LastEnum;
-    mpMover->UpdateMoveAnimation(0.001f);
-
-    if(abSendMessage)
-    {
-        SendMessage(eLuxEnemyMessage_ChangePose, 0, false, 0, 0, aPose);
-    }
-}
-
-//-----------------------------------------------------------------------
-
-void cLuxEnemy_ManPig::ChangeMoveType(eLuxEnemyMoveType aMoveType)
-{
-    if(mCurrentMoveType == aMoveType)
-    {
-        return;
-    }
-
-    mCurrentMoveType = aMoveType;
-
-    mpMover->mMoveState = eLuxEnemyMoveState_LastEnum;
-    mpMover->UpdateMoveAnimation(0.001f);
 }
 
 //-----------------------------------------------------------------------
@@ -1928,7 +1960,7 @@ bool cLuxEnemy_ManPig::PlayerIsDetected()
     }
     else
     {
-        return (DistToPlayer() < mpCharBody->GetSize().x && PlayerInFOV())/* || (mfInLanternLightCount>=1 && mbBlind==false)*/;
+        return (DistToPlayer() < mpCharBody->GetSize().x && PlayerInFOV()) || (mfInLanternLightCount>=1 && mbBlind==false);
     }
 }
 
@@ -2389,7 +2421,7 @@ void cLuxEnemy_ManPig::SetTeslaSoundDisabled(bool abX)
 {
     mbTeslaSoundDisabled = abX;
 
-    if(abX == true && mpMindFuckSound)
+    if(abX == false && mpMindFuckSound)
     {
         cSoundHandler *pSoundHandler = gpBase->mpEngine->GetSound()->GetSoundHandler();
 
@@ -2744,8 +2776,6 @@ kSerializeVar(mbTeslaTerror, eSerializeType_Bool)
 kSerializeVar(mbTeslaFadeDisabled, eSerializeType_Bool)
 kSerializeVar(mbTeslaSoundDisabled, eSerializeType_Bool)
 kSerializeVar(mbTeslaEasyEscapeDisabled, eSerializeType_Bool)
-kSerializeVar(mlCurrentPose, eSerializeType_Int32)
-kSerializeVar(mlCurrentMoveType, eSerializeType_Int32)
 kSerializeVar(mbSkipVisibilityRangeHandicaps, eSerializeType_Bool)
 
 kEndSerialize()
@@ -2784,9 +2814,6 @@ void cLuxEnemy_ManPig::SaveToSaveData(iLuxEntity_SaveData* apSaveData)
     kCopyToVar(pData, mbTeslaSoundDisabled);
     kCopyToVar(pData, mbTeslaEasyEscapeDisabled);
 
-    pData->mlCurrentPose = mCurrentPose;
-    pData->mlCurrentMoveType = mCurrentMoveType;
-
     kCopyToVar(pData, mbSkipVisibilityRangeHandicaps);
 }
 
@@ -2817,9 +2844,6 @@ void cLuxEnemy_ManPig::LoadFromSaveData(iLuxEntity_SaveData* apSaveData)
     kCopyFromVar(pData, mbTeslaSoundDisabled);
     kCopyFromVar(pData, mbTeslaEasyEscapeDisabled);
 
-    mCurrentPose = (eLuxEnemyPoseType)pData->mlCurrentPose;
-    mCurrentMoveType = (eLuxEnemyMoveType)pData->mlCurrentMoveType;
-
     kCopyFromVar(pData, mbSkipVisibilityRangeHandicaps);
 }
 
@@ -2831,5 +2855,3 @@ void cLuxEnemy_ManPig::SetupSaveData(iLuxEntity_SaveData *apSaveData)
 }
 
 //-----------------------------------------------------------------------
-
-#endif

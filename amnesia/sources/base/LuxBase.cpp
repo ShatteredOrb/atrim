@@ -51,6 +51,9 @@
 #include "LuxProp_EmotionStone.h"
 #include "LuxProp_NPC.h"
 #include "LuxProp_MultiSlider.h"
+#include "LuxProp_PhoneBox.h"
+#include "LuxProp_VoiceFlashbackTrigger.h"
+#include "LuxAnimatedProp.h"
 
 #include "LuxCritter_Bug.h"
 #include "LuxCritter_Spider.h"
@@ -69,10 +72,8 @@
 
 #include "LuxEnemy_Grunt.h"
 #include "LuxEnemy_WaterLurker.h"
-
-#if LUX_ENEMY_MANPIG
 #include "LuxEnemy_ManPig.h"
-#endif
+#include "LuxEnemy_Child.h"
 
 #include "LuxCommentaryIcon.h"
 
@@ -1228,12 +1229,15 @@ bool cLuxBase::InitGame()
     mpEngine->GetResources()->AddEntityLoader(hplNew(cLuxPropLoader_MultiSlider, ("MultiSlider")));
     mpEngine->GetResources()->AddEntityLoader(hplNew(cLuxPropLoader_Critter_Bug, ("CritterBug")));
     mpEngine->GetResources()->AddEntityLoader(hplNew(cLuxPropLoader_Critter_Spider, ("CritterSpider")));
+    //MFP types. Names must match the Type attribute in the .ent files.
+    mpEngine->GetResources()->AddEntityLoader(hplNew(cLuxPropLoader_PhoneBox, ("PhoneBox")));
+    mpEngine->GetResources()->AddEntityLoader(hplNew(cLuxPropLoader_VoiceFlashbackTrigger, ("VoiceFlashbackTrigger")));
+    mpEngine->GetResources()->AddEntityLoader(hplNew(cLuxAnimatedPropLoader, ("AnimatedProp")));
 
     mpEngine->GetResources()->AddEntityLoader(hplNew(cLuxEnemyLoader_Grunt, ("Enemy_Grunt")));
     mpEngine->GetResources()->AddEntityLoader(hplNew(cLuxEnemyLoader_WaterLurker, ("Enemy_WaterLurker")));
-#if LUX_ENEMY_MANPIG
     mpEngine->GetResources()->AddEntityLoader(hplNew(cLuxEnemyLoader_ManPig, ("Enemy_ManPig")));
-#endif
+    mpEngine->GetResources()->AddEntityLoader(hplNew(cLuxEnemyLoader_Child, ("Enemy_Child")));
 
     mpEngine->GetResources()->AddEntityLoader(hplNew(cLuxCommentaryIconLoader, ("CommentaryIcon")));
 

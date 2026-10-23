@@ -227,6 +227,8 @@ public:
     cGuiSet *mpVersionWatermarkSet;
     tWString msVersionWatermarkText;
 
+    tString msCommandLineMapFile;
+
     tString msStartMapFile;
     tString msStartMapFolder;
     tString msStartMapPos;

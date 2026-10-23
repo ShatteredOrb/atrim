@@ -101,7 +101,7 @@ bool cLuxEnemyPathfinder::MoveTo(const cVector3f& avPos)
         vStartPos -= cVector3f(0, pCharBody->GetSize().y / 2.0f, 0);
     }
 
-    vStartPos.y += 0.01f;
+    vStartPos.y += 0.1f;
 
     /////////////////////////////////
     //Get the nodes of the path
@@ -310,7 +310,7 @@ void cLuxEnemyPathfinder::OnRenderSolid(cRendererCallbackFunctions* apFunctions)
 
 }
 
-cVector3f  cLuxEnemyPathfinder::GetNextGoalPos()
+cVector3f cLuxEnemyPathfinder::GetNextGoalPos()
 {
     if(mlstPathNodes.empty())
     {
@@ -351,7 +351,8 @@ void cLuxEnemyPathfinder::UpdateMoving(double adFixedDelta)
 
     cBoundingVolume tempBV; //= *pCharBody->GetCurrentBody()->GetBoundingVolume();
     cVector3f vBodySize = pCharBody->GetSize();
-    tempBV.SetSize(cVector3f(vBodySize.x * 1.3f, vBodySize.y * 1.2f+0.45f, vBodySize.z * 1.3f));
+    float pathNodeReachedCheckVolumeXZScaleFactor = mpEnemy->GetPathNodeReachedCheckVolumeScaleFactor();
+    tempBV.SetSize(cVector3f(vBodySize.x*pathNodeReachedCheckVolumeXZScaleFactor, vBodySize.y*1.2f+0.45f, vBodySize.z*pathNodeReachedCheckVolumeXZScaleFactor));
     tempBV.SetPosition(pCharBody->GetPosition() - cVector3f(0, vBodySize.y * 0.1f, 0));
 
     /////////////////////////////////////////

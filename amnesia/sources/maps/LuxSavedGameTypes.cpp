@@ -17,7 +17,9 @@
 #include "LuxInsanityHandler.h"
 #include "LuxLoadScreenHandler.h"
 #include "LuxMoveState_Normal.h"
+#include "LuxHandObject_LightSource.h"
 
+//-----------------------------------------------------------------------
 
 //////////////////////////////////////////////////////////////////////////
 // LOAD SCREEN HANDLER
@@ -51,6 +53,50 @@ kSerializeVar(msLoadTextEntry, eSerializeType_String)
 kSerializeVar(msLoadTextImage, eSerializeType_String)
 kSerializeVar(mlTextRandomNum, eSerializeType_Int32)
 kSerializeVar(mlPrevTextNumBitFlags, eSerializeType_Int32)
+
+kEndSerialize()
+
+//-----------------------------------------------------------------------
+
+//////////////////////////////////////////////////////////////////////////
+// SOUND MANAGER HANDLER
+//////////////////////////////////////////////////////////////////////////
+
+//-----------------------------------------------------------------------
+
+void cLuxSoundManager_SaveData::FromSoundManager(cSoundManager *apData)
+{
+    cResourceBaseIterator iterator = apData->GetResourceBaseIterator();
+
+    while(iterator.HasNext())
+    {
+        iResourceBase* pSound = iterator.Next();
+        cLuxPreloadedSound_SaveData preloadData;
+        preloadData.msName = cString::To8Char(cString::GetFileNameW(pSound->GetFullPath()));
+        mlstPreloadedSounds.Add(preloadData);
+    }
+}
+
+void cLuxSoundManager_SaveData::ToSoundManager(cSoundManager *apData)
+{
+    cContainerListIterator<cLuxPreloadedSound_SaveData> it = mlstPreloadedSounds.GetIterator();
+    while(it.HasNext())
+    {
+        cLuxPreloadedSound_SaveData preloadData = it.Next();
+
+        apData->CreateSoundData(preloadData.msName, false);
+    }
+}
+
+kBeginSerializeBase(cLuxPreloadedSound_SaveData)
+
+kSerializeVar(msName, eSerializeType_String)
+
+kEndSerialize()
+
+kBeginSerializeBase(cLuxSoundManager_SaveData)
+
+kSerializeClassContainer(mlstPreloadedSounds, cLuxPreloadedSound_SaveData, eSerializeType_Class)
 
 kEndSerialize()
 
@@ -128,6 +174,7 @@ kEndSerialize()
 //////////////////////////////////////////////////////////////////////////
 
 //-----------------------------------------------------------------------
+
 void cLuxHintHandler_SaveData::FromHintHandler(cLuxHintHandler *apData)
 {
     ///////////////////////
@@ -327,6 +374,37 @@ void cLuxEffectHandler_SaveData::FromEffectHandler(cLuxEffectHandler *apEffects)
     {
         mvVoiceData.Add(*voiceIt);
     }
+    mvTextQueue.Clear();
+    std::deque<cTextQueueEntry>::iterator subIt = apEffects->GetPlayVoice()->mvTextEntryQueue.begin();
+
+    while(subIt != apEffects->GetPlayVoice()->mvTextEntryQueue.end())
+    {
+        mvTextQueue.Add(*subIt);
+        ++subIt;
+    }
+
+    cLuxEffect_PlayVoice *pVoice = apEffects->GetPlayVoice();
+    if(pVoice->mpSoundHandler->IsValid(pVoice->mpVoiceEntry, pVoice->mlVoiceEntryID))
+    {
+        msVoice_Name = pVoice->mpVoiceEntry->GetName();
+        mfVoice_ElapsedTime = (float)pVoice->mpVoiceEntry->GetSoundChannel()->GetElapsedTime();
+        mbVoice_3D = pVoice->mpVoiceEntry->GetSoundChannel()->Get3D();
+        mfVoice_MinDistance = pVoice->mpVoiceEntry->GetSoundChannel()->GetMinDistance();
+        mfVoice_MaxDistance =pVoice->mpVoiceEntry->GetSoundChannel()->GetMaxDistance();
+        mvVoice_Position = pVoice->mpVoiceEntry->GetSoundChannel()->GetPosition();
+
+        msEffect_Name = "";
+        if(pVoice->mpSoundHandler->IsValid(pVoice->mpEffectEntry, pVoice->mlEffectEntryID))
+        {
+            msEffect_Name = pVoice->mpEffectEntry->GetName();
+        }
+    }
+    else
+    {
+        mfVoice_ElapsedTime = 0;
+        msVoice_Name = "";
+        msEffect_Name = "";
+    }
 
     //////////////////////
     // Sound volume and speed mul
@@ -397,6 +475,60 @@ void cLuxEffectHandler_SaveData::ToEffectHandler(cLuxMap *apMap, cLuxEffectHandl
         apEffects->GetPlayVoice()->mlstVoices.push_back(mvVoiceData[i]);
     }
 
+    apEffects->GetPlayVoice()->mvTextEntryQueue.clear();
+    for(size_t i=0; i<mvTextQueue.Size(); ++i)
+    {
+        apEffects->GetPlayVoice()->mvTextEntryQueue.push_back(mvTextQueue[i]);
+    }
+
+    ////////////////
+    // Play sound
+    if(msVoice_Name != "")
+    {
+        if(mbVoice_3D==false)
+        {
+            apEffects->GetPlayVoice()->mpVoiceEntry = apEffects->GetPlayVoice()->mpSoundHandler->PlayGuiStream(msVoice_Name,false, 1.0f);
+            if(apEffects->GetPlayVoice()->mpVoiceEntry)
+            {
+                apEffects->GetPlayVoice()->mlVoiceEntryID = apEffects->GetPlayVoice()->mpVoiceEntry->GetId();
+                apEffects->GetPlayVoice()->mpVoiceEntry->GetSoundChannel()->SetElapsedTime(mfVoice_ElapsedTime);
+            }
+
+            if(msEffect_Name != "")
+            {
+                apEffects->GetPlayVoice()->mpEffectEntry = apEffects->GetPlayVoice()->mpSoundHandler->PlayGuiStream(msEffect_Name,false, 1.0f);
+                if(apEffects->GetPlayVoice()->mpEffectEntry)
+                {
+                    apEffects->GetPlayVoice()->mlEffectEntryID = apEffects->GetPlayVoice()->mpEffectEntry->GetId();
+                    apEffects->GetPlayVoice()->mpEffectEntry->GetSoundChannel()->SetElapsedTime(mfVoice_ElapsedTime);
+                }
+            }
+        }
+        //////////////////////
+        //3D sound with position
+        else
+        {
+            apEffects->GetPlayVoice()->mpVoiceEntry = apEffects->GetPlayVoice()->mpSoundHandler->Play(msVoice_Name,false, 1.0f, mvVoice_Position,mfVoice_MinDistance, mfVoice_MaxDistance,
+                eSoundEntryType_Gui,false,true,0, true);
+            if(apEffects->GetPlayVoice()->mpVoiceEntry)
+            {
+                apEffects->GetPlayVoice()->mlVoiceEntryID = apEffects->GetPlayVoice()->mpVoiceEntry->GetId();
+                apEffects->GetPlayVoice()->mpVoiceEntry->GetSoundChannel()->SetElapsedTime(mfVoice_ElapsedTime);
+            }
+
+            if(msEffect_Name!="")
+            {
+                apEffects->GetPlayVoice()->mpEffectEntry = apEffects->GetPlayVoice()->mpSoundHandler->Play(msEffect_Name,false, 1.0f, mvVoice_Position,mfVoice_MinDistance, mfVoice_MaxDistance,
+                    eSoundEntryType_Gui,false,true,0, true);
+                if(apEffects->GetPlayVoice()->mpEffectEntry)
+                {
+                    apEffects->GetPlayVoice()->mlEffectEntryID = apEffects->GetPlayVoice()->mpEffectEntry->GetId();
+                    apEffects->GetPlayVoice()->mpEffectEntry->GetSoundChannel()->SetElapsedTime(mfVoice_ElapsedTime);
+                }
+            }
+        }
+    }
+
     //////////////////////
     // Sound volume and speed mul
     cSoundHandler *pSoundHandler = gpBase->mpEngine->GetSound()->GetSoundHandler();
@@ -459,6 +591,14 @@ kSerializeVar(mfRadialBlur_FadeSpeed, eSerializeType_Float32)
 kSerializeVar(msVoiceOverCallback, eSerializeType_String)
 kSerializeVar(mbVoiceActive, eSerializeType_Bool)
 kSerializeClassContainer(mvVoiceData, cLuxVoiceData, eSerializeType_Class)
+kSerializeClassContainer(mvTextQueue, cTextQueueEntry, eSerializeType_Class)
+kSerializeVar(mfVoice_ElapsedTime, eSerializeType_Float32)
+kSerializeVar(msVoice_Name, eSerializeType_String)
+kSerializeVar(mfVoice_MinDistance, eSerializeType_Float32)
+kSerializeVar(mfVoice_MaxDistance, eSerializeType_Float32)
+kSerializeVar(mvVoice_Position, eSerializeType_Vector3f)
+kSerializeVar(mbVoice_3D, eSerializeType_Bool)
+kSerializeVar(msEffect_Name, eSerializeType_String)
 
 kSerializeClassContainer(mvGlobalSoundVolumeMul, cLuxEffectHandler_SoundMul_SaveData, eSerializeType_Class)
 kSerializeClassContainer(mvGlobalSoundSpeedMul, cLuxEffectHandler_SoundMul_SaveData, eSerializeType_Class)
@@ -1045,6 +1185,15 @@ void cLuxPlayer_SaveData::FromPlayer(cLuxPlayer *apPlayer)
     mbLanternOn = apPlayer->GetHelperLantern()->IsActive();
     mbLanternDisabled = apPlayer->GetHelperLantern()->GetDisabled();
 
+    iLuxHandObject * handObject = apPlayer->GetHands()->GetHandObject("lantern");
+
+    if(handObject)
+    {
+        cLuxHandObject_LightSource * lantern = (cLuxHandObject_LightSource *) handObject;
+        mbLanternFlickering = lantern->GetFlickering();
+        mfLanternFlickeringSpeed = lantern->GetFlickeringSpeed();
+    }
+
     msDeathHintCat = apPlayer->GetHelperDeath()->GetHintCat();
     msDeathHintEntry = apPlayer->GetHelperDeath()->GetHintEntry();
 
@@ -1081,7 +1230,27 @@ void cLuxPlayer_SaveData::FromPlayer(cLuxPlayer *apPlayer)
     mlInsanityCollapse_State = apPlayer->GetInsanityCollapse()->mlState;
     mfInsanityCollapse_HeightAdd = apPlayer->GetInsanityCollapse()->mfHeightAdd;
     mfInsanityCollapse_Roll = apPlayer->GetInsanityCollapse()->mfRoll;
-    mfInsanityCollapse_T = apPlayer->GetInsanityCollapse()->mfT;;
+    mfInsanityCollapse_T = apPlayer->GetInsanityCollapse()->mfT;
+
+    /////////////////////
+    // Voice flashback
+    mbVoiceFlashback_IsDelaying			= apPlayer->GetHelperVoiceFlashback()->mbIsDelaying;
+    mbVoiceFlashback_IsPlaying			= apPlayer->GetHelperVoiceFlashback()->mbIsPlaying;
+    mbVoiceFlashback_UseEffects			= apPlayer->GetHelperVoiceFlashback()->mbUseEffects;
+    mbVoiceFlashback_ObstructMovement	= apPlayer->GetHelperVoiceFlashback()->mbObstructMovement;
+
+    mfVoiceFlashback_EffectFadeInTime			= apPlayer->GetHelperVoiceFlashback()->mfEffectFadeInTime;
+    mfVoiceFlashback_EffectFadeOutTime			= apPlayer->GetHelperVoiceFlashback()->mfEffectFadeOutTime;
+    mfVoiceFlashback_SepiaAmount				= apPlayer->GetHelperVoiceFlashback()->mfSepiaAmount;
+    mfVoiceFlashback_LightFadeAmount			= apPlayer->GetHelperVoiceFlashback()->mfLightFadeAmount;
+    mfVoiceFlashback_ImageTrailAmount			= apPlayer->GetHelperVoiceFlashback()->mfImageTrailAmount;
+    mfVoiceFlashback_BlurStartDistance			= apPlayer->GetHelperVoiceFlashback()->mfBlurStartDistance;
+    mfVoiceFlashback_BlurAmount					= apPlayer->GetHelperVoiceFlashback()->mfBlurAmount;
+    mfVoiceFlashback_FovMultiplier				= apPlayer->GetHelperVoiceFlashback()->mfFovMultiplier;
+    mfVoiceFlashback_MoveSpeedMultiplier		= apPlayer->GetHelperVoiceFlashback()->mfMoveSpeedMultiplier;
+    mfVoiceFlashback_MouseSensitivityModifier	= apPlayer->GetHelperVoiceFlashback()->mfMouseSensitivityModifier;
+
+    msVoiceFlashback_StopSound					= apPlayer->GetHelperVoiceFlashback()->m_sStopSound;
 
     //////////////////////
     /// Sanity
@@ -1136,6 +1305,11 @@ void cLuxPlayer_SaveData::FromPlayer(cLuxPlayer *apPlayer)
     kCopyFromVar(apPlayer, mfRollGoal);
     kCopyFromVar(apPlayer, mfRollSpeedMul);
     kCopyFromVar(apPlayer, mfRollMaxSpeed);
+
+    kCopyFromVar(apPlayer, mbFadingPitch);
+    kCopyFromVar(apPlayer, mfPitchGoal);
+    kCopyFromVar(apPlayer, mfPitchSpeedMul);
+    kCopyFromVar(apPlayer, mfPitchMaxSpeed);
 
     kCopyFromVar(apPlayer, mvCamAnimPos);
     kCopyFromVar(apPlayer, mvCamAnimPosGoal);
@@ -1229,6 +1403,15 @@ void cLuxPlayer_SaveData::ToPlayer(cLuxMap *apMap, cLuxPlayer *apPlayer)
     apPlayer->GetHelperLantern()->SetActive(mbLanternOn, false, false);
     apPlayer->GetHelperLantern()->SetDisabled(mbLanternDisabled);
 
+    iLuxHandObject * handObject = apPlayer->GetHands()->GetHandObject("lantern");
+
+    if(handObject)
+    {
+        cLuxHandObject_LightSource * lantern = (cLuxHandObject_LightSource *) handObject;
+        lantern->SetFlickering(mbLanternFlickering);
+        lantern->SetFlickeringSpeed(mfLanternFlickeringSpeed);
+    }
+
     apPlayer->GetHelperDeath()->SetHint(msDeathHintCat, msDeathHintEntry);
 
     cLuxMoveState_Normal *pMoveNormal = static_cast<cLuxMoveState_Normal *>(apPlayer->GetMoveStateData(eLuxMoveState_Normal));
@@ -1268,6 +1451,26 @@ void cLuxPlayer_SaveData::ToPlayer(cLuxMap *apMap, cLuxPlayer *apPlayer)
     apPlayer->GetInsanityCollapse()->mfHeightAdd = mfInsanityCollapse_HeightAdd;
     apPlayer->GetInsanityCollapse()->mfRoll = mfInsanityCollapse_Roll;
     apPlayer->GetInsanityCollapse()->mfT = mfInsanityCollapse_T;
+
+    //////////////////
+    //Voice flashback
+    apPlayer->GetHelperVoiceFlashback()->mbIsDelaying		  =	 mbVoiceFlashback_IsDelaying;
+    apPlayer->GetHelperVoiceFlashback()->mbIsPlaying		  =	 mbVoiceFlashback_IsPlaying;
+    apPlayer->GetHelperVoiceFlashback()->mbUseEffects		  =	 mbVoiceFlashback_UseEffects;
+    apPlayer->GetHelperVoiceFlashback()->mbObstructMovement =	 mbVoiceFlashback_ObstructMovement;
+
+    apPlayer->GetHelperVoiceFlashback()->mfEffectFadeInTime		   = mfVoiceFlashback_EffectFadeInTime;
+    apPlayer->GetHelperVoiceFlashback()->mfEffectFadeOutTime		   = mfVoiceFlashback_EffectFadeOutTime;
+    apPlayer->GetHelperVoiceFlashback()->mfSepiaAmount			   = mfVoiceFlashback_SepiaAmount	;
+    apPlayer->GetHelperVoiceFlashback()->mfLightFadeAmount			   = mfVoiceFlashback_LightFadeAmount;
+    apPlayer->GetHelperVoiceFlashback()->mfImageTrailAmount		   = mfVoiceFlashback_ImageTrailAmount	;
+    apPlayer->GetHelperVoiceFlashback()->mfBlurStartDistance		   = mfVoiceFlashback_BlurStartDistance	;
+    apPlayer->GetHelperVoiceFlashback()->mfBlurAmount			   = mfVoiceFlashback_BlurAmount;
+    apPlayer->GetHelperVoiceFlashback()->mfFovMultiplier			   = mfVoiceFlashback_FovMultiplier	;
+    apPlayer->GetHelperVoiceFlashback()->mfMoveSpeedMultiplier	   = mfVoiceFlashback_MoveSpeedMultiplier;
+    apPlayer->GetHelperVoiceFlashback()->mfMouseSensitivityModifier  = mfVoiceFlashback_MouseSensitivityModifier	;
+
+    apPlayer->GetHelperVoiceFlashback()->m_sStopSound = msVoiceFlashback_StopSound;
 
     //////////////////////
     /// Sanity
@@ -1323,6 +1526,11 @@ void cLuxPlayer_SaveData::ToPlayer(cLuxMap *apMap, cLuxPlayer *apPlayer)
     kCopyToVar(apPlayer, mfRollSpeedMul);
     kCopyToVar(apPlayer, mfRollMaxSpeed);
 
+    kCopyToVar(apPlayer, mbFadingPitch);
+    kCopyToVar(apPlayer, mfPitchGoal);
+    kCopyToVar(apPlayer, mfPitchSpeedMul);
+    kCopyToVar(apPlayer, mfPitchMaxSpeed);
+
     kCopyToVar(apPlayer, mvCamAnimPos);
     kCopyToVar(apPlayer, mvCamAnimPosGoal);
     kCopyToVar(apPlayer, mfCamAnimPosSpeedMul);
@@ -1349,6 +1557,8 @@ void cLuxPlayer_SaveData::ToPlayer(cLuxMap *apMap, cLuxPlayer *apPlayer)
     pCam->SetPitch(mvCameraAngles.x);
     pCam->SetYaw(mvCameraAngles.y);
     pCam->SetRoll(mvCameraAngles.z);
+    pCam->SetFOV(apPlayer->mfFOV * mfFOVMul);
+    pCam->SetAspect(apPlayer->mfAspect * mfAspectMul);
 
     if(apPlayer->mvHeadPosAdds.size() == mvHeadPosAdds.Size())
     {
@@ -1448,6 +1658,11 @@ kSerializeVar(mfRollGoal, eSerializeType_Float32)
 kSerializeVar(mfRollSpeedMul, eSerializeType_Float32)
 kSerializeVar(mfRollMaxSpeed, eSerializeType_Float32)
 
+kSerializeVar(mbFadingPitch, eSerializeType_Bool)
+kSerializeVar(mfPitchGoal, eSerializeType_Float32)
+kSerializeVar(mfPitchSpeedMul, eSerializeType_Float32)
+kSerializeVar(mfPitchMaxSpeed, eSerializeType_Float32)
+
 kSerializeVar(mvCamAnimPos, eSerializeType_Vector3f)
 kSerializeVar(mvCamAnimPosGoal, eSerializeType_Vector3f)
 kSerializeVar(mfCamAnimPosSpeedMul, eSerializeType_Float32)
@@ -1461,6 +1676,9 @@ kSerializeVar(mbScriptShowFocusIconAndCrossHair, eSerializeType_Bool)
 
 kSerializeVar(mbLanternOn, eSerializeType_Bool)
 kSerializeVar(mbLanternDisabled, eSerializeType_Bool)
+
+kSerializeVar(mbLanternFlickering, eSerializeType_Bool)
+kSerializeVar(mfLanternFlickeringSpeed, eSerializeType_Float32)
 
 kSerializeVar(msDeathHintCat, eSerializeType_String)
 kSerializeVar(msDeathHintEntry, eSerializeType_String)
@@ -1480,6 +1698,22 @@ kSerializeVar(mlInsanityCollapse_State, eSerializeType_Int32)
 kSerializeVar(mfInsanityCollapse_HeightAdd, eSerializeType_Float32)
 kSerializeVar(mfInsanityCollapse_Roll, eSerializeType_Float32)
 kSerializeVar(mfInsanityCollapse_T, eSerializeType_Float32)
+
+kSerializeVar(mfVoiceFlashback_EffectFadeInTime, eSerializeType_Float32)
+kSerializeVar(mfVoiceFlashback_EffectFadeOutTime, eSerializeType_Float32)
+kSerializeVar(mfVoiceFlashback_SepiaAmount, eSerializeType_Float32)
+kSerializeVar(mfVoiceFlashback_LightFadeAmount, eSerializeType_Float32)
+kSerializeVar(mfVoiceFlashback_ImageTrailAmount, eSerializeType_Float32)
+kSerializeVar(mfVoiceFlashback_BlurStartDistance, eSerializeType_Float32)
+kSerializeVar(mfVoiceFlashback_BlurAmount, eSerializeType_Float32)
+kSerializeVar(mfVoiceFlashback_FovMultiplier, eSerializeType_Float32)
+kSerializeVar(mfVoiceFlashback_MoveSpeedMultiplier, eSerializeType_Float32)
+kSerializeVar(mfVoiceFlashback_MouseSensitivityModifier, eSerializeType_Float32)
+kSerializeVar(mbVoiceFlashback_IsDelaying, eSerializeType_Bool)
+kSerializeVar(mbVoiceFlashback_IsPlaying, eSerializeType_Bool)
+kSerializeVar(mbVoiceFlashback_UseEffects, eSerializeType_Bool)
+kSerializeVar(mbVoiceFlashback_ObstructMovement, eSerializeType_Bool)
+kSerializeVar(msVoiceFlashback_StopSound, eSerializeType_String)
 
 kSerializeVar(mfSanity_AtLowSanityCount, eSerializeType_Float32)
 
@@ -1551,6 +1785,7 @@ kSerializeVar(mGlobalDataHandler, eSerializeType_Class)
 kSerializeVar(mHintHandler, eSerializeType_Class)
 kSerializeVar(mInsanityHandler, eSerializeType_Class)
 kSerializeVar(mLoadScreenHandler, eSerializeType_Class)
+kSerializeVar(mSoundManager, eSerializeType_Class)
 
 kSerializeVar(mpSavedMaps, eSerializeType_ClassPointer)
 

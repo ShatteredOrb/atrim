@@ -379,7 +379,7 @@ bool iLuxProp_CritterBase::Attack(const cVector3f& avDir)
                 mvAttackDamageMinMax.x, mvAttackDamageMinMax.y,
                 mvAttackForce.x, mvAttackForce.y, mlAttackStrength, 3,
                 eLuxDamageType_BloodSplat, eLuxWeaponHitType_Sword,
-                false, true, false, false);
+                false, true, false, false, NULL);
     if(bHit)
     {
         PlaySound("CritterAttack", msAttackHitSound, true, true);

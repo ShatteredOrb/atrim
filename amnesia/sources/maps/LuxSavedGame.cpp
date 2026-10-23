@@ -163,6 +163,7 @@ void cLuxSavedGameEnemy::FromEnemy(iLuxEnemy *apEnemy)
         mvPatrolNodes[i].mlNodeId =     apEnemy->GetPatrolNode(i)->mpNode->GetID();
         mvPatrolNodes[i].mfWaitTime =     apEnemy->GetPatrolNode(i)->mfWaitTime;
         mvPatrolNodes[i].msAnimation =     apEnemy->GetPatrolNode(i)->msAnimation;
+        mvPatrolNodes[i].mbLoopAnimation = apEnemy->GetPatrolNode(i)->mbLoopAnimation;
     }
 }
 
@@ -185,7 +186,7 @@ void cLuxSavedGameEnemy::ToEnemy(cLuxMap *apMap, iLuxEnemy *apEnemy)
                 continue;
             }
 
-            apEnemy->AddPatrolNode(pNode, mvPatrolNodes[i].mfWaitTime, mvPatrolNodes[i].msAnimation);
+            apEnemy->AddPatrolNode(pNode, mvPatrolNodes[i].mfWaitTime, mvPatrolNodes[i].msAnimation, mvPatrolNodes[i].mbLoopAnimation);
         }
     }
 }
@@ -396,7 +397,8 @@ void cLuxSavedGameMap::FromMap(cLuxMap *apMap)
         {
             cParticleSystem *pPS = psIt.Next();
 
-            if(    pPS->IsSaved() && pPS->GetEntityParent() == NULL && pPS->GetParent() == NULL && pPS->IsDying() == false) // && pPS->GetUniqueID()<0)
+            if(	pPS->IsSaved() && pPS->GetEntityParent() == NULL && pPS->GetParent()==NULL &&
+                    (pPS->IsDying()==false || pPS->IsActive() == false && pPS->IsDead() == false)) //Save PS that are either looping or that have not been activated yet
             {
                 cEnginePS_SaveData savePS;
                 savePS.FromPS(pPS);
@@ -1153,24 +1155,30 @@ cLuxSavedGameMapCollection::cLuxSavedGameMapCollection()
 
 cLuxSavedGameMapCollection::~cLuxSavedGameMapCollection()
 {
-    cContainerListIterator<cLuxSavedGameMap *> it = mlstMaps.GetIterator();
-    while(it.HasNext())
+    if(mlstMaps.Size() > 0)
     {
-        hplDelete( it.Next() );
+        cContainerListIterator<cLuxSavedGameMap *> it = mlstMaps.GetIterator();
+        while(it.HasNext())
+        {
+            hplDelete( it.Next() );
+        }
+        mlstMaps.Clear();
     }
-    mlstMaps.Clear();
 }
 
 //-----------------------------------------------------------------------
 
 void cLuxSavedGameMapCollection::Reset()
 {
-    cContainerListIterator<cLuxSavedGameMap *> it = mlstMaps.GetIterator();
-    while(it.HasNext())
+    if(mlstMaps.Size() > 0)
     {
-        hplDelete( it.Next() );
+        cContainerListIterator<cLuxSavedGameMap *> it = mlstMaps.GetIterator();
+        while(it.HasNext())
+        {
+            hplDelete( it.Next() );
+        }
+        mlstMaps.Clear();
     }
-    mlstMaps.Clear();
 }
 
 //-----------------------------------------------------------------------

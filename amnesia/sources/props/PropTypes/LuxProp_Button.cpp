@@ -12,6 +12,7 @@
 
 cLuxPropLoader_Button::cLuxPropLoader_Button(const tString& asName) : iLuxPropLoader(asName)
 {
+    mbForceFullGameSave = true;
 }
 
 //-----------------------------------------------------------------------
@@ -90,6 +91,20 @@ bool cLuxProp_Button::OnInteract(iPhysicsBody *apBody, const cVector3f &avPos)
     SetSwitchedOn(!mbSwitchedOn, true);
 
     return true;
+}
+
+//-----------------------------------------------------------------------
+
+void cLuxProp_Button::SetCanBeSwitchedOn(bool abX)
+{
+    mbCanBeSwitchedOn = abX;
+}
+
+//-----------------------------------------------------------------------
+
+void cLuxProp_Button::SetCanBeSwitchedOff(bool abX)
+{
+    mbCanBeSwitchedOff = abX;
 }
 
 //-----------------------------------------------------------------------

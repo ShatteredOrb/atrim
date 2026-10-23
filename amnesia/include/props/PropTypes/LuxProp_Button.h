@@ -45,6 +45,8 @@ public:
     //////////////////////
     //Properties
     void SetSwitchedOn(bool abX, bool abUseEffects);
+    void SetCanBeSwitchedOn(bool abX);
+    void SetCanBeSwitchedOff(bool abX);
 
     //////////////////////
     //Connection callbacks

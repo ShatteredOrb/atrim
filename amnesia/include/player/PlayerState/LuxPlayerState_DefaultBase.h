@@ -15,7 +15,7 @@ class iLuxPlayerState_DefaultBase_SaveData : public iLuxPlayerState_SaveData
 {
     kSerializableClassInit(iLuxPlayerState_DefaultBase_SaveData)
 public:
-
+    virtual ~iLuxPlayerState_DefaultBase_SaveData() {}
 };
 
 

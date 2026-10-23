@@ -128,7 +128,7 @@ public:
 
     void BroadcastEnemyMessage(eLuxEnemyMessage aType, bool abHasPosition, const cVector3f& avPos, float afRadius,
                                float afTime = 0, bool abLocalScope = false, const cVector3f& avX = 0, float afX = 0, int alX = 0);
-    void BroadcastEnemySoundMessage(const cVector3f& avPos, float afVolume, float afMinDist, float afMaxDist);
+    void BroadcastEnemySoundMessage(const cVector3f& avPos, float afVolume, float afMinDist, float afMaxDist, tString asSoundName);
     /**
      * Gets number of enemies that are in range of player
      */
@@ -166,7 +166,7 @@ public:
     void AddPosNode(cLuxNode_Pos *apNode);
     cLuxNode_Pos *GetPosNode(const tString & asName);
 
-    void SetCheckPoint(const tString& asName, const tString& asStartPos, const tString& asCallback);
+    void SetCheckPoint(const tString& asName, const tString& asStartPos, const tString& asCallback, bool abKeepPlayerInLimbo);
     void LoadCheckPoint();
 
     void AddUseItemCallback(    const tString& asName, const tString& asItem, const tString& asEntity,
@@ -216,6 +216,7 @@ public:
         return msLanternLitCallback;
     }
 
+    void RunCheckPointCallbackScript();
 
 private:
     void CalculateTotalCompletionAmount();
@@ -284,6 +285,7 @@ private:
     tLuxLampLightConnectionList mlstLampLightConnections;
 
     bool mbRunUpdateScript;
+    float mfTimeToNextCriticalCheck;
 };
 
 //----------------------------------------------

@@ -39,6 +39,10 @@ public:
         return mbShowPickUpMessage;
     }
 
+    virtual bool GetHasMaxAmount()
+    {
+        return false;
+    }
     virtual void OnUse(cLuxInventory_Item *apItem, int alSlotIndex) = 0;
     virtual tWString GetDisplayedNameAdd(cLuxInventory_Item *apItem)
     {

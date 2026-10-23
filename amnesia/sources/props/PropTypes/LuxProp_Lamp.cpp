@@ -37,6 +37,9 @@ void cLuxPropLoader_Lamp::LoadVariables(iLuxProp *apProp, cXmlElement *apRootEle
 
     pLamp->mbCanBeGrabbed = GetVarBool("CanBeGrabbed", false);
 
+    pLamp->mbCanBeTurnedOff = GetVarBool("CanBeTurnedOff", false);
+    pLamp->mbNeedsTinderbox = GetVarBool("NeedsTinderbox", false);
+
     ///////////////////////////
     // Grab specific
     pLamp->mGrabData.mbGrabUseDepth = GetVarBool("GrabUseDepth", false);
@@ -68,6 +71,14 @@ void cLuxPropLoader_Lamp::LoadInstanceVariables(iLuxProp *apProp, cResourceVarsO
     pLamp->mfConnectionLightAmount = apInstanceVars->GetVarFloat("ConnectionLightAmount", 0);
     pLamp->mbConnectionLightUseOnColor = apInstanceVars->GetVarBool("ConnectionLightUseOnColor", false);
     pLamp->mbConnectionLightUseSpec = apInstanceVars->GetVarBool("ConnectionLightUseSpec", false);
+
+    pLamp->msConnectionLight2 = apInstanceVars->GetVarString("ConnectedLight2","");
+    pLamp->mfConnectionLight2Amount = apInstanceVars->GetVarFloat("ConnectionLight2Amount",0);
+    pLamp->mbConnectionLight2UseOnColor = apInstanceVars->GetVarBool("ConnectionLight2UseOnColor",false);
+    pLamp->mbConnectionLight2UseSpec = apInstanceVars->GetVarBool("ConnectionLight2UseSpec",false);
+    pLamp->mbSynchronizeFlickering = apInstanceVars->GetVarBool("SynchronizeFlickering",false);
+
+    pLamp->SetFlickerActive(apInstanceVars->GetVarBool("FlickerActive", false));
 }
 //-----------------------------------------------------------------------
 
@@ -88,7 +99,8 @@ cLuxLampLightConnection::~cLuxLampLightConnection()
     for(; it != mlstLamps.end(); ++it)
     {
         cLuxLampLightConnection_Lamp *pLampConnection = *it;
-        pLampConnection->mpLamp->mpLightConnection = NULL;
+        pLampConnection->mpLamp->mpLightConnection1 = NULL;
+        pLampConnection->mpLamp->mpLightConnection2 = NULL;
     }
 
     STLDeleteAll(mlstLamps);
@@ -167,7 +179,8 @@ void cLuxLampLightConnection::RemoveLamp(cLuxProp_Lamp *apLamp)
 cLuxProp_Lamp::cLuxProp_Lamp(const tString &asName, int alID, cLuxMap *apMap) : iLuxProp(asName, alID, apMap, eLuxPropType_Lamp)
 {
     mbLit = true;
-    mpLightConnection = NULL;
+    mpLightConnection1 = NULL;
+    mpLightConnection2 = NULL;
     mbLightConnectionSetup = false;
 }
 
@@ -175,9 +188,14 @@ cLuxProp_Lamp::cLuxProp_Lamp(const tString &asName, int alID, cLuxMap *apMap) : 
 
 cLuxProp_Lamp::~cLuxProp_Lamp()
 {
-    if(mpLightConnection)
+    if(mpLightConnection1)
     {
-        mpLightConnection->RemoveLamp(this);
+        mpLightConnection1->RemoveLamp(this);
+    }
+
+    if(mpLightConnection2)
+    {
+        mpLightConnection2->RemoveLamp(this);
     }
 }
 
@@ -191,7 +209,7 @@ cLuxProp_Lamp::~cLuxProp_Lamp()
 
 bool cLuxProp_Lamp::CanInteract(iPhysicsBody *apBody)
 {
-    if(CanBeIgnitByPlayer() && mbLit == false)
+    if(mbCanBeLitByPlayer && (mbLit==false || mbCanBeTurnedOff))
     {
         return true;
     }
@@ -211,34 +229,39 @@ bool cLuxProp_Lamp::OnInteract(iPhysicsBody *apBody, const cVector3f &avPos)
     //Turn off
     if(mbLit)
     {
-        //SetLit(false, true);
-        //Nothing...
+        if ( mbCanBeTurnedOff )
+        {
+            SetLit(false, true);
+        }
     }
     //////////////////////
     //Ignite
     else
     {
-        /////////////////////
-        // Check so has enough tinderboxes
-        if(gpBase->mpPlayer->GetTinderboxes() <= 0)
+        if(mbNeedsTinderbox)
         {
-            gpBase->mpMessageHandler->SetMessage(kTranslate("Game", "NoMoreTinderboxes"), 0);
-            return false;
+            /////////////////////
+            // Check so has enough tinderboxes
+            if(gpBase->mpPlayer->GetTinderboxes() <= 0)
+            {
+                gpBase->mpMessageHandler->SetMessage(kTranslate("Game", "NoMoreTinderboxes"), 0);
+                return false;
+            }
+    
+            /////////////////////
+            // Add sanity
+            float fIncreaseAmount = 1.0f - gpBase->mpPlayer->GetSanity() / 100.0f;
+            fIncreaseAmount = fIncreaseAmount * fIncreaseAmount; //Want exp curve
+            float fSanityAdd =    gpBase->mpGlobalDataHandler->GetLightLampMinSanityIncrease() * (1 - fIncreaseAmount) +
+                                  gpBase->mpGlobalDataHandler->GetLightLampMaxSanityIncrease() * fIncreaseAmount;
+            gpBase->mpPlayer->AddSanity(fSanityAdd, false);
+    
+            ////////////////////
+            // Negate tinderboxes
+            gpBase->mpPlayer->AddTinderboxes(-1);
+    
+            gpBase->mpHelpFuncs->PlayGuiSoundData("ui_use_tinderbox", eSoundEntryType_Gui);
         }
-
-        /////////////////////
-        // Add sanity
-        float fIncreaseAmount = 1.0f - gpBase->mpPlayer->GetSanity() / 100.0f;
-        fIncreaseAmount = fIncreaseAmount * fIncreaseAmount; //Want exp curve
-        float fSanityAdd =    gpBase->mpGlobalDataHandler->GetLightLampMinSanityIncrease() * (1 - fIncreaseAmount) +
-                              gpBase->mpGlobalDataHandler->GetLightLampMaxSanityIncrease() * fIncreaseAmount;
-        gpBase->mpPlayer->AddSanity(fSanityAdd, false);
-
-        ////////////////////
-        // Negate tinderboxes
-        gpBase->mpPlayer->AddTinderboxes(-1);
-
-        gpBase->mpHelpFuncs->PlayGuiSoundData("ui_use_tinderbox", eSoundEntryType_Gui);
 
         RunCallbackFunc("OnIgnite");
 
@@ -264,11 +287,101 @@ void cLuxProp_Lamp::OnSetupAfterLoad(cWorld *apWorld)
 
 //-----------------------------------------------------------------------
 
+void cLuxProp_Lamp::SynchronizeFlickering()
+{
+    if ( mvLights.size() > 0 )
+    {
+        for(size_t i = 0; i < mvBillboards.size(); ++i)
+        {
+            mvBillboards[i]->SetVisible( mvLights[0]->GetFlickerOn() );
+        }
+
+        if ( mbSynchronizeFlickering )
+        {
+            for(size_t i=0; i<mvLights.size(); ++i)
+            {
+                if ( mvLights[0]->GetFlickerOn() )
+                {
+                    mvLights[i]->SetDiffuseColor(mvLights[i]->GetFlickerOnColor() );
+                    mvLights[i]->SetRadius(mvLights[i]->GetFlickerOnRadius() );
+
+                }
+                else
+                {
+                    mvLights[i]->SetDiffuseColor(mvLights[i]->GetFlickerOffColor() );
+                    mvLights[i]->SetRadius(mvLights[i]->GetFlickerOffRadius() );
+                }
+            }
+        }
+    }
+}
+
+//-----------------------------------------------------------------------
+
 void cLuxProp_Lamp::UpdatePropSpecific(double adFixedDelta)
 {
     if(mbLightConnectionSetup == false)
     {
         SetupLampLightConnection();
+    }
+
+    if ( mbFlickerActive  && mvLights.size() > 0 )
+    {
+        SynchronizeFlickering();
+
+        bool flickerOn = mvLights[0]->GetFlickerOn();
+
+        for(size_t i=0; i<mvParticleSystems.size(); ++i)
+        {
+            cParticleSystem *pPS = mvParticleSystems[i];
+            if(pPS && mpWorld->ParticleSystemExists(pPS))
+            {
+                pPS->SetFlickerMultiplier( flickerOn ? 1.0f : 0.25f );
+            }
+        }
+    }
+
+    if(mpMeshEntity)
+    {
+        if ( mbFlickerActive && mvLights.size() > 0 )
+        {
+            if ( mvLights[0]->GetFlickerFade() )
+            {
+                mpMeshEntity->SetIlluminationAmount(mfEffectsAlpha * (mvLights[0]->GetFlickerOn() ? mvLights[0]->GetFadeProgress() : 0.0f ) );
+            }
+            else
+            {
+                mpMeshEntity->SetIlluminationAmount(mfEffectsAlpha * (mvLights[0]->GetFlickerOn() ? 1.0f : 0.0f ) );
+            }
+        }
+        else
+        {
+            mpMeshEntity->SetIlluminationAmount( mfEffectsAlpha );
+        }
+    }
+}
+
+//-----------------------------------------------------------------------
+
+void cLuxProp_Lamp::FadeTo( float afR, float afG, float afB, float afA, float afRadius, float afTime )
+{
+    SetFlickerActive(false);
+
+    for(size_t i=0; i<mvLights.size(); ++i)
+    {
+        iLight *pLight = mvLights[i];
+
+        cColor newColor(
+            afR >=0 ? afR : pLight->GetDiffuseColor().r,
+            afG >=0 ? afG : pLight->GetDiffuseColor().g,
+            afB >=0 ? afB : pLight->GetDiffuseColor().b,
+            afA >=0 ? afA : pLight->GetDiffuseColor().a
+        );
+
+        float fNewRadius = afRadius >=0 ? afRadius : pLight->GetRadius();
+
+        pLight->SetVisible(true);
+        pLight->FadeTo(newColor, fNewRadius, afTime);
     }
 }
 
@@ -282,6 +395,11 @@ void cLuxProp_Lamp::BeforePropDestruction()
 
 eLuxFocusCrosshair cLuxProp_Lamp::GetFocusCrosshair(iPhysicsBody *apBody, const cVector3f &avPos)
 {
+    if(!mbNeedsTinderbox && mbCanBeLitByPlayer && (mbCanBeTurnedOff || !mbLit))
+    {
+        return eLuxFocusCrosshair_Grab;
+    }
+
     //if(CanBeIgnitByPlayer())    return eLuxFocusCrosshair_Ignite;
     if(mCustomFocusCrossHair != eLuxFocusCrosshair_Default && mbLit == true)
     {
@@ -298,11 +416,41 @@ eLuxFocusCrosshair cLuxProp_Lamp::GetFocusCrosshair(iPhysicsBody *apBody, const 
 
 tWString cLuxProp_Lamp::GetFocusText()
 {
-    if(CanInteract(GetMainBody()) && mbLit == false)
+    if(mbNeedsTinderbox && CanInteract(GetMainBody()) && mbLit==false)
     {
         return _W("x ") + cString::ToStringW(gpBase->mpPlayer->GetTinderboxes());
     }
     return _W("");
+}
+
+//-----------------------------------------------------------------------
+
+void cLuxProp_Lamp::SetFlickerActive(bool abFlickerActive)
+{
+    mbFlickerActive = abFlickerActive;
+
+    if ( mvLights.size() > 0 )
+    {
+        mvLights[0]->SetFlickerActive( abFlickerActive );
+        mvEffectLightData[0].mbFlickering = abFlickerActive;
+
+        if ( !abFlickerActive )
+        {
+            for(size_t i = 0; i < mvBillboards.size(); ++i)
+            {
+                mvBillboards[i]->SetVisible( true );
+            }
+
+            if ( mbSynchronizeFlickering )
+            {
+                for(size_t i=0; i<mvLights.size(); ++i)
+                {
+                    mvLights[i]->SetDiffuseColor(mvLights[i]->GetFlickerOnColor() );
+                    mvLights[i]->SetRadius(mvLights[i]->GetFlickerOnRadius() );
+                }
+            }
+        }
+    }
 }
 
 //-----------------------------------------------------------------------
@@ -368,6 +516,33 @@ void cLuxProp_Lamp::SetupLampLightConnection()
             Error("Light '%s' that is connected to lamp '%s' does not exist!\n", msConnectionLight.c_str(), msName.c_str());
         }
     }
+
+    if(msConnectionLight2 != "")
+    {
+        iLight *pConnectionLight2 = NULL;
+        //Iterate all lights and get light with name and with NO parent (otherwise a light connected to an entity is gotten).
+        cLightListIterator lightIt = mpWorld->GetLightIterator();
+        while(lightIt.HasNext())
+        {
+            iLight *pLight = lightIt.Next();
+            if(pLight->GetEntityParent() == NULL && pLight->GetName() == msConnectionLight2)
+            {
+                pConnectionLight2 = pLight;
+                break;
+            }
+        }
+
+
+        if(pConnectionLight2)
+        {
+            mpMap->AddLampLightConnection(this, pConnectionLight2, mfConnectionLight2Amount, mbConnectionLight2UseOnColor, mbConnectionLight2UseSpec);
+        }
+        else
+        {
+            Error("Light '%s' that is connected to lamp '%s' does not exist!\n", msConnectionLight2.c_str(), msName.c_str());
+        }
+    }
+
     mbLightConnectionSetup = true;
 }
 
@@ -397,6 +572,16 @@ kSerializeVar(msConnectionLight,            eSerializeType_String)
 kSerializeVar(mfConnectionLightAmount,        eSerializeType_Float32)
 kSerializeVar(mbConnectionLightUseOnColor,    eSerializeType_Bool)
 kSerializeVar(mbConnectionLightUseSpec,        eSerializeType_Bool)
+kSerializeVar(msConnectionLight2,			eSerializeType_String)
+kSerializeVar(mfConnectionLight2Amount,		eSerializeType_Float32)
+kSerializeVar(mbConnectionLight2UseOnColor,	eSerializeType_Bool)
+kSerializeVar(mbConnectionLight2UseSpec,		eSerializeType_Bool)
+kSerializeVar(mbCanBeLitByPlayer,		eSerializeType_Bool)
+kSerializeVar(mbCanBeGrabbed,		eSerializeType_Bool)
+kSerializeVar(mbCanBeTurnedOff,		eSerializeType_Bool)
+kSerializeVar(mbNeedsTinderbox,		eSerializeType_Bool)
+kSerializeVar(mbSynchronizeFlickering,		eSerializeType_Bool)
+kSerializeVar(mbFlickerActive,		eSerializeType_Bool)
 kEndSerialize()
 
 //-----------------------------------------------------------------------
@@ -423,6 +608,16 @@ void cLuxProp_Lamp::SaveToSaveData(iLuxEntity_SaveData* apSaveData)
     kCopyToVar(pData, mfConnectionLightAmount);
     kCopyToVar(pData, mbConnectionLightUseOnColor);
     kCopyToVar(pData, mbConnectionLightUseSpec);
+    kCopyToVar(pData,msConnectionLight2);
+    kCopyToVar(pData,mfConnectionLight2Amount);
+    kCopyToVar(pData,mbConnectionLight2UseOnColor);
+    kCopyToVar(pData,mbConnectionLight2UseSpec);
+    kCopyToVar(pData,mbCanBeLitByPlayer);
+    kCopyToVar(pData,mbCanBeGrabbed);
+    kCopyToVar(pData,mbCanBeTurnedOff);
+    kCopyToVar(pData,mbNeedsTinderbox);
+    kCopyToVar(pData,mbSynchronizeFlickering);
+    kCopyToVar(pData,mbFlickerActive);
 }
 
 //-----------------------------------------------------------------------
@@ -442,6 +637,16 @@ void cLuxProp_Lamp::LoadFromSaveData(iLuxEntity_SaveData* apSaveData)
     kCopyFromVar(pData, mfConnectionLightAmount);
     kCopyFromVar(pData, mbConnectionLightUseOnColor);
     kCopyFromVar(pData, mbConnectionLightUseSpec);
+    kCopyFromVar(pData,msConnectionLight2);
+    kCopyFromVar(pData,mfConnectionLight2Amount);
+    kCopyFromVar(pData,mbConnectionLight2UseOnColor);
+    kCopyFromVar(pData,mbConnectionLight2UseSpec);
+    kCopyFromVar(pData,mbCanBeLitByPlayer);
+    kCopyFromVar(pData,mbCanBeGrabbed);
+    kCopyFromVar(pData,mbCanBeTurnedOff);
+    kCopyFromVar(pData,mbNeedsTinderbox);
+    kCopyFromVar(pData,mbSynchronizeFlickering);
+    kCopyFromVar(pData,mbFlickerActive);
 }
 
 //-----------------------------------------------------------------------

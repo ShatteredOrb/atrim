@@ -23,6 +23,7 @@ class cLuxPlayerHurt;
 class cLuxPlayerSpawnPS;
 class cLuxPlayerCamDirEffects;
 class cLuxPlayerInsanityCollapse;
+class cLuxPlayerVoiceFlashback;
 class cLuxNode_PlayerStart;
 
 class cLuxPlayerHands;
@@ -462,9 +463,15 @@ public:
         return mfAvgSpeed;
     }
 
+    const cVector3f& GetAvgMoveDir2D()
+    {
+        return mvAvgMoveDir2D;
+    }
+
     void FadeFOVMulTo(float afX, float afSpeed);
     void FadeAspectMulTo(float afX, float afSpeed);
     void FadeRollTo(float afX, float afSpeedMul, float afMaxSpeed);
+    void FadePitchTo(float afX, float afSpeedMul, float afMaxSpeed);
     void FadeLeanRollTo(float afX, float afSpeedMul, float afMaxSpeed);
     void SetRoll(float afX);
 
@@ -561,6 +568,10 @@ public:
     {
         return mpInsanityCollapse;
     }
+    cLuxPlayerVoiceFlashback* GetHelperVoiceFlashback()
+    {
+        return mpVoiceFlashback;
+    }
 
     cLuxPlayerHands *GetHands()
     {
@@ -569,6 +580,8 @@ public:
 
     void RunHelperMessage(eUpdateableMessage aMessage, double adX);
     void RunHelperLuxMessage(eLuxUpdateableMessage aMessage, void *apData);
+
+    void ReleasePlayerFromLimbo();
 
     float GetRoll()
     {
@@ -589,6 +602,7 @@ private:
     void UpdateLean(double adFixedDelta);
     void UpdateFocusText(double adFixedDelta);
     void UpdateAvgSpeed(double adFixedDelta);
+    void UpdateAvgMoveDir(double adFixedDelta);
 
     void SpinHead(float afSpeed);
     void UpdateHeadSpin(double adFixedDelta);
@@ -672,6 +686,11 @@ private:
     float mfRollSpeedMul;
     float mfRollMaxSpeed;
 
+    bool mbFadingPitch;
+    float mfPitchGoal;
+    float mfPitchSpeedMul;
+    float mfPitchMaxSpeed;
+
     float mfLeanRoll;
     float mfLeanRollGoal;
     float mfLeanRollSpeedMul;
@@ -696,6 +715,10 @@ private:
     int mlMaxPrevSpeeds;
     float mfAvgSpeed;
 
+    std::list<cVector3f> mlstPrevMoveDirs;
+    cVector3f mvAvgMoveDir2D;
+    float mfAddMoveDirCount;
+
     ///////////////////////////////
     // Data
     cVector3f mvBodySize;
@@ -704,6 +727,8 @@ private:
 
     float mfHeadSpinDamageSpeed;
     float mfHeadSpinDeacc;
+
+    tString msHeadSpinHitSound;
 
     float mfDefaultMass;
 
@@ -736,7 +761,7 @@ private:
     cLuxPlayerSpawnPS *mpSpawnPS;
     cLuxPlayerCamDirEffects *mpCamDirEffects;
     cLuxPlayerInsanityCollapse *mpInsanityCollapse;
-
+    cLuxPlayerVoiceFlashback * mpVoiceFlashback;
 
     cLuxPlayerHands *mpHands;
 

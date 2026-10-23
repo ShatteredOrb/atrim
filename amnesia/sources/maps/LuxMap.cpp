@@ -6,6 +6,7 @@
 #include "LuxAreaNodes.h"
 
 #include "LuxPlayer.h"
+#include "LuxPlayerHelpers.h"
 #include "LuxPlayerState.h"
 #include "LuxDebugHandler.h"
 #include "LuxCompletionCountHandler.h"
@@ -71,6 +72,7 @@ cLuxMap::cLuxMap(const tString& asName)
     mbDeletingAllWorldEntities = false;
 
     mbCommentaryIconsActive = false;
+    mfTimeToNextCriticalCheck = 30.0f;
 }
 
 //-----------------------------------------------------------------------
@@ -194,6 +196,7 @@ bool cLuxMap::LoadFromFile(const tString & asFile, bool abLoadEntities)
     gpBase->mpLoadScreenHandler->SetLoadProgress(0.92f);
 
     gpBase->mpCurrentMapLoading = NULL;
+    mfTimeToNextCriticalCheck = 30.0f;
 
 
     //////////////////
@@ -493,14 +496,18 @@ void cLuxMap::PlacePlayerAtStartPos(const tString& asPosName)
 
 //-----------------------------------------------------------------------
 
-void cLuxMap::SetCheckPoint(const tString& asName, const tString& asStartPos, const tString& asCallback)
+void cLuxMap::SetCheckPoint(const tString& asName, const tString& asStartPos, const tString& asCallback, bool abKeepPlayerInLimbo)
 {
+    Log( "setting checkpoint checkpoint name %s", asName.c_str() );
+
     if(msCheckPointName == asName)
     {
         return;
     }
 
     msCheckPointName = asName;
+
+    gpBase->mpPlayer->GetHelperDeath()->SetKeepPlayerInLimbo(abKeepPlayerInLimbo);
     msCheckPointStartPos = asStartPos;
     msCheckPointCallback = asCallback;
     mlCheckPointCount = 0;
@@ -554,7 +561,7 @@ void cLuxMap::LoadCheckPoint()
     for(; it != mlstEnemies.end(); ++it)
     {
         iLuxEnemy *pEnemy = *it;
-        pEnemy->SetActive(false);
+        pEnemy->SetActive(pEnemy->StartsActive());
         pEnemy->ResetProperties();
     }
 
@@ -574,12 +581,12 @@ void cLuxMap::LoadCheckPoint()
         gpBase->mpMusicHandler->Play(msCheckPointMusic, true, mfCheckPointMusicVolume, 1, mlCheckPointMusicPrio, mbCheckPointMusicResume, false);
     }
 
-
-    //////////////////////////////
-    // Run script (last thing done!)
-    RunScript(msCheckPointCallback + "(\"" + msCheckPointName + "\", " + cString::ToString(mlCheckPointCount) + ")"  );
-
     mlCheckPointCount++;
+}
+
+void cLuxMap::RunCheckPointCallbackScript()
+{
+    RunScript(msCheckPointCallback + "(\"" + msCheckPointName + "\", " + cString::ToString(mlCheckPointCount) + ")"  );
 }
 
 //-----------------------------------------------------------------------
@@ -765,13 +772,17 @@ void cLuxMap::BroadcastEnemyMessage(eLuxEnemyMessage aType, bool abHasPosition, 
 
 //-----------------------------------------------------------------------
 
-void cLuxMap::BroadcastEnemySoundMessage(const cVector3f& avPos, float afVolume, float afMinDist, float afMaxDist)
+void cLuxMap::BroadcastEnemySoundMessage(const cVector3f& avPos, float afVolume,float afMinDist, float afMaxDist, tString asSoundName)
 {
     cLuxEnemyIterator it = GetEnemyIterator();
     while(it.HasNext())
     {
         iLuxEnemy *pEnemy = it.Next();
         if(pEnemy->IsActive() == false)
+        {
+            continue;
+        }
+        if(pEnemy->GetDeaf())
         {
             continue;
         }
@@ -797,6 +808,7 @@ void cLuxMap::BroadcastEnemySoundMessage(const cVector3f& avPos, float afVolume,
 
         /////////////////////////
         //Send message
+        pEnemy->SetHeardSound(asSoundName);
         pEnemy->SendMessage(eLuxEnemyMessage_SoundHeard, 0, false, avPos, fHearVolume, 0);
     }
 }

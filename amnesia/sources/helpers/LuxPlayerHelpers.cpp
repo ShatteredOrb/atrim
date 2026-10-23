@@ -24,6 +24,178 @@
 #include "LuxLoadScreenHandler.h"
 #include "LuxMainMenu.h"
 
+//-----------------------------------------------------------------------
+
+//////////////////////////////////////////////////////////////////////////
+// PLAYER VOICE FLASHBACK
+//////////////////////////////////////////////////////////////////////////
+
+//-----------------------------------------------------------------------
+
+cLuxPlayerVoiceFlashback::cLuxPlayerVoiceFlashback(cLuxPlayer *apPlayer) : iLuxPlayerHelper(apPlayer, "LuxPlayerVoiceFlashback")
+{
+    mbIsDelaying = false;
+    mbIsPlaying = false;
+    mbUseEffects = false;
+    mbObstructMovement = false;
+    m_sStopSound = "";
+
+    mfEffectFadeInTime = gpBase->mpGameCfg->GetFloat("VoiceFlashback","EffectFadeInTime",0);
+    mfEffectFadeOutTime = gpBase->mpGameCfg->GetFloat("VoiceFlashback","EffectFadeOutTime",0);
+    mfLightFadeAmount = gpBase->mpGameCfg->GetFloat("VoiceFlashback","LightFadeAmount",0);
+    mfSepiaAmount = gpBase->mpGameCfg->GetFloat("VoiceFlashback","SepiaAmount",0);
+    mfImageTrailAmount = gpBase->mpGameCfg->GetFloat("VoiceFlashback","ImageTrailAmount",0);
+    mfBlurStartDistance = gpBase->mpGameCfg->GetFloat("VoiceFlashback","BlurStartDistance",0);
+    mfBlurAmount = gpBase->mpGameCfg->GetFloat("VoiceFlashback","BlurAmount",0);
+    mfFovMultiplier = gpBase->mpGameCfg->GetFloat("VoiceFlashback","FovMultiplier",0);
+    mfMoveSpeedMultiplier = 1.0f;
+    mfMouseSensitivityModifier = 1.0f;
+}
+
+//-----------------------------------------------------------------------
+
+void cLuxPlayerVoiceFlashback::StopPlaying()
+{
+    if ( mbIsPlaying )
+    {
+        gpBase->mpEffectHandler->GetPlayVoice()->StopVoices(0.3f);
+
+        if ( mbUseEffects )
+        {
+            StopEffects();
+            mbUseEffects = false;
+        }
+
+        if ( mbObstructMovement )
+        {
+            StopMovementObstruction();
+            mbObstructMovement = false;
+        }
+    }
+
+    mbIsPlaying = false;
+    mbIsDelaying = false;
+
+    m_sStopSound = "";
+}
+
+//-----------------------------------------------------------------------
+
+void cLuxPlayerVoiceFlashback::Start(
+    const tString & asVoiceFile,
+    const tString & asTextEntry1, float afDelay1,
+    const tString & asTextEntry2, float afDelay2,
+    const tString & asTextEntry3, float afDelay3,
+    const tString & asTextEntry4, float afDelay4,
+    const tString & asTextEntry5, float afDelay5,
+    const tString & asTextEntry6, float afDelay6,
+    const tString & asTextEntry7, float afDelay7,
+    bool abUseEffects, bool abObstructMovement )
+{
+    mbUseEffects = abUseEffects;
+    mbObstructMovement = abObstructMovement;
+
+    if ( mbUseEffects )
+    {
+        StartEffects();
+    }
+
+    if ( mbObstructMovement )
+    {
+        StartMovementObstruction();
+    }
+
+    gpBase->mpEffectHandler->GetPlayVoice()->AddMultiSubbedVoice(
+        asVoiceFile,
+        "", "Voice",
+        asTextEntry1, afDelay1,
+        asTextEntry2, afDelay2,
+        asTextEntry3, afDelay3,
+        asTextEntry4, afDelay4,
+        asTextEntry5, afDelay5,
+        asTextEntry6, afDelay6,
+        asTextEntry7, afDelay7
+        , false, cVector3f(), 0, 0
+    );
+
+    mbIsPlaying = true;
+}
+
+//-----------------------------------------------------------------------
+
+void cLuxPlayerVoiceFlashback::Update(double adFixedDelta)
+{
+    cSoundHandler *pSoundHandler = gpBase->mpEngine->GetSound()->GetSoundHandler();
+
+    if ( mbIsPlaying && gpBase->mpEffectHandler->GetPlayVoice()->VoiceDonePlaying() )
+    {
+        mbIsPlaying = false;
+        mbIsDelaying = false;
+
+        if ( mbUseEffects )
+        {
+            StopEffects();
+            mbUseEffects = false;
+        }
+
+        if ( mbObstructMovement )
+        {
+            StopMovementObstruction();
+            mbObstructMovement = false;
+        }
+
+        if ( m_sStopSound != "" )
+        {
+            gpBase->mpHelpFuncs->PlayGuiSoundData(m_sStopSound, eSoundEntryType_Gui);
+        }
+    }
+}
+
+//-----------------------------------------------------------------------
+
+void cLuxPlayerVoiceFlashback::StartEffects()
+{
+    gpBase->mpEffectHandler->GetFade()->FadeOut(mfEffectFadeInTime,mfLightFadeAmount);
+    gpBase->mpEffectHandler->GetSepiaColor()->FadeTo(mfSepiaAmount,mfEffectFadeInTime);
+    gpBase->mpEffectHandler->GetImageTrail()->FadeTo(mfImageTrailAmount, mfEffectFadeInTime);
+    gpBase->mpEffectHandler->GetRadialBlur()->SetBlurStartDist( mfBlurStartDistance );
+    gpBase->mpEffectHandler->GetRadialBlur()->FadeTo( mfBlurAmount, mfEffectFadeInTime );
+    gpBase->mpPlayer->FadeFOVMulTo(mfFovMultiplier, mfEffectFadeInTime);
+}
+
+//-----------------------------------------------------------------------
+
+void cLuxPlayerVoiceFlashback::StopEffects()
+{
+    gpBase->mpEffectHandler->GetFade()->FadeOut(mfEffectFadeOutTime,0.0f);
+    gpBase->mpEffectHandler->GetSepiaColor()->FadeTo(0.0f,mfEffectFadeOutTime);
+    gpBase->mpEffectHandler->GetImageTrail()->FadeTo(0.0f, 3.0f * mfEffectFadeOutTime );
+    gpBase->mpEffectHandler->GetRadialBlur()->FadeTo( 0.0f, mfEffectFadeOutTime );
+    gpBase->mpPlayer->FadeFOVMulTo(1.0f, mfEffectFadeOutTime);
+}
+
+//-----------------------------------------------------------------------
+
+void cLuxPlayerVoiceFlashback::StartMovementObstruction()
+{
+    gpBase->mpPlayer->SetEventMoveSpeedMul(mfMoveSpeedMultiplier);
+    gpBase->mpPlayer->SetEventRunSpeedMul(mfMoveSpeedMultiplier);
+}
+
+//-----------------------------------------------------------------------
+
+void cLuxPlayerVoiceFlashback::StopMovementObstruction()
+{
+    gpBase->mpPlayer->SetEventMoveSpeedMul(1.0f);
+    gpBase->mpPlayer->SetEventRunSpeedMul(1.0f);
+}
+
+//-----------------------------------------------------------------------
+
+cLuxPlayerVoiceFlashback::~cLuxPlayerVoiceFlashback()
+{
+
+}
 
 //-----------------------------------------------------------------------
 
@@ -2073,6 +2245,9 @@ cLuxPlayerDeath::cLuxPlayerDeath(cLuxPlayer *apPlayer) : iLuxPlayerHelper(apPlay
     msStartSound = gpBase->mpGameCfg->GetString("Player_General", "Death_StartSound", "");
     msAwakenSound = gpBase->mpGameCfg->GetString("Player_General", "Death_AwakenSound", "");
 
+    mbKeepPlayerInLimbo = false;
+    mbHoldsPlayerInLimbo = false;
+
     mpFont = NULL;
 
     mFlashOscill.SetUp(0, 1, 0, 0.5, 0.5);
@@ -2143,6 +2318,9 @@ void cLuxPlayerDeath::Start()
 
     mbActive = true;
 
+    mbHoldsPlayerInLimbo = mbKeepPlayerInLimbo;
+    mbHasRunCheckPointCallbackScript = false;
+
     //////////////////////////////////
     //Progress log
     gpBase->mpProgressLogHandler->AddLog(eLuxProgressLogLevel_High, "Player died!");
@@ -2170,6 +2348,8 @@ void cLuxPlayerDeath::Start()
 
     //////////////////////////////////
     //Sound
+    //Enemy / danger music must be force stopped (their slots are blanked on play), the loop below skips them.
+    gpBase->mpMusicHandler->StopAllEnemyMusic(0.2f);
     for(int i = 0; i <= gpBase->mpMusicHandler->GetMaxPrio(); ++i)
     {
         gpBase->mpMusicHandler->Stop(0.2f, i);
@@ -2259,7 +2439,7 @@ void cLuxPlayerDeath::Update(double adFixedDelta)
 
             if(mpPlayer->UsePermaDeath())
             {
-                mlState = 4;
+                mlState = 5;
 
                 cLuxSoundExtraData extraData;
                 if(gpBase->mpHelpFuncs->PlayGuiSoundData(mpPlayer->GetCurrentPermaDeathSound(), eSoundEntryType_Gui, 1, eSoundEntityType_Main, true, &extraData))
@@ -2293,33 +2473,42 @@ void cLuxPlayerDeath::Update(double adFixedDelta)
             if(mfTextOnScreenCount > 5.5f || mbShowHint == false)
             {
                 mlState = 2;
-
-                ResetGame();
-                gpBase->mpEffectHandler->GetFlash()->Start(0.7f, 1.2f, 2.5f);
-                gpBase->mpHelpFuncs->PlayGuiSoundData(msAwakenSound, eSoundEntryType_Gui);
-
-                /////////////////////////////
-                //// HARDMODE
-                //if (gpBase->mbHardMode && gpBase->mpPlayer->IsActive())
-                //{
-                //    mlState = 5;
-                //}
             }
         }
     }
+
+    if ( mbHoldsPlayerInLimbo )
+    {
+        if (!mbHasRunCheckPointCallbackScript )
+        {
+            mbHasRunCheckPointCallbackScript = true;
+            gpBase->mpMapHandler->GetCurrentMap()->RunCheckPointCallbackScript();
+        }
+        return;
+    }
+
+    if(mlState == 2)
+    {
+        ResetGame();
+        gpBase->mpEffectHandler->GetFlash()->Start(0.7f, 1.2f, 2.5f);
+        gpBase->mpHelpFuncs->PlayGuiSoundData(msAwakenSound, eSoundEntryType_Gui);
+                
+        mlState = 3;
+    }
+
     //////////////////////
     // Fade to white
-    if(mlState == 2)
+    if(mlState == 3)
     {
         mfWhiteCount += (float)adFixedDelta;
         if(mfWhiteCount >= 0.5f)
         {
-            mlState = 3;
+            mlState = 4;
         }
     }
     //////////////////////
     // Fade In
-    if(mlState == 3)
+    if(mlState == 4)
     {
         mfTextAlpha1 -= (float)adFixedDelta * 0.85f;
         mfFadeAlpha -= (float)adFixedDelta * 0.75f;
@@ -2354,7 +2543,7 @@ void cLuxPlayerDeath::Update(double adFixedDelta)
     }
     //////////////////////
     // Play voice
-    if(mlState == 4)
+    if(mlState == 5)
     {
         cSoundHandler *pSoundHandler = gpBase->mpEngine->GetSound()->GetSoundHandler();
         if(mpVoiceEntry == NULL || pSoundHandler->IsValid(mpVoiceEntry, mlVoiceEntryId) == false)
@@ -2364,7 +2553,7 @@ void cLuxPlayerDeath::Update(double adFixedDelta)
     }
     //////////////////////
     // HARDMODE
-    if (mlState == 5)
+    if (mlState == 6)
     {
         //////////////////////
         // Load latest save
@@ -2547,6 +2736,10 @@ void cLuxPlayerDeath::ResetGame()
     //////////////////////////////////
     //Check point
     gpBase->mpMapHandler->GetCurrentMap()->LoadCheckPoint();
+    if ( !mbKeepPlayerInLimbo )
+    {
+        gpBase->mpMapHandler->GetCurrentMap()->RunCheckPointCallbackScript();
+    }
 }
 
 //-----------------------------------------------------------------------
@@ -2975,7 +3168,6 @@ void cLuxPlayerHudEffect::LoadDamageData(cLuxPlayerDamageData *apData, const tSt
     }
 }
 
-
 //-----------------------------------------------------------------------
 
 //////////////////////////////////////////////////////////////////////////
@@ -3083,10 +3275,10 @@ void cLuxPlayerLightLevel::OnMapEnter(cLuxMap *apMap)
 
 //-----------------------------------------------------------------------
 
-
 //////////////////////////////////////////////////////////////////////////
 // PLAYER IN DARKNESS
 //////////////////////////////////////////////////////////////////////////
+
 //-----------------------------------------------------------------------
 
 cLuxPlayerInDarkness::cLuxPlayerInDarkness(cLuxPlayer *apPlayer) : iLuxPlayerHelper(apPlayer, "LuxPlayerInDarkness")

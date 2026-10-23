@@ -4,6 +4,7 @@
 #include "LuxMapHandler.h"
 #include "LuxPlayer.h"
 #include "LuxEnemy.h"
+#include "LuxDebugHandler.h"
 
 
 //////////////////////////////////////////////////////////////////////////
@@ -69,25 +70,15 @@ void cLuxMusicHandler::Reset()
         mvGameMusic[i].Reset();
     }
 
-    mlCurrentMaxPrio = -1;
-
-    for(int i = 0; i < eLuxEnemyMusic_LastEnum; ++i)
-    {
-        m_setEnemies[i].clear();
-
-        mbEnemyPlaying[i] = false;
-        mfEnemyPlayCount[i] = 0;
-        mfEnemyStopCount[i] = 0;
-    }
-
-    gpBase->mpEngine->GetSound()->GetMusicHandler()->ResetResumeData();
-
-    mbEnemyClosePlaying = false;
-    mfEnemyCloseCount = 0;
-    mfEnemyGoneCount = 0;
+    //Danger music plays at prio 5 (see UpdateDangerMusic), this used to force stop prio 4.
+    StopAllEnemyMusic(5.0f);
 
     mfUpdateDangerCount = 0;
     mfUpdateAttackCount = 0;
+
+    gpBase->mpEngine->GetSound()->GetMusicHandler()->ResetResumeData();
+
+    mlCurrentMaxPrio = -1;
 }
 
 //-----------------------------------------------------------------------
@@ -156,7 +147,7 @@ void cLuxMusicHandler::Play(const tString &asFile, bool abLoop, float afVolume, 
 
 //-----------------------------------------------------------------------
 
-void cLuxMusicHandler::Stop(float afFadeTime, int alPrio)
+void cLuxMusicHandler::Stop(float afFadeTime, int alPrio, bool abForceStop)
 {
     if(alPrio > mlMaxPrio)
     {
@@ -164,7 +155,7 @@ void cLuxMusicHandler::Stop(float afFadeTime, int alPrio)
     }
 
     //Check if there is any song playing at this prio
-    if(mvGameMusic[alPrio].msFile != "")
+    if(mvGameMusic[alPrio].msFile != "" || abForceStop)
     {
         mvGameMusic[alPrio].msFile = "";
 
@@ -210,23 +201,39 @@ bool cLuxMusicHandler::EnemyExist(eLuxEnemyMusic aType, iLuxEnemy *apEntity)
 
 void cLuxMusicHandler::OnMapEnter(cLuxMap *apMap)
 {
-    for(int i = 0; i < eLuxEnemyMusic_LastEnum; ++i)
-    {
-        m_setEnemies[i].clear();
-        Stop(2.0f, 8 + i);
-    }
-
-    //Update(2.0f);
+    StopAllEnemyMusic(2.0f);
 }
 
-void cLuxMusicHandler::OnMapLeave(cLuxMap *apMap)
+//-----------------------------------------------------------------------
+
+void cLuxMusicHandler::StopAllEnemyMusic(float afFadeTime)
 {
     for(int i = 0; i < eLuxEnemyMusic_LastEnum; ++i)
     {
         m_setEnemies[i].clear();
-        Stop(2.0f, 8 + i);
+
+        if(mbEnemyPlaying[i])
+        {
+            Stop(afFadeTime, 8 + i, true);
+        }
+
+        mbEnemyPlaying[i] = false;
+        mfEnemyPlayCount[i] = 0;
+        mfEnemyStopCount[i] = 0;
     }
 
+    if(mbEnemyClosePlaying)
+    {
+        Stop(afFadeTime, 5, true);
+    }
+    mbEnemyClosePlaying = false;
+    mfEnemyCloseCount = 0;
+    mfEnemyGoneCount = 0;
+}
+
+void cLuxMusicHandler::OnMapLeave(cLuxMap *apMap)
+{
+    StopAllEnemyMusic(2.0f);
 
     for(int i = 0; i < 60; ++i)
     {
@@ -298,6 +305,7 @@ void cLuxMusicHandler::UpdateDangerMusic(double adFixedDelta)
             if(mfEnemyCloseCount > 2.0f)
             {
                 Play(sMusic, true, 1.0f, 6.0f, 5, true, true);
+                mvGameMusic[5].msFile = ""; //hack to make sure it doesnt loop automatically when all enemies are disabled
                 mbEnemyClosePlaying = true;
             }
         }
@@ -329,7 +337,7 @@ void cLuxMusicHandler::UpdateDangerMusic(double adFixedDelta)
             mfEnemyGoneCount += (float)adFixedDelta;
             if(mfEnemyGoneCount > 6.0f)
             {
-                Stop(6.0f, 5);
+                Stop(6.0f, 5, true); //slot 5 file is blanked on play, must force
                 mbEnemyClosePlaying = false;
             }
         }
@@ -398,6 +406,7 @@ void cLuxMusicHandler::UpdateEnemyMusic(double adFixedDelta, eLuxEnemyMusic aTyp
                 }
 
                 Play(sMusic, true, 1.0f, 1.5f, 8 + aType, true, true);
+                mvGameMusic[8+aType].msFile = ""; //hack to make sure the music does not start playing automatically again
                 mbEnemyPlaying[aType] = true;
                 //Log("Play!");
                 mfEnemyPlayCount[aType] = 0;
@@ -414,8 +423,7 @@ void cLuxMusicHandler::UpdateEnemyMusic(double adFixedDelta, eLuxEnemyMusic aTyp
         if(mfEnemyStopCount[aType] > 1.2f)
         {
             mbEnemyPlaying[aType] = false;
-            Stop(5.0f, 8 + aType);
-            //Log("Stop!");
+            Stop(5.0f, 8 + aType, true);
             mfEnemyStopCount[aType] = 0;
         }
     }

@@ -14,6 +14,7 @@
 cLuxPropLoader_Lever::cLuxPropLoader_Lever(const tString& asName) : iLuxPropLoader(asName)
 {
     mfDefaultMaxFocusDistance = gpBase->mpGameCfg->GetFloat("Player_Interaction", "Lever_DefaultMaxFocusDist", 0);
+    mbForceFullGameSave = true;
 }
 
 //-----------------------------------------------------------------------

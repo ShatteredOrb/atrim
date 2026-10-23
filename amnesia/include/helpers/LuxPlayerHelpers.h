@@ -11,6 +11,74 @@ class cLuxPlayer;
 
 //----------------------------------------------
 
+class cLuxPlayerVoiceFlashback : public iLuxPlayerHelper
+{
+    friend class cLuxPlayer_SaveData;
+public:
+    cLuxPlayerVoiceFlashback(cLuxPlayer *apPlayer);
+    ~cLuxPlayerVoiceFlashback();
+
+    void Update(double adFixedDelta);
+
+    bool AllowsJump()
+    {
+        return !(mbIsPlaying && (mbObstructMovement));
+    }
+
+    void StopPlaying();
+    void Start(
+        const tString & asVoiceFile,
+        const tString & asTextEntry1, float afDelay1,
+        const tString & asTextEntry2, float afDelay2,
+        const tString & asTextEntry3, float afDelay3,
+        const tString & asTextEntry4, float afDelay4,
+        const tString & asTextEntry5, float afDelay5,
+        const tString & asTextEntry6, float afDelay6,
+        const tString & asTextEntry7, float afDelay7,
+        bool abUseEffects, bool abObstructMovement );
+    void StartEffects();
+    void StopEffects();
+    void StopMovementObstruction();
+    void StartMovementObstruction();
+    void SetStopSound( const tString& asStopSound )
+    {
+        m_sStopSound = asStopSound;
+    }
+    bool GetIsPlaying()
+    {
+        return mbIsPlaying;
+    }
+
+    void SetMoveSpeedMultiplier( float afMoveSpeedMultiplier )
+    {
+        mfMoveSpeedMultiplier = afMoveSpeedMultiplier;
+    }
+    void SetMouseSensitivityModifier( float afMouseSensitivityModifier )
+    {
+        mfMouseSensitivityModifier = afMouseSensitivityModifier;
+    }
+
+private:
+    bool mbIsDelaying;
+    bool mbIsPlaying;
+    bool mbUseEffects;
+    bool mbObstructMovement;
+
+    float mfEffectFadeInTime;
+    float mfEffectFadeOutTime;
+    float mfSepiaAmount;
+    float mfLightFadeAmount;
+    float mfImageTrailAmount;
+    float mfBlurStartDistance;
+    float mfBlurAmount;
+    float mfFovMultiplier;
+    float mfMoveSpeedMultiplier;
+    float mfMouseSensitivityModifier;
+    tString m_sStopSound;
+};
+
+//----------------------------------------------
+
 class cLuxPlayerInsanityCollapse : public iLuxPlayerHelper
 {
     friend class cLuxPlayer_SaveData;
@@ -430,7 +498,6 @@ private:
     bool mbActive;
     float mfAlpha;
     cLightPoint *mpLight;
-
 };
 
 //----------------------------------------------
@@ -451,7 +518,6 @@ public:
 
     void Update(double adFixedDelta);
     void PostUpdate(double adFixedDelta);
-
 
     void OnDraw(double adFrameTime);
 
@@ -476,6 +542,11 @@ public:
         mbShowHint = abX;
     }
 
+    void ReleasePlayerFromLimbo()
+    {
+        mbHoldsPlayerInLimbo = false;
+    }
+
     void SetHint(const tString& asCat, const tString& asEntry);
     const tString &GetHintCat()
     {
@@ -486,13 +557,20 @@ public:
         return msHintEntry;
     }
 
-
+    void SetKeepPlayerInLimbo( bool abKeepPlayerInLimbo )
+    {
+        mbKeepPlayerInLimbo = abKeepPlayerInLimbo;
+    }
 
 private:
     void ResetGame();
 
     bool mbToMainMenu;
     bool mbActive;
+
+    bool mbKeepPlayerInLimbo;
+    bool mbHoldsPlayerInLimbo;
+    bool mbHasRunCheckPointCallbackScript;
 
     bool mbShowHint;
 

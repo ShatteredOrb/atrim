@@ -164,14 +164,8 @@ bool cLuxEnemy_Grunt::StateEventImplement(int alState, eLuxEnemyStateEvent aEven
 
     if(gpBase->mpGlobalDataHandler->GetEnemyActivateSoundAllowed())
     {
-        ////////////////////////
-        // HARDMODE
-
-        //if (gpBase->mbHardMode == false)
-        {
-            gpBase->mpGlobalDataHandler->SetEnemyActivateSoundMade();
-            PlaySound(msEnabledSound);
-        }
+        gpBase->mpGlobalDataHandler->SetEnemyActivateSoundMade();
+        PlaySound(msEnabledSound);
     }
 
     if(mvPatrolNodes.empty())
@@ -221,6 +215,10 @@ bool cLuxEnemy_Grunt::StateEventImplement(int alState, eLuxEnemyStateEvent aEven
     SendMessage(eLuxEnemyMessage_TimeOut_2, cMath::RandRectf(mfIdleExtraTimeMin, mfIdleExtraTimeMax), true);
 
     SetMoveSpeed(eLuxEnemyMoveSpeed_Walk);
+    mpPathfinder->Stop();
+
+    kLuxOnLeave
+    mpMover->SetOverideMoveState(false);
 
     kLuxOnMessage(eLuxEnemyMessage_TimeOut)
 
@@ -777,7 +775,7 @@ bool cLuxEnemy_Grunt::StateEventImplement(int alState, eLuxEnemyStateEvent aEven
 
 
     kLuxOnMessage(eLuxEnemyMessage_AnimationSpecialEvent)
-    Attack(mNormalAttackSize, mBreakDoorAttackDamage);
+    Attack(mNormalAttackSize, mBreakDoorAttackDamage, 1.0f);
 
 
     ////////////////////////
@@ -808,7 +806,7 @@ bool cLuxEnemy_Grunt::StateEventImplement(int alState, eLuxEnemyStateEvent aEven
     }
 
     kLuxOnMessage(eLuxEnemyMessage_AnimationSpecialEvent)
-    Attack(mNormalAttackSize, mNormalAttackDamage);
+    Attack(mNormalAttackSize, mNormalAttackDamage, 1.0f);
 
     ////////////////////////
     // Overload global
@@ -840,7 +838,7 @@ bool cLuxEnemy_Grunt::StateEventImplement(int alState, eLuxEnemyStateEvent aEven
 
     kLuxOnMessage(eLuxEnemyMessage_AnimationSpecialEvent)
     mlTempVal = 1;
-    Attack(mNormalAttackSize, mNormalAttackDamage);
+    Attack(mNormalAttackSize, mNormalAttackDamage, 1.0f);
 
     kLuxOnMessage(eLuxEnemyMessage_AnimationOver)
     ChangeState(mPreviousState);
@@ -1079,7 +1077,6 @@ void cLuxEnemy_Grunt::LoadFromSaveData(iLuxEntity_SaveData* apSaveData)
 
     ////////////////////////
     // Handle changed enums
-#if LUX_ENEMY_MANPIG
     if (mCurrentState >= eLuxEnemyState_PigEnumStart)
     {
         mCurrentState = eLuxEnemyState_LastEnum;
@@ -1092,7 +1089,6 @@ void cLuxEnemy_Grunt::LoadFromSaveData(iLuxEntity_SaveData* apSaveData)
     {
         mPreviousState = eLuxEnemyState_LastEnum;
     }
-#endif
 }
 
 //-----------------------------------------------------------------------

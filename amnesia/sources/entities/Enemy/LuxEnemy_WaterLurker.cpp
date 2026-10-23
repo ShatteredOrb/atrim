@@ -72,6 +72,8 @@ void cLuxEnemyLoader_WaterLurker::LoadInstanceVariables(iLuxEnemy *apEnemy, cRes
     {
         pWaterLurker->mfPlayerDetectionHeight = fHeight;
     }
+
+    pWaterLurker->mfRunSpeedMul = apInstanceVars->GetVarFloat("RunSpeedMul", 1);
 }
 
 //-----------------------------------------------------------------------
@@ -108,6 +110,13 @@ void cLuxEnemy_WaterLurker::OnSetupAfterLoad(cWorld *apWorld)
 {
     mpMeshEntity->SetActive(false);
     mpMeshEntity->SetVisible(false);
+
+    mpCharBody->SetGravityActive(false);
+    mpCharBody->SetDeaccelerateMoveSpeedInAir(true);
+    mpCharBody->SetCollideStaticVolatile(false);
+    mpCharBody->SetClimbHeightAdd(0);
+    mpCharBody->SetMaxStepSize(0);
+    mpCharBody->SetMaxStepSizeInAir(0);
 }
 
 
@@ -161,6 +170,12 @@ bool cLuxEnemy_WaterLurker::StateEventImplement(int alState, eLuxEnemyStateEvent
     kLuxState(eLuxEnemyState_Idle)
     kLuxOnEnter
     ChangeSoundState(eLuxEnemySoundState_Idle);
+
+    kLuxOnUpdate
+    if(PlayerIsDetected())
+    {
+        ChangeState(eLuxEnemyState_Hunt);
+    }
 
     ///////////////////////
     // Heard sound
@@ -380,6 +395,8 @@ bool cLuxEnemy_WaterLurker::StateEventImplement(int alState, eLuxEnemyStateEvent
         ChangeSoundState(eLuxEnemySoundState_Hunt);
 
         SetMoveSpeed(eLuxEnemyMoveSpeed_Run);
+        mfForwardSpeed *= mfRunSpeedMul;
+
         SendMessage(eLuxEnemyMessage_TimeOut, 0.1f, true);
         SendMessage(eLuxEnemyMessage_TimeOut_2, 0.1f, true);
         gpBase->mpMusicHandler->AddEnemy(eLuxEnemyMusic_Attack, this);
@@ -457,7 +474,7 @@ bool cLuxEnemy_WaterLurker::StateEventImplement(int alState, eLuxEnemyStateEvent
     //Damage door
     kLuxOnMessage(eLuxEnemyMessage_TimeOut)
     //SplashWater(eWaterLurkerSplash_Attack);
-    Attack(mNormalAttackSize, mBreakDoorAttackDamage);
+    Attack(mNormalAttackSize, mBreakDoorAttackDamage, 1.0f);
     SendMessage(eLuxEnemyMessage_TimeOut_2, cMath::RandRectf(0.5, 1.5f), true);
 
     ///////////////////
@@ -494,7 +511,7 @@ bool cLuxEnemy_WaterLurker::StateEventImplement(int alState, eLuxEnemyStateEvent
 
     kLuxOnMessage(eLuxEnemyMessage_TimeOut)
     SplashWater(eWaterLurkerSplash_Attack);
-    Attack(mNormalAttackSize, mNormalAttackDamage);
+    Attack(mNormalAttackSize, mNormalAttackDamage, 1.0f);
     SendMessage(eLuxEnemyMessage_TimeOut_2, 0.5f, true);
     mpPathfinder->Stop();
 
@@ -674,6 +691,7 @@ void cLuxEnemy_WaterLurker::PatrolEndOfPath()
 kBeginSerialize(cLuxEnemy_WaterLurker_SaveData, iLuxEnemy_SaveData)
 
 kSerializeVar(mfPlayerDetectionHeight, eSerializeType_Float32)
+kSerializeVar(mfRunSpeedMul, eSerializeType_Float32)
 
 kEndSerialize()
 
@@ -696,6 +714,7 @@ void cLuxEnemy_WaterLurker::SaveToSaveData(iLuxEntity_SaveData* apSaveData)
     //////////////////
     //Set variables
     kCopyToVar(pData, mfPlayerDetectionHeight);
+    kCopyToVar(pData,mfRunSpeedMul);
 }
 
 //-----------------------------------------------------------------------
@@ -710,10 +729,10 @@ void cLuxEnemy_WaterLurker::LoadFromSaveData(iLuxEntity_SaveData* apSaveData)
     //////////////////
     //Set variables
     kCopyFromVar(pData, mfPlayerDetectionHeight);
+    kCopyFromVar(pData,mfRunSpeedMul);
 
     ////////////////////////
     // Handle changed enums
-#if LUX_ENEMY_MANPIG
     if (mCurrentState >= eLuxEnemyState_PigEnumStart)
     {
         mCurrentState = eLuxEnemyState_LastEnum;
@@ -726,7 +745,6 @@ void cLuxEnemy_WaterLurker::LoadFromSaveData(iLuxEntity_SaveData* apSaveData)
     {
         mPreviousState = eLuxEnemyState_LastEnum;
     }
-#endif
 }
 
 //-----------------------------------------------------------------------

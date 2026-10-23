@@ -37,6 +37,7 @@ private:
     static bool GetEntities(const tString& asName, tLuxEntityList &alstEntities, eLuxEntityType aType, int alSubType);
     static iLuxEntity *GetEntity(const tString& asName, eLuxEntityType aType, int alSubType);
     static iPhysicsBody *GetBodyInEntity(iLuxEntity* apEntity, const tString& asName);
+    static bool GetParticleSystems(const tString& asName,std::list<cParticleSystem*> &alstParticleSystems);
 
     // Debug
     static void __stdcall Print(string& asString);
@@ -59,6 +60,10 @@ private:
     static void __stdcall AddTimer(string& asName, float afTime, string& asFunction);
     static void __stdcall RemoveTimer(string& asName);
     static float __stdcall GetTimerTimeLeft(string& asName);
+
+    static void __stdcall StartPhoneRinging(string & asName);
+    static void __stdcall StopPhoneRinging(string & asName);
+    static void __stdcall HangUpPhone(string & asName);
 
     static void __stdcall SetLocalVarInt(string& asName, int alVal);
     static void __stdcall SetLocalVarFloat(string& asName, float afVal);
@@ -93,7 +98,9 @@ private:
     /**
      * Callback syntax: MyFunc(string &in asName, int alCount), Count is 0 on first checkpoint load!
      */
-    static void __stdcall CheckPoint(string& asName, string& asStartPos, string& asCallback, string &asDeathHintCat, string &asDeathHintEntry);
+    static void __stdcall CheckPoint(string& asName, string& asStartPos, string& asCallback, string &asDeathHintCat, string &asDeathHintEntry, bool abKeepPlayerInLimbo);
+    static void __stdcall CheckPointLegacy(string& asName, string& asStartPos, string& asCallback, string &asDeathHintCat, string &asDeathHintEntry);
+    static void __stdcall ReleasePlayerFromLimbo();
 
     // Map
     static void __stdcall ChangeMap(string& asMapName, string& asStartPos, string& asStartSound, string& asEndSound);
@@ -144,6 +151,61 @@ private:
     static void __stdcall AddEffectVoice(    string& asVoiceFile, string& asEffectFile,
             string& asTextCat, string& asTextEntry, bool abUsePosition,
             string& asPosEntity, float afMinDistance, float afMaxDistance);
+
+    static void __stdcall AddEffectVoice2(	string& asVoiceFile, string& asEffectFile,
+                                            string& asTextCat,
+                                            string& asTextEntry, float afTextDelay,
+                                            string& asText2Entry, float afText2Delay,
+                                            bool abUsePosition, string& asPosEntity, float afMinDistance, float afMaxDistance);
+
+    static void __stdcall AddEffectVoice3(	string& asVoiceFile, string& asEffectFile,
+                                            string& asTextCat,
+                                            string& asTextEntry, float afTextDelay,
+                                            string& asText2Entry, float afText2Delay,
+                                            string& asText3Entry, float afText3Delay,
+                                            bool abUsePosition, string& asPosEntity, float afMinDistance, float afMaxDistance);
+
+    static void __stdcall AddEffectVoice4(	string& asVoiceFile, string& asEffectFile,
+                                            string& asTextCat,
+                                            string& asTextEntry, float afTextDelay,
+                                            string& asText2Entry, float afText2Delay,
+                                            string& asText3Entry, float afText3Delay,
+                                            string& asText4Entry, float afText4Delay,
+                                            bool abUsePosition, string& asPosEntity, float afMinDistance, float afMaxDistance);
+
+    static void __stdcall AddEffectVoice5(	string& asVoiceFile, string& asEffectFile,
+                                            string& asTextCat,
+                                            string& asTextEntry, float afTextDelay,
+                                            string& asText2Entry, float afText2Delay,
+                                            string& asText3Entry, float afText3Delay,
+                                            string& asText4Entry, float afText4Delay,
+                                            string& asText5Entry, float afText5Delay,
+                                            bool abUsePosition, string& asPosEntity, float afMinDistance, float afMaxDistance);
+
+    static void __stdcall AddEffectVoice6(	string& asVoiceFile, string& asEffectFile,
+                                            string& asTextCat,
+                                            string& asTextEntry, float afTextDelay,
+                                            string& asText2Entry, float afText2Delay,
+                                            string& asText3Entry, float afText3Delay,
+                                            string& asText4Entry, float afText4Delay,
+                                            string& asText5Entry, float afText5Delay,
+                                            string& asText6Entry, float afText6Delay,
+                                            bool abUsePosition, string& asPosEntity, float afMinDistance, float afMaxDistance);
+
+    static void __stdcall AddEffectVoice7(	string& asVoiceFile, string& asEffectFile,
+                                            string& asTextCat,
+                                            string& asTextEntry, float afTextDelay,
+                                            string& asText2Entry, float afText2Delay,
+                                            string& asText3Entry, float afText3Delay,
+                                            string& asText4Entry, float afText4Delay,
+                                            string& asText5Entry, float afText5Delay,
+                                            string& asText6Entry, float afText6Delay,
+                                            string& asText7Entry, float afText7Delay,
+                                            bool abUsePosition, string& asPosEntity, float afMinDistance, float afMaxDistance);
+
+    static void __stdcall AddEffectVoiceExt(	string& asVoiceFile, string& asEffectFile,
+            string& asTextCat, string& asTextEntry, bool abUsePosition,
+            string& asPosEntity, float afMinDistance, float afMaxDistance, int alPriority, bool abStopInterrupted);
     static void __stdcall StopAllEffectVoices(float afFadeOutTime);
     static bool __stdcall GetEffectVoiceActive();
     /**
@@ -192,7 +254,9 @@ private:
     static float __stdcall GetPlayerLampOil();
 
     static float __stdcall GetPlayerSpeed();
+    static float __stdcall GetPlayerXSpeed();
     static float __stdcall GetPlayerYSpeed();
+    static float __stdcall GetPlayerZSpeed();
 
     static float __stdcall GetPlayerBodyPitch();
     static float __stdcall GetPlayerBodyYaw();
@@ -219,6 +283,7 @@ private:
     static void __stdcall FadePlayerFOVMulTo(float afX, float afSpeed);
     static void __stdcall FadePlayerAspectMulTo(float afX, float afSpeed);
     static void __stdcall FadePlayerRollTo(float afX, float afSpeedMul, float afMaxSpeed);
+    static void __stdcall FadePlayerPitchTo(float afX, float afSpeedMul, float afMaxSpeed);
     static void __stdcall MovePlayerHeadPos(float afX, float afY, float afZ, float afSpeed, float afSlowDownDist);
     static void __stdcall StartPlayerLookAt(string& asEntityName, float afSpeedMul, float afMaxSpeed, string &asAtTargetCallback);
     static void __stdcall StopPlayerLookAt();
@@ -233,10 +298,40 @@ private:
     static bool __stdcall GetLanternActive();
     static void __stdcall SetLanternDisabled(bool abX);
     static void __stdcall SetPlayerFallDamageDisabled(bool abX);
+
+    static bool __stdcall GetJournalDisabled();
+    static void __stdcall SetJournalDisabled(bool abX);
+
+    static void __stdcall SetLanternFailureActive(bool abX);
+
+    static void __stdcall SetLanternFailureChances(float afFlickerFailureChance, float afDeadFailureChance);
+    static void __stdcall SetLanternDefaultFailureChances();
+
+    static void __stdcall SetLanternTimeBetweenFailures(float afMinTimeBetweenFailures, float afMaxTimeBetweenFailures);
+    static void __stdcall SetLanternDefaultTimesBetweenFailure();
+
+    static void __stdcall SetLanternFlickerTimes(float afMinTimeInFailureFlickering, float afMaxTimeInFailureFlickering);
+    static void __stdcall SetLanternDefaultFlickerTimes();
+
+    static void __stdcall SetLanternFailureToFailureTransitionChances( float afChanceFlickerComesAfterDeadFailure, float afChanceDeadComesAfterFlickerFailure );
+    static void __stdcall SetLanternDefaultFailureToFailureTransitionChances();
+
+    static void __stdcall SetLanternDeadTimes(float afMinTimeInFailureDead, float afMaxTimeInFailureDead);
+    static void __stdcall SetLanternDefaultDeadTimes();
+
+    static void __stdcall StartLanternNoFailure();
+    static void __stdcall StartLanternFailureDead();
+    static void __stdcall StartLanternFailureFlickering();
+
+    static void __stdcall StartLanternNoFailureWithDuration(float afDuration);
+    static void __stdcall StartLanternFailureDeadWithDuration(float afDuration);
+    static void __stdcall StartLanternFailureFlickeringWithDuration(float afDuration);
+
     /**
      * Syntax: MyFun(bool abLit)
      */
     static void __stdcall SetLanternLitCallback(string &asCallback);
+    static void __stdcall SetLanternFlickerActive(bool abX);
     /**
     * if time is <=0 then the life time is calculated based on string length.
     */
@@ -308,9 +403,11 @@ private:
     static void __stdcall CreateParticleSystemAtEntityExt(    string& asPSName, string& asPSFile, string& asEntity, bool abSavePS, float afR, float afG, float afB, float afA,
             bool abFadeAtDistance, float afFadeMinEnd, float afFadeMinStart, float afFadeMaxStart, float afFadeMaxEnd);
     static void __stdcall DestroyParticleSystem(string& asName);
+    static void __stdcall DestroyParticleSystemInstantly(string& asName);
 
     //asEntity can be "Player". If abSaveSound = true the sound is never attached to the entity! Also note that saving should on be used on looping sounds!
     static void __stdcall PlaySoundAtEntity(string& asSoundName, string& asSoundFile, string& asEntity, float afFadeTime, bool abSaveSound);
+    static void __stdcall PlaySoundAtPosition(string& asSoundName, string& asSoundFile, float afX, float afY, float afZ, float afFadeTime, bool abSaveSound);
     static void __stdcall FadeInSound(string& asSoundName, float afFadeTime, bool abPlayStart);
     static void __stdcall StopSound(string& asSoundName, float afFadeTime);
 
@@ -327,12 +424,20 @@ private:
     static void __stdcall FadeLightTo(string& asLightName, float afR, float afG, float afB, float afA, float afRadius, float afTime);
     static void __stdcall SetLightFlickerActive(string& asLightName, bool abActive);
 
+    static void __stdcall FadeLampTo(string& asName, float afR, float afG, float afB, float afA, float afRadius, float afTime);
+    static void __stdcall SetLampFlickerActive(string& asName, bool abActive);
 
+    static void __stdcall SetPhysicsAutoDisable(string& asName, bool abAutoDisable);
+
+    static void __stdcall SetParticleSystemActive(string& asName, bool abActive);
+
+    static void __stdcall SetEnemyActivationDistance(string& asName, float afX);
 
     // Entity properties
     static void __stdcall SetEntityActive(string& asName, bool abActive);
     static void __stdcall SetEntityVisible(string& asName, bool abVisible);
     static bool __stdcall GetEntityExists(string& asName);
+    static bool __stdcall GetEntityActive(string& asName);
     static void __stdcall SetEntityPos(string& asName, float afX, float afY, float afZ);
     static float __stdcall GetEntityPosX(string& asName);
     static float __stdcall GetEntityPosY(string& asName);
@@ -341,7 +446,8 @@ private:
     * CrossHair can be: Default (uses default), Grab, Push, Ignite, Pick, LevelDoor, Ladder
      */
     static void __stdcall SetEntityCustomFocusCrossHair(string& asName, string &asCrossHair);
-    static void __stdcall CreateEntityAtArea(string& asEntityName, string& asEntityFile, string& asAreaName, bool abFullGameSave);
+    static void __stdcall CreateEntityAtArea(string& asEntityName, string& asEntityFile, string& asAreaName, bool abFullGameSave, float afPosX, float afPosY, float afPosZ, float afRotX, float afRotY, float afRotZ);
+    static void __stdcall CreateEntityAtAreaLegacy(string& asEntityName, string& asEntityFile, string& asAreaName, bool abFullGameSave);
     static void __stdcall ReplaceEntity(string& asName, string& asBodyName, string& asNewEntityName, string& asNewEntityFile, bool abFullGameSave);
     static void __stdcall PlaceEntityAtEntity(string& asName, string& asTargetEntity, string& asTargetBodyName, bool abUseRotation);
     /**
@@ -376,15 +482,22 @@ private:
     static void __stdcall RotatePropToSpeed(string& asName, float afAcc, float afGoalSpeed, float afAxisX, float afAxisY, float afAxisZ, bool abResetSpeed, string& asOffsetArea);
     static void __stdcall StopPropMovement(string& asName);
 
+    static void __stdcall AttachPropToBone(string& asChildEntityName, string& asParentEntityName, string& asParentBoneName, float afPosX, float afPosY, float afPosZ, float afRotX, float afRotY, float afRotZ);
     static void __stdcall AttachPropToProp(string& asPropName, string& asAttachName, string& asAttachFile, float afPosX, float afPosY, float afPosZ, float afRotX, float afRotY, float afRotZ);
+
+    static void __stdcall DetachPropFromBone(string& asChildEntityName);
+
     static void __stdcall AddAttachedPropToProp(string& asPropName, string& asAttachName, string& asAttachFile, float afPosX, float afPosY, float afPosZ, float afRotX, float afRotY, float afRotZ);
     static void __stdcall RemoveAttachedPropFromProp(string& asPropName, string& asAttachName);
 
+    static void __stdcall SetLampCanBeLitByPlayer(string& asName, bool abX);
+    static void __stdcall SetLampCanBeUnlitByPlayer(string& asName, bool abX);
 
     static void __stdcall SetLampLit(string& asName, bool abLit, bool abEffects);
     static void __stdcall SetSwingDoorLocked(string& asName, bool abLocked, bool abEffects);
     static void __stdcall SetSwingDoorClosed(string& asName, bool abClosed, bool abEffects);
     static void __stdcall SetSwingDoorDisableAutoClose(string& asName, bool abDisableAutoClose);
+    static void __stdcall SetSwingDoorOpenAmount(string& asName, float afOpenAmount, float afDuration, bool abOpenTowardsMaxAngle);
     static bool __stdcall GetSwingDoorLocked(string &asName);
     static bool __stdcall GetSwingDoorClosed(string &asName);
     /**
@@ -413,6 +526,8 @@ private:
     static void __stdcall SetMultiSliderCallback(string& asName, string& asCallback);
 
     static void __stdcall SetButtonSwitchedOn(string& asName, bool abSwitchedOn, bool abEffects);
+    static void __stdcall SetButtonCanBeSwitchedOn(string& asName, bool abCanBeSwitchedOn);
+    static void __stdcall SetButtonCanBeSwitchedOff(string& asName, bool abCanBeSwitchedOff);
     static void __stdcall SetAllowStickyAreaAttachment(bool abX);
     static void __stdcall AttachPropToStickyArea(string& asAreaName, string& asProp);
     static void __stdcall AttachBodyToStickyArea(string& asAreaName, string& asBody);
@@ -420,18 +535,34 @@ private:
     static void __stdcall SetNPCAwake(string& asName, bool abAwake, bool abEffects);
     static void __stdcall SetNPCFollowPlayer(string& asName, bool abX);
 
+    static void __stdcall AttachAreaToProp(string& asAreaName, string& asProp, int alBody);
+
     static void __stdcall SetEnemyDisabled(string& asName, bool abDisabled);
     static void __stdcall SetEnemyIsHallucination(string& asName, bool abX);
     static void __stdcall FadeEnemyToSmoke(string& asName, bool abPlaySound);
     static void __stdcall ShowEnemyPlayerPosition(string& asName);
+    static void __stdcall ForceEnemyWaitState(string& asName);
     static void __stdcall AlertEnemyOfPlayerPresence(string& asName);
     static void __stdcall SetEnemyDisableTriggers(string& asName, bool abX);
-    static void __stdcall AddEnemyPatrolNode(string& asName, string& asNodeName, float afWaitTime, string& asAnimation);
+    static void __stdcall AddEnemyPatrolNode(string& asName, string& asNodeName, float afWaitTime, string& asAnimation, bool abLoopAnimation);
+    static void __stdcall AddEnemyPatrolNodeLegacy(string& asName, string& asNodeName, float afWaitTime, string& asAnimation);
     static void __stdcall ClearEnemyPatrolNodes(string& asEnemyName);
+    static void __stdcall PlayEnemyAnimation(string & asEnemyName, string & asAnimName, bool abLoop, float afFadeTime);
     static void __stdcall TeleportEnemyToNode(string & asEnemyName, string & asNodeName, bool abChangeY);
     static void __stdcall TeleportEnemyToEntity(string & asName, string & asTargetEntity, string & asTargetBody, bool abChangeY);
+    static float __stdcall GetEnemyPlayerDistance(string & asEnemyName);
+    static bool __stdcall GetPlayerCanSeeEnemy(string & asEnemyName);
 
-#if LUX_ENEMY_MANPIG
+    static void __stdcall ChangeEnemyPose(string& asName, string& asPoseType);
+    static void __stdcall SetEnemyMoveType(string& asName, string& asMoveType );
+    static void __stdcall SetManPigType(string& asName, string& asManPigType);
+    static void __stdcall SendEnemyTimeOut(string& asName, float afTimeOut );
+    static void __stdcall StopAnimationAndContinue(string& asName, float afTimeOut );
+    static void __stdcall PlayScriptedAnimation(string& asName, string& asAnimationName, bool abLoopAnimation);
+
+    static void __stdcall SetEnemyBlind(string& asName, bool abX);
+    static void __stdcall SetEnemyDeaf(string& asName, bool abX);
+
     /**
      * Pose can be "Biped" or "Quadruped"
      */
@@ -441,8 +572,8 @@ private:
     static void __stdcall SetTeslaPigSoundDisabled(string& asName, bool abX);
     static void __stdcall SetTeslaPigEasyEscapeDisabled(string& asName, bool abX);
     static void __stdcall ForceTeslaPigSighting(string& asName);
-#endif
 
+    static int __stdcall GetEnemyState(string& asName);
     static string &__stdcall GetEnemyStateName(string& asName);
 
     static void __stdcall SetPropHealth(string& asName, float afHealth);
@@ -453,7 +584,11 @@ private:
      * Callback syntax: MyFunc(string &in asProp)
      */
     static void __stdcall PlayPropAnimation(string& asProp, string& asAnimation, float afFadeTime, bool abLoop, string &asCallback);
-
+    static void __stdcall StopPropAnimation(string& asProp);
+    static void __stdcall PlayCurrentAnimation(string& asProp, float afFadeTime, bool abLoop);
+    static void __stdcall PauseCurrentAnimation(string& asProp, float afFadeTime);
+    static void __stdcall SetPropAnimationSpeed(string& asProp, float afSpeed);
+    static void __stdcall SetPropAnimationPosition(string& asProp, float afPos);
 
     /**
      * State is 0 -1 where 0 is close and 1 is open. Any intermediate value is also valid!
@@ -492,20 +627,6 @@ private:
      * Callback Syntax: MyFunc(string &in asConnectionName, string &in asMainEntity, string &in asConnectEntity, int alState). State is what is sent to connection entity and will be inverted if abInvertStateSent=true!
      */
     static void __stdcall ConnectEntities(string& asName, string& asMainEntity, string& asConnectEntity, bool abInvertStateSent, int alStatesUsed, string& asCallbackFunc);
-
-
-    // TEMP
-    /*static void __stdcall CreateRope(    string& asName,
-                                        string& asStartArea, string& asEndArea,
-                                        string& asStartBody, string& asEndBody,
-                                        float afMinTotalLength, float afMaxTotalLength,
-                                        float afSegmentLength, float afDamping,
-                                        float afStrength, float afStiffness,
-                                        string& asMaterial, float afRadius,
-                                        float afLengthTileAmount, float afLengthTileSize,
-                                        string& asSound,float afSoundStartSpeed, float afSoundStopSpeed,
-                                        bool abAutoMove, float afAutoMoveAcc, float afAutoMoveMaxSpeed
-                                        );*/
 
     //////////////////////////////
     // Math

@@ -16,6 +16,11 @@ public:
 
 typedef std::list<cLuxDebugMessage> tLuxDebugMessageList;
 typedef tLuxDebugMessageList::iterator tLuxDebugMessageListIt;
+typedef std::pair<float,iLight*> tLightComplexity;
+
+//----------------------------------------------
+
+#define DebugMessage(mess) gpBase->mpDebugHandler->AddMessage(cString::To16Char(mess), false);
 
 //----------------------------------------------
 
@@ -47,6 +52,7 @@ public:
 
     void AddErrorOrWarningMessage(const tWString& asText);
     void AddMessage(const tWString& asText, bool abCheckForDuplicates);
+    void AddAILogEntry(const tString& asText);
 
     bool GetShowPlayerInfo()
     {
@@ -67,6 +73,21 @@ public:
     bool GetAllowQuickSave()
     {
         return mbAllowQuickSave;
+    }
+    bool GetShowGbufferContent()
+    {
+        return mbShowGbufferContent;
+    }
+    bool GetPositionAttachedProps()
+    {
+        return mbPositionAttachedProps;
+    }
+
+    cMatrixf GetParentBoneOffsetMatrix()
+    {
+        cMatrixf mtxTransform = cMath::MatrixRotate(cMath::Vector3ToRad(cVector3f(mfPropOffsetRotX, mfPropOffsetRotY, mfPropOffsetRotZ)), eEulerRotationOrder_XYZ);
+        mtxTransform.SetTranslation(cVector3f(mfPropOffsetPosX, mfPropOffsetPosY,mfPropOffsetPosZ));
+        return mtxTransform;
     }
 
     void SetFastForward(bool abX);
@@ -164,6 +185,7 @@ private:
     cWidgetCheckBox *mpCBFastForward;
 
     tWidgetList mlstScriptOutputWidgets;
+    std::vector<tLightComplexity> mvLightComplexity;
 
     bool mbShowFPS;
     bool mbShowSoundPlaying;
@@ -173,6 +195,9 @@ private:
     bool mbScriptDebugOn;
     bool mbInspectionMode;
     bool mbDrawPhysics;
+    bool mbShowGbufferContent;
+    bool mbShowAILog;
+    bool mbPositionAttachedProps;
 
     bool mbAllowQuickSave;
 
@@ -195,6 +220,15 @@ private:
 
     tLuxDebugMessageList mlstMessages;
     int mlTempCount;
+
+    float mfPropOffsetRotX;
+    float mfPropOffsetRotY;
+    float mfPropOffsetRotZ;
+    float mfPropOffsetPosX;
+    float mfPropOffsetPosY;
+    float mfPropOffsetPosZ;
+
+    tStringList m_lstAiLogStrings;
 };
 
 //----------------------------------------------

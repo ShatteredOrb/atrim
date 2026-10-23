@@ -3,8 +3,26 @@
 #include "LuxMap.h"
 #include "LuxPlayer.h"
 #include "LuxPlayerHands.h"
+#include "LuxEnemy.h"
 #include "LuxMapHelper.h"
+#include "LuxMapHandler.h"
 #include "LuxHelpFuncs.h"
+#include "LuxDebugHandler.h"
+#include <limits>
+
+//-----------------------------------------------------------------------
+
+// When the player is right handed the hands entity is mirrored on X (see cLuxPlayerHands::UpdatePlayerHandsPos).
+// Lights parented to it must be mirrored too, otherwise their world matrix gets a negative determinant
+// and the spotlight frustum / culling breaks (lantern light disappears).
+static cMatrixf GetHandOrientedLightMatrix(const cMatrixf& a_mtxLocal)
+{
+    if(gpBase->mpPlayer->GetHandOrientation() == eLuxHandOrientation_Right)
+    {
+        return cMath::MatrixMul(a_mtxLocal, cMath::MatrixScale(cVector3f(-1.0f, 1.0f, 1.0f)));
+    }
+    return a_mtxLocal;
+}
 
 //////////////////////////////////////////////////////////////////////////
 // CONSTRUCTORS
@@ -16,6 +34,19 @@ cLuxHandObject_LightSource::cLuxHandObject_LightSource(const tString& asName, cL
 {
     mfSwayAngle = 0;
     mfSwayVel = 0;
+
+    mbFlickering = false;
+    mfFlickeringSpeed = 1.0f;
+    mlFlickeringState = 1;
+
+    mfFlickerAmount = 1;
+    mfFlickerTime = 0;
+    mfFlickerPauseTime = 0;
+    mfLastAppliedFlicker = 1.0f;
+
+    mfStrobeDroneTime=0;
+    mpDroneSound = NULL;
+    mlDroneSoundId = -1;
 }
 
 cLuxHandObject_LightSource::~cLuxHandObject_LightSource()
@@ -91,12 +122,19 @@ void cLuxHandObject_LightSource::ImplementedCreateEntity(cLuxMap *apMap)
         cSubMeshEntity *pSubEnt = mpMeshEntity->GetSubMeshEntity((unsigned int)i);
         mvDefaultSubMeshMatrix[i] = pSubEnt->GetLocalMatrix();
     }
+
+    mvDefaultBillboardMatrix.resize(mvBillboards.size());
+    for(size_t i = 0; i < mvBillboards.size() && i < mvDefaultBillboardMatrix.size(); ++i)
+    {
+        mvDefaultBillboardMatrix[i] = mvBillboards[i]->GetLocalMatrix();
+    }
 }
 
 //-----------------------------------------------------------------------
 
 void cLuxHandObject_LightSource::ImplementedDestroyEntity(cLuxMap *apMap)
 {
+    StopDroneSound();
 }
 
 //-----------------------------------------------------------------------
@@ -105,25 +143,41 @@ void cLuxHandObject_LightSource::ImplementedReset()
 {
     mfSwayAngle = 0;
     mfSwayVel = 0;
+
+    mfStrobeDroneTime = 0;
+    mfFlickerAmount = 1;
+    mfLastAppliedFlicker = 1.0f;
+    StopDroneSound();
+}
+
+//-----------------------------------------------------------------------
+
+void cLuxHandObject_LightSource::StopDroneSound()
+{
+    if(mpDroneSound)
+    {
+        cSoundHandler *pSoundHandler = gpBase->mpEngine->GetSound()->GetSoundHandler();
+        if(pSoundHandler->IsValid(mpDroneSound, mlDroneSoundId))
+        {
+            mpDroneSound->Stop();
+        }
+        mpDroneSound = NULL;
+    }
+    mlDroneSoundId = -1;
 }
 
 //-----------------------------------------------------------------------
 
 void cLuxHandObject_LightSource::Update(double adFixedDelta)
 {
+    float fAlpha = 1.0f;
+
     bool bUpdate = false;
     bool bUpdateDone = false;
 
-    for(size_t i = 0; i < mvLights.size(); ++i)
+    for(size_t i = 0; i < mvLights.size() && i < mvDefaultLightMatrix.size(); ++i)
     {
-        cMatrixf mtxLight = mvDefaultLightMatrix[i];
-
-        if(gpBase->mpPlayer->GetHandOrientation() == eLuxHandOrientation_Right)
-        {
-            mtxLight = cMath::MatrixMul(mtxLight, cMath::MatrixScale(cVector3f(-1.0f, 1.0f, 1.0f)));
-        }
-
-        mvLights[i]->SetMatrix(mtxLight);
+        mvLights[i]->SetMatrix(GetHandOrientedLightMatrix(mvDefaultLightMatrix[i]));
     }
 
     ///////////////////
@@ -152,6 +206,17 @@ void cLuxHandObject_LightSource::Update(double adFixedDelta)
             mpHands->mfHandObjectAlpha = 0.0f;
         }
 
+        if(mpDroneSound)
+        {
+            cSoundHandler *pSoundHandler = gpBase->mpEngine->GetSound()->GetSoundHandler();
+
+            if(pSoundHandler->IsValid(mpDroneSound, mlDroneSoundId))
+            {
+                mpDroneSound->FadeOut(0.5f);
+            }
+            mpDroneSound = NULL;
+        }
+
         bUpdate = true;
     }
     ///////////////////
@@ -169,6 +234,22 @@ void cLuxHandObject_LightSource::Update(double adFixedDelta)
     }
 
     ///////////////////
+    // Flickering
+    float fFlicker = UpdateFlickering(adFixedDelta);
+
+    ///////////////////
+    // Set alpha
+    // Flicker must also be applied after the fade in is done, otherwise the
+    // strobe / script flicker is never visible. Only touch colors when something
+    // changed so the engine's own light flicker (mvDefaultLightFlicker) is left alone.
+    fAlpha = mpHands->mfHandObjectAlpha * fFlicker;
+    if(fFlicker != mfLastAppliedFlicker)
+    {
+        bUpdate = true;
+        mfLastAppliedFlicker = fFlicker;
+    }
+
+    ///////////////////
     // Calculate fade out color
     if(mpHands->GetState() != eLuxHandsState_Holster)
     {
@@ -183,19 +264,22 @@ void cLuxHandObject_LightSource::Update(double adFixedDelta)
     // Set alpha
     if(bUpdate)
     {
-        mpMeshEntity->SetIlluminationAmount(mpHands->mfHandObjectAlpha);
+        if(mpMeshEntity)
+        {
+            mpMeshEntity->SetIlluminationAmount(fAlpha);
+        }
 
-        for(size_t i = 0; i < mvBillboards.size(); ++i)
+        for(size_t i = 0; i < mvBillboards.size() && i < mvDefaultBillboardMatrix.size(); ++i)
         {
             cColor col = mvBillboards[i]->GetColor();
-            col.a = mpHands->mfHandObjectAlpha;
+            col.a = fAlpha;
             mvBillboards[i]->SetColor(col);
         }
 
         for(size_t i = 0; i < mvParticleSystems.size(); ++i)
         {
             cColor col = mvParticleSystems[i]->GetColor();
-            col.a = mpHands->mfHandObjectAlpha;
+            col.a = fAlpha;
             mvParticleSystems[i]->SetColor(col);
         }
 
@@ -203,11 +287,11 @@ void cLuxHandObject_LightSource::Update(double adFixedDelta)
         {
             if(mpHands->GetState() == eLuxHandsState_Holster)
             {
-                mvLights[i]->SetDiffuseColor(mvLightFadeOutColor[i] * mpHands->mfHandObjectAlpha);
+                mvLights[i]->SetDiffuseColor(mvLightFadeOutColor[i] * fAlpha);
             }
             else
             {
-                mvLights[i]->SetDiffuseColor(mvDefaultLightColors[i] * mpHands->mfHandObjectAlpha);
+                mvLights[i]->SetDiffuseColor(mvDefaultLightColors[i] * fAlpha);
             }
         }
     }
@@ -236,6 +320,21 @@ bool cLuxHandObject_LightSource::DoAction(eLuxPlayerAction aAction, bool abPress
 bool cLuxHandObject_LightSource::AnimationIsOver()
 {
     return true;
+}
+
+//-----------------------------------------------------------------------
+
+void cLuxHandObject_LightSource::SetFlickering(bool abX)
+{
+    mbFlickering = abX;
+
+    if(mbFlickering)
+    {
+        mfFlickerAmount = 1;
+        mfFlickerTime = 0.05f;
+        mlFlickeringState = 1;
+        mfFlickerPauseTime=0;
+    }
 }
 
 //-----------------------------------------------------------------------
@@ -309,19 +408,219 @@ void cLuxHandObject_LightSource::UpdateSwayPhysics(double adFixedDelta)
     /////////////////////////////
     // Update Model matrix
     cMatrixf mtxSway = cMath::MatrixRotate(mvSwayPinDir * mfSwayAngle, eEulerRotationOrder_XYZ);
+    cMatrixf mtxSwayLight = cMath::MatrixRotate(mvSwayPinDir * mfSwayAngle * 0.125f, eEulerRotationOrder_XYZ);
 
-    for(int i = 0; i < mpMeshEntity->GetSubMeshEntityNum(); ++i)
+    if ( mpMeshEntity )
     {
-        cSubMeshEntity *pSubEnt = mpMeshEntity->GetSubMeshEntity((unsigned int)i);
-        if(pSubEnt->GetSubMesh()->GetName() == msSkipSwaySubMesh)
+        for(int i=0; i<mpMeshEntity->GetSubMeshEntityNum(); ++i)
+        {
+            cSubMeshEntity *pSubEnt = mpMeshEntity->GetSubMeshEntity(i);
+            if(pSubEnt->GetSubMesh()->GetName() == msSkipSwaySubMesh)
+            {
+                continue;
+            }
+            //Log("'%s'\n",pSubEnt->GetSubMesh()->GetName().c_str());
+
+            pSubEnt->SetMatrix(cMath::MatrixMul(mtxSway, mvDefaultSubMeshMatrix[i]) );
+        }
+        mpMeshEntity->SetMatrix(m_mtxOffset);
+    }
+
+    for(size_t i=0; i<mvLights.size() && i<mvDefaultLightMatrix.size(); ++i)
+    {
+        //Must keep the right hand mirroring, otherwise the light breaks when hand orientation is Right.
+        mvLights[i]->SetMatrix(GetHandOrientedLightMatrix(cMath::MatrixMul(mtxSwayLight, mvDefaultLightMatrix[i])) );
+    }
+
+    for(size_t i = 0; i < mvBillboards.size() && i < mvDefaultBillboardMatrix.size(); ++i)
+    {
+        mvBillboards[i]->SetMatrix(cMath::MatrixMul(mtxSway, mvDefaultBillboardMatrix[i]) );
+    }
+    // Update
+}
+
+//----------------------------------------------------------------------
+
+float cLuxHandObject_LightSource::UpdateFlickering(double adFixedDelta)
+{
+    if(mpHands->GetState() == eLuxHandsState_Holster)
+    {
+        return 1.0f;
+    }
+
+    ////////////////////////////
+    // See if an enemy is in the spotlight.
+    bool bEnemyInSpotLight = false;
+    cLuxMap* pMap = gpBase->mpMapHandler->GetCurrentMap();
+    if(pMap == NULL)
+    {
+        StopDroneSound();
+        return 1.0f;
+    }
+    cLuxEnemyIterator it = pMap->GetEnemyIterator();
+    while(it.HasNext())
+    {
+        iLuxEnemy* pEnemy = it.Next();
+        if(pEnemy->IsActive()==false)
         {
             continue;
         }
-
-        pSubEnt->SetMatrix(cMath::MatrixMul(mtxSway, mvDefaultSubMeshMatrix[i]) );
+        if(pEnemy->GetInLanternLightCount()>0)
+        {
+            bEnemyInSpotLight=true;
+            break;
+        }
     }
-    mpMeshEntity->SetMatrix(m_mtxOffset);
+
+    ////////////////////////////
+    // Strobe drone
+    cSoundHandler *pSoundHandler = gpBase->mpEngine->GetSound()->GetSoundHandler();
+
+    if(bEnemyInSpotLight)
+    {
+        mfStrobeDroneTime = 1.0f;
+    }
+    if(mfStrobeDroneTime>0)
+    {
+        mfStrobeDroneTime -= (float)adFixedDelta;
+
+        if(mpDroneSound==NULL || pSoundHandler->IsValid(mpDroneSound, mlDroneSoundId)==false)
+        {
+            mpDroneSound = pSoundHandler->PlayGui("ui_lanterndrone.ogg", true, 1);
+            if(mpDroneSound)
+            {
+                mlDroneSoundId = mpDroneSound->GetId();
+                mpDroneSound->FadeIn(1.0f, 0.5f);
+            }
+        }
+    }
+    else
+    {
+        if(mpDroneSound)
+        {
+            if(pSoundHandler->IsValid(mpDroneSound, mlDroneSoundId))
+            {
+                mpDroneSound->FadeOut(0.5f);
+            }
+            mpDroneSound = NULL;
+        }
+    }
+
+    ////////////////////////////
+    // If In spotlight, do a strobing effect
+    if(bEnemyInSpotLight)
+    {
+        //Make sure within bounds
+        if(mfFlickerTime<0.01)
+        {
+            mfFlickerTime = 0.025f;
+        }
+        if(mfFlickerTime>0.1)
+        {
+            mfFlickerTime = 0.1f;
+        }
+
+        //Puase
+        if(mfFlickerPauseTime>0)
+        {
+            mfFlickerPauseTime -= (float)adFixedDelta;
+            return mfFlickerAmount;
+        }
+
+        ////////////////////////////
+        // Fade in
+        if(mlFlickeringState==1)
+        {
+            mfFlickerAmount += (float)adFixedDelta*(1.0f/mfFlickerTime);
+            if(mfFlickerAmount>=1)
+            {
+                mfFlickerAmount=1;
+                mfFlickerTime = cMath::RandRectf(0.1f, 1.0f);
+                mlFlickeringState=0;
+                gpBase->mpHelpFuncs->PlayGuiSoundData("lantern_flicker_strobe", eSoundEntryType_World);
+            }
+        }
+        ////////////////////////////
+        // Fade out
+        else if(mlFlickeringState==0)
+        {
+            mfFlickerAmount -= (float)adFixedDelta*(1.0f/mfFlickerTime);
+            if(mfFlickerAmount<=0)
+            {
+                if(cMath::RandRectl(0, 5)==0)
+                {
+                    mfFlickerPauseTime = cMath::RandRectf(0, 1);
+                }
+
+                mfFlickerAmount=0;
+                mfFlickerTime = cMath::RandRectf(0.025f, 0.2f);
+                mlFlickeringState=1;
+                gpBase->mpHelpFuncs->PlayGuiSoundData("lantern_flicker_strobe", eSoundEntryType_World);
+            }
+        }
+
+        return mfFlickerAmount;
+    }
+
+    ////////////////////////////
+    // Check if active
+    if(mbFlickering==false)
+    {
+        mfFlickerAmount += (float)adFixedDelta*12;
+        if(mfFlickerAmount>=1)
+        {
+            mfFlickerAmount=1;
+        }
+        return mfFlickerAmount;
+    }
+
+    ////////////////////////////
+    // Fade in
+    if(mlFlickeringState==1 && mfFlickerAmount<1)
+    {
+        mfFlickerAmount += (float)adFixedDelta*35;
+        if(mfFlickerAmount>=1)
+        {
+            mfFlickerAmount=1;
+        }
+    }
+    ////////////////////////////
+    // Fade out
+    else if(mlFlickeringState==0 && mfFlickerAmount>0)
+    {
+        mfFlickerAmount -= (float)adFixedDelta*35;
+        if(mfFlickerAmount<=0)
+        {
+            mfFlickerAmount=0;
+        }
+    }
+    ////////////////////////////
+    // Check of time for state switch
+    else
+    {
+        mfFlickerTime -= (float)adFixedDelta*mfFlickeringSpeed;
+        if(mfFlickerTime<=0)
+        {
+            ///////////////////////////
+            // Off -> On
+            if(mlFlickeringState == 1)
+            {
+                mfFlickerTime = cMath::RandRectf(0.0f, 0.15f);
+                mlFlickeringState =0;
+                gpBase->mpHelpFuncs->PlayGuiSoundData("lantern_flicker", eSoundEntryType_World);
+            }
+            ///////////////////////////
+            // On -> Off
+            else
+            {
+                mfFlickerTime = cMath::RandRectf(0.1f, 0.8f);
+                mlFlickeringState =1;
+                gpBase->mpHelpFuncs->PlayGuiSoundData("lantern_flicker", eSoundEntryType_World);
+            }
+        }
+    }
+
+    return mfFlickerAmount;
 }
 
-//-----------------------------------------------------------------------
-
+//----------------------------------------------------------------------

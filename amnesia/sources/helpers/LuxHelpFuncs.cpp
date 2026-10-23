@@ -167,6 +167,7 @@ bool cLuxHelpFuncs::PlayGuiSoundData(const tString& asName, eSoundEntryType aDes
         apOutputData->mfMinDistance = pSoundData->GetMinDistance();
         apOutputData->mfMaxDistance = pSoundData->GetMaxDistance();
         apOutputData->mfVolume = pSoundData->GetVolume();
+        apOutputData->mfAIVolume = pSoundData->GetAIVolume();
         apOutputData->mpSoundEntry = pSound;
     }
 

@@ -57,6 +57,8 @@ public:
 
     float mfStuckCounter;
 
+    cVector3f mvCurrentGoal;
+
     int mlMoveState;
     bool mbOverideMoveState;
 };
@@ -111,6 +113,9 @@ public:
     float mfHealth;
     bool mbCausesSanityDecrease;
 
+    bool mbBlind;
+    bool mbDeaf;
+
     bool mbHallucination;
     float mfHallucinationEndDist;
 
@@ -119,6 +124,9 @@ public:
     int mlPreviousState;
 
     int mlSoundState;
+
+    int mCurrentPose;
+    int mCurrentMoveType;
 
     float mfLookForPlayerCount;
     int mlPlayerInLOSCount;
@@ -142,10 +150,19 @@ public:
 
     float mfFOVMul;
 
+    bool mbSkipVisibilityRangeHandicaps;
+
     tString msCurrentAnimName;
     bool mbAnimationIsSpeedDependant;
     float mfAnimationSpeedMul;
     bool mbUseMoveAnimWhenCurrentIsOver;
+
+    int mlNextAnimationIndex;
+    bool mbNextAnimationLoop;
+    bool mbNextAnimationDependsOnSpeed;
+    float mfNextAnimSpeedMul;
+    bool mbNextAnimUseMoveAnimWhenCurrentIsOver;
+    bool mbNextAnimOverideMoveState;
 
     cVector3f mvStartPosition;
 
@@ -208,13 +225,12 @@ enum eLuxEnemyState
     eLuxEnemyState_BreakDoor,
 
     eLuxEnemyState_Dead,
-#if LUX_ENEMY_MANPIG
+
     eLuxEnemyState_PigEnumStart,
 
     eLuxEnemyState_Flee,
     eLuxEnemyState_Stalk,
     eLuxEnemyState_Track,
-#endif
 
     eLuxEnemyState_LastEnum
 };
@@ -377,14 +393,20 @@ public:
     void AlertOfPlayerPresence();
 
     void ChangeState(eLuxEnemyState aState);
+    void ChangePose(eLuxEnemyPoseType aPose, bool abSendMessage=true);
+    void ChangeMoveType(eLuxEnemyMoveType aMoveType);
 
     void SendMessage(eLuxEnemyMessage aType, float afTime = 0, bool abLocalScope = false, const cVector3f& avX = 0, float afX = 0, int alX = 0);
+
+    virtual void PlayScriptedAnimation(const tString &asName, bool abLoop);
 
     void PlayAnim(    const tString &asName, bool abLoop, float afFadeTime,
                       bool abDependsOnSpeed = false, float afSpeedMul = 1.0f,
                       bool abSyncWithPrevFrame = false,
                       bool abOverideMoveState = true,
-                      bool abUseMoveAnimWhenCurrentIsOver = true);
+                      bool abUseMoveAnimWhenCurrentIsOver = true,
+                      bool abCanBlend = true,
+                      bool abPlayTransition = true);
     void FadeOutCurrentAnim(float afFadeTime);
     float ConvertAnimToAbsoluteTime(float afRelativeTimePosition);
 
@@ -401,29 +423,36 @@ public:
 
     virtual const tString &GetBackwardAnimationName()
     {
-        return msBackwardAnimationName[eLuxEnemyMoveType_Normal][mCurrentPose];
+        return msBackwardAnimationName[mCurrentMoveType][mCurrentPose];
     }
     virtual const tString &GetIdleAnimationName()
     {
-        return msIdleAnimationName[eLuxEnemyMoveType_Normal][mCurrentPose];
+        return msIdleAnimationName[mCurrentMoveType][mCurrentPose];
     }
     virtual const tString &GetWalkAnimationName()
     {
-        return msWalkAnimationName[eLuxEnemyMoveType_Normal][mCurrentPose];
+        return msWalkAnimationName[mCurrentMoveType][mCurrentPose];
     }
     virtual const tString &GetRunAnimationName()
     {
-        return msRunAnimationName[eLuxEnemyMoveType_Normal][mCurrentPose];
+        return msRunAnimationName[mCurrentMoveType][mCurrentPose];
+    }
+    virtual const tString &GetJogAnimationName()
+    {
+        return msJogAnimationName[mCurrentMoveType][mCurrentPose];
     }
 
     //////////////////////
     //Patrol nodes
-    void AddPatrolNode(cAINode *apNode, float afWaitTime, const tString & asAnimation, bool abLoopAnimation = false);
-    void ClearPatrolNodes();
+    virtual void AddPatrolNode(cAINode *apNode, float afWaitTime, const tString & asAnimation, bool abLoopAnimation);
+    virtual void ClearPatrolNodes();
 
     cLuxEnemyPatrolNode *GetCurrentPatrolNode();
+    cLuxEnemyPatrolNode* GetPreviousPatrolNode();
     bool IsAtLastPatrolNode();
+    bool IsAtFirstPatrolNode();
     void IncCurrentPatrolNode(bool abLoopIfAtEnd);
+    void DecCurrentPatrolNode(bool abLoopIfAtStart);
 
     cLuxEnemyPatrolNode *GetPatrolNode(size_t alIdx)
     {
@@ -469,6 +498,20 @@ public:
         return mEnemyType;
     }
 
+    bool GetDeaf()
+    {
+        return mbDeaf;
+    }
+
+    void SetBlind(bool abX)
+    {
+        mbBlind = abX;
+    }
+    void SetDeaf(bool abX)
+    {
+        mbDeaf = abX;
+    }
+
     void SetDisabled(bool abX);
     bool IsDisabled()
     {
@@ -486,6 +529,8 @@ public:
         return mCurrentState;
     }
     string &GetCurrentEnemyStateName();
+
+    float DistToPlayer();
 
     bool CanSeePlayer()
     {
@@ -531,6 +576,10 @@ public:
     float GetActivationDistance()
     {
         return mfActivationDistance;
+    }
+    void SetActivationDistance( float abX )
+    {
+        mfActivationDistance = abX;
     }
 
     const tString &GetHitSound(eLuxWeaponHitType aType)
@@ -622,9 +671,15 @@ public:
     virtual void LoadFromSaveData(iLuxEntity_SaveData* apSaveData);
     virtual void SetupSaveData(iLuxEntity_SaveData *apSaveData);
 
+    virtual void SetHeardSound( tString asSoundName)
+    {
+        msHeardSoundName = asSoundName;
+    }
+
 protected:
     //////////////////////////////
     // Update and related
+    void AddTransitionAnimation(const tString& asMainAnim, const tString& asTransAnim, const tString& asPrevAnim, float afMinTime=-1.0f, float afMaxTime=-1.0f);
 
     tString GetCurrentPoseSuffix();
 
@@ -660,7 +715,7 @@ protected:
     // Helpers
     bool TriggersDisabled();
 
-    bool Attack(const cEnemyAttackSizeData &aSizeData, const cEnemyAttackDamageData &aDamageData, float afDamageMul = 1.0f);
+    bool Attack(const cEnemyAttackSizeData &aSizeData, const cEnemyAttackDamageData &aDamageData, float afDamageMul);
 
     void SetMoveSpeed(eLuxEnemyMoveSpeed aType);
 
@@ -680,6 +735,11 @@ protected:
     bool IsInPlayerFovAtFeetPos(const cVector3f& avFeetPos);
     bool IsVisibleToPlayerAtFeetPos(const cVector3f& avFeetPos);
 
+    float GetPathNodeReachedCheckVolumeScaleFactor()
+    {
+        return mfPathNodeReachedCheckVolumeScaleFactor;
+    }
+
     cVector3f GetPlayerFeetPos();
 
     float Dist2D(const cVector3f &avPos);
@@ -688,7 +748,6 @@ protected:
     float AbsHeightDistToChar(iCharacterBody *apBody);
     cVector3f GetDirection2D(const cVector3f &avPos);
 
-    float DistToPlayer();
     float DistToPlayer2D();
     float DistToPlayer2D(const cVector3f& avPos);
     float AbsHeightDistToPlayer();
@@ -699,10 +758,11 @@ protected:
 
     bool OutsideStartRadius();
     bool InFOV(const cVector3f &avPos);
+    bool InFOV(const cVector3f &avPos, float fFOV);
     bool PlayerInFOV();
+    bool PlayerInFOV(float fFOV);
 
     void OnSetActive(bool abX);
-
 
     virtual float GetDamageMul(float afAmount, int alStrength) = 0;
     virtual void OnDamage(float afAmount, int alStrength) {}
@@ -723,6 +783,9 @@ protected:
     float mfHealth;
     bool mbCausesSanityDecrease;
     bool mbCausesSanityDecreaseAsDefault;
+
+    bool mbBlind;
+    bool mbDeaf;
 
     eLuxEnemyState mCurrentState;
     eLuxEnemyState mNextState;
@@ -748,6 +811,8 @@ protected:
     float mfDarknessGlowAlphaGoal;
     float mfDarknessGlowUpdateCount;
 
+    float mfPathNodeReachedCheckVolumeScaleFactor;
+
     float mfForwardSpeed;
     float mfBackwardSpeed;
     float mfForwardAcc;
@@ -761,6 +826,13 @@ protected:
     bool mbAnimationIsSpeedDependant;
     float mfAnimationSpeedMul;
     bool mbUseMoveAnimWhenCurrentIsOver;
+
+    int mlNextAnimationIndex;
+    bool mbNextAnimationLoop;
+    bool mbNextAnimationDependsOnSpeed;
+    float mfNextAnimSpeedMul;
+    bool mbNextAnimUseMoveAnimWhenCurrentIsOver;
+    bool mbNextAnimOverideMoveState;
 
     tLuxStateMessageList mlstMessages;
 
@@ -792,6 +864,7 @@ protected:
     cSurfaceData *mpWaterSurfaceData;
 
     eLuxEnemyPoseType mCurrentPose;
+    eLuxEnemyMoveType mCurrentMoveType;
 
     //////////////
     //Data
@@ -804,9 +877,12 @@ protected:
     bool mbAlignEntityWithGroundRay;
 
     bool mbAutoRemoveAtPathEnd;
+    bool mbAutoReverseAtPathEnd;
+    float mfAutoRemoveMinPlayerDistance;
 
     float mfSightRange;
     float mfDarknessSightRange;
+    float mfDarknessStillSightRangeMul;
     float mfHearVolume;
     float mfFOV;
     float mfFOVXMul;
@@ -846,6 +922,8 @@ protected:
     float mfStoppedToWalkSpeed[eLuxEnemyPoseType_LastEnum];
     float mfWalkToStoppedSpeed[eLuxEnemyPoseType_LastEnum];
     float mfWalkToRunSpeed[eLuxEnemyPoseType_LastEnum];
+    float mfWalkToJogSpeed[eLuxEnemyPoseType_LastEnum];
+    float mfRunToJogSpeed[eLuxEnemyPoseType_LastEnum];
     float mfRunToWalkSpeed[eLuxEnemyPoseType_LastEnum];
 
     float mfDefaultForwardSpeed[eLuxEnemyPoseType_LastEnum][eLuxEnemyMoveSpeed_LastEnum];
@@ -886,9 +964,11 @@ protected:
     cMatrixf m_mtxCharMeshOffset;
 
     string msPolledEnemyStateName;
+    tString msHeardSoundName;
 
     tString msIdleAnimationName[eLuxEnemyMoveType_LastEnum][eLuxEnemyPoseType_LastEnum];
     tString msWalkAnimationName[eLuxEnemyMoveType_LastEnum][eLuxEnemyPoseType_LastEnum];
+    tString msJogAnimationName[eLuxEnemyMoveType_LastEnum][eLuxEnemyPoseType_LastEnum];
     tString msRunAnimationName[eLuxEnemyMoveType_LastEnum][eLuxEnemyPoseType_LastEnum];
     tString msBackwardAnimationName[eLuxEnemyMoveType_LastEnum][eLuxEnemyPoseType_LastEnum];
 

@@ -131,6 +131,8 @@ void cLuxProp_LevelDoor::UpdatePropSpecific(double adFixedDelta)
     {
         mfLockedCount -= (float)adFixedDelta;
     }
+
+    //No flash on level doors (TDD behaviour). MFP added FlashIfNearPlayer here.
 }
 
 //-----------------------------------------------------------------------

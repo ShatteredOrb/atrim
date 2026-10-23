@@ -15,7 +15,7 @@ class iLuxPlayerState_InteractRotateBase_SaveData : public iLuxPlayerState_Inter
 {
     kSerializableClassInit(iLuxPlayerState_InteractRotateBase_SaveData)
 public:
-
+    virtual ~iLuxPlayerState_InteractRotateBase_SaveData() {}
 };
 //----------------------------------------------
 

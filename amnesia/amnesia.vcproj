@@ -522,6 +522,14 @@
 			Name="Props"
 			>
 			<File
+				RelativePath=".\sources\props\LuxAnimatedProp.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\include\props\LuxAnimatedProp.h"
+				>
+			</File>
+			<File
 				RelativePath=".\sources\props\LuxProp.cpp"
 				>
 			</File>
@@ -645,6 +653,14 @@
 					>
 				</File>
 				<File
+					RelativePath=".\sources\props\PropTypes\LuxProp_PhoneBox.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\include\props\PropTypes\LuxProp_PhoneBox.h"
+					>
+				</File>
+				<File
 					RelativePath=".\sources\props\PropTypes\LuxProp_Photocell.cpp"
 					>
 				</File>
@@ -658,6 +674,14 @@
 				</File>
 				<File
 					RelativePath=".\include\props\PropTypes\LuxProp_SwingDoor.h"
+					>
+				</File>
+				<File
+					RelativePath=".\sources\props\PropTypes\LuxProp_VoiceFlashbackTrigger.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\include\props\PropTypes\LuxProp_VoiceFlashbackTrigger.h"
 					>
 				</File>
 				<File
@@ -802,6 +826,14 @@
 				</File>
 				<File
 					RelativePath=".\include\entities\Enemy\LuxEnemy.h"
+					>
+				</File>
+				<File
+					RelativePath=".\sources\entities\Enemy\LuxEnemy_Child.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\include\entities\Enemy\LuxEnemy_Child.h"
 					>
 				</File>
 				<File

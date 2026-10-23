@@ -52,6 +52,8 @@ public:
 class iLuxInteractData_RotateBase
 {
 public:
+    virtual ~iLuxInteractData_RotateBase() {}
+
     float mfMoveMaxSpeed;
     float mfMoveSlowDownFactor;
     float mfMoveSpeedFactor;
@@ -93,6 +95,7 @@ class iLuxProp_SaveData : public iLuxEntity_SaveData
 {
     kSerializableClassInit(iLuxProp_SaveData)
 public:
+    iLuxProp_SaveData();
     virtual ~iLuxProp_SaveData();
 
     ////////////////
@@ -132,9 +135,22 @@ public:
     bool mbMoveAngularUseOffset;
     cVector3f mvMoveAngularWorldOffset;
     cVector3f mvMoveAngularLocalOffset;
+    bool mbGlowEnabled;
+    cColor mcGlowColor;
+    cColor mcGlowOutlineColor;
 
     int mlCurrentNonLoopAnimIndex;
     tString msAnimCallback;
+
+    cMatrixf mpParentBoneOffsetMatrix;
+    tString msParentEntityName;
+    tString msParentBoneName;
+
+    float mfBodyMassBackup;
+    bool mbBodyCollideBackup;
+    bool mbBodyCollideCharacterBackup;
+    bool mbBodyActiveBackup;
+    cMatrixf mBodyMatrixBackup;
 
     cContainerVec<cLuxProp_AttachedProp> mvAttachedProps;
 
@@ -161,6 +177,7 @@ public:
     cEngineJoint_SaveData *GetJoint(iPhysicsJoint* apJoint);
 
     iLuxEntity *CreateEntity(cLuxMap *apMap);
+    iLuxEntity* CreateAndAddEntity(cLuxMap *apMap);
 };
 
 //----------------------------------------------
@@ -252,6 +269,13 @@ public:
      */
     void PlayAnimation(const tString& asName, float afFadeTime, bool abLoop, const tString& asCallback);
 
+    void StopAnimation();
+
+    void PlayCurrentAnimation(float afFadeTime, bool abLoop);
+    void PauseCurrentAnimation(float afFadeTime);
+    void SetAnimationSpeed(float afSpeed);
+    void SetAnimationPosition(float afPos);
+
     //////////////////////
     //Properties
     eLuxPropType GetPropType()
@@ -321,6 +345,33 @@ public:
     }
     void SetStaticPhysics(bool abX);
 
+    void FlashIfNearPlayer(double adFixedDelta);
+    void SetGlowColor(const cColor & acGlowColor)
+    {
+        mcGlowColor = acGlowColor;
+    }
+    void SetGlowOutlineColor(const cColor & acGlowOutlineColor)
+    {
+        mcGlowOutlineColor = acGlowOutlineColor;
+    }
+    void SetGlowEnabled( bool abGlowEnabled )
+    {
+        mbGlowEnabled = abGlowEnabled;
+    }
+
+    const cColor & GetGlowColor()
+    {
+        return mcGlowColor;
+    }
+    const cColor & GetGlowOutlineColor()
+    {
+        return mcGlowOutlineColor;
+    }
+    bool GetGlowEnabled()
+    {
+        return mbGlowEnabled;
+    }
+
     //////////////////////
     //Attached Prop
     iLuxProp *GetAttachmentParent()
@@ -389,7 +440,11 @@ public:
     virtual void LoadFromSaveData(iLuxEntity_SaveData* apSaveData);
     virtual void SetupSaveData(iLuxEntity_SaveData *apSaveData);
 
+    void SetParentBone(cBoneState * apParentBone, const cMatrixf & apParentBoneOffsetMatrix, tString asParentName, tString asParentBoneName);
+    void DetachFromParentBone();
 protected:
+    void UpdateParentBone(double adFixedDelta);
+
     void OnSetActive(bool abX);
 
     virtual void OnHealthChange() {}
@@ -430,6 +485,17 @@ protected:
     //Variables
     float mfHealth;
 
+    cBoneState * mpParentBone;
+    cMatrixf mpParentBoneOffsetMatrix;
+    tString msParentEntityName;
+    tString msParentBoneName;
+
+    float mfBodyMassBackup;
+    bool mbBodyCollideBackup;
+    bool mbBodyCollideCharacterBackup;
+    bool mbBodyActiveBackup;
+    cMatrixf mBodyMatrixBackup;
+
     bool mbCheckOutsidePlayer;
 
     bool mbIsInteractedWith;
@@ -446,6 +512,11 @@ protected:
 
     float mfMovingVolume;
     float mfMoveStartCount;
+
+    float mfFlashAlpha;
+    cColor mcGlowColor;
+    cColor mcGlowOutlineColor;
+    bool mbGlowEnabled;
 
     bool mbMovingLinear;
     float mfMoveLinearMaxSpeed;

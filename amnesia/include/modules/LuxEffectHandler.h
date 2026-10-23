@@ -4,6 +4,7 @@
 //----------------------------------------------
 
 #include "LuxBase.h"
+#include <deque>
 
 //----------------------------------------------
 
@@ -20,7 +21,10 @@ public:
 
     virtual void DoAction(eLuxPlayerAction aAction, bool abPressed) {}
 
-
+    virtual bool IsAlwaysOn()
+    {
+        return false;
+    }
     bool IsActive()
     {
         return mbActive;
@@ -83,6 +87,9 @@ public:
     void Reset() {};
 
 private:
+
+    //////////////////////
+    //Data
     cGuiSet *mpGuiSet;
 
     tString msTextureName;
@@ -149,6 +156,10 @@ public:
     {
         return mfSize;
     }
+    virtual bool IsAlwaysOn()
+    {
+        return true;
+    }
 
     void Update(double adFixedDelta);
     void OnDraw(double adFrameTime) {}
@@ -163,6 +174,26 @@ private:
 
 //----------------------------------------------
 
+class cLuxEffect_ViewportImage : public iLuxEffect
+{
+    friend class cLuxEffectHandler_SaveData;
+public:
+    cLuxEffect_ViewportImage();
+
+    void ShowImage(string & imageFileName, float xPos, float yPos, float xSize, float ySize, bool applyPostProcessEffects);
+
+    virtual bool IsAlwaysOn() { return false; }
+
+    void Update(double adFixedDelta);
+    void OnDraw(double adFrameTime){}
+    void Reset();
+
+private:
+
+};
+
+//----------------------------------------------
+
 class cLuxEffect_SepiaColor : public iLuxEffect
 {
     friend class cLuxEffectHandler_SaveData;
@@ -170,6 +201,11 @@ public:
     cLuxEffect_SepiaColor();
 
     void FadeTo(float afAmount, float afSpeed);
+
+    virtual bool IsAlwaysOn()
+    {
+        return true;
+    }
 
     void Update(double adFixedDelta);
     void OnDraw(double adFrameTime) {}
@@ -221,6 +257,10 @@ public:
     cLuxEffect_ImageTrail();
 
     void FadeTo(float afAmount, float afSpeed);
+    virtual bool IsAlwaysOn()
+    {
+        return true;
+    }
 
     void Update(double adFixedDelta);
     void OnDraw(double adFrameTime) {}
@@ -241,8 +281,8 @@ public:
     cLuxEffect_Fade();
     ~cLuxEffect_Fade();
 
-    void FadeIn(float afTime);
-    void FadeOut(float afTime);
+    void FadeIn(float afTime, float afGoalAlpha = 0.0f);
+    void FadeOut(float afTime, float afGoalAlpha = 1.0f);
 
     bool IsFading();
 
@@ -251,6 +291,11 @@ public:
     void Reset();
 
     void SetDirectAlpha(float afX);
+
+    float GetCurrentAlpha()
+    {
+        return mfAlpha;
+    }
 
 private:
     cGuiGfxElement *mpWhiteGfx;
@@ -338,8 +383,22 @@ public:
 
     void StopVoices(float afFadeOutSpeed);
     void AddVoice(    const tString& asVoiceFile, const tString& asEffectFile,
-                      const tString& asTextCat, const tString& asTextEntry, bool abUsePosition,
-                      const cVector3f& avPosition, float afMinDistance, float afMaxDistance);
+                      const tString& asTextCat, const tString& asTextEntry, bool abUsePostion,
+                      const cVector3f& avPosition, float afMinDistance, float afMaxDistance, int alPriority = 0, bool abRemoveInterrupted = true);
+
+    // yes, there are much more elegant ways, but I have a 2 hour deadline and a save system that doesn't like stringlists.
+    void AddMultiSubbedVoice(
+        const tString& asVoiceFile, const tString& asEffectFile, const tString& asTextCat,
+        const tString& asTextEntry, float afTextDelay,
+        const tString& asText2Entry, float afText2Delay,
+        const tString& asText3Entry, float afText3Delay,
+        const tString& asText4Entry, float afText4Delay,
+        const tString& asText5Entry, float afText5Delay,
+        const tString& asText6Entry, float afText6Delay,
+        const tString& asText7Entry, float afText7Delay,
+        bool abUsePostion,
+        const cVector3f& avPosition, float afMinDistance, float afMaxDistance, int alPriority = 0, bool abRemoveInterrupted = true
+    );
 
     void PauseCurrentVoices();
     void UnpauseCurrentVoices();
@@ -381,6 +440,12 @@ private:
     cSoundEntry *mpEffectEntry;
     int mlEffectEntryID;
     std::vector<tWString> mvCurrentTextRows;
+    std::deque<cTextQueueEntry> mvTextEntryQueue;
+
+    //The voice that is playing right now (already popped from mlstVoices).
+    //Needed so priorities are compared against what is actually playing, not the next queued voice.
+    cLuxVoiceData mCurrentVoiceData;
+    bool mbHasCurrentVoice;
 
     float mfVolumeMul;
 };

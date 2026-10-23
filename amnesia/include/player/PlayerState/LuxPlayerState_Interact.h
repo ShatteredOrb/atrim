@@ -15,6 +15,7 @@ class iLuxPlayerState_Interact_SaveData : public iLuxPlayerState_SaveData
 {
     kSerializableClassInit(iLuxPlayerState_Interact_SaveData)
 public:
+    virtual ~iLuxPlayerState_Interact_SaveData() {}
     int mlCurrentPropId;
     int mlCurrentBodyId;
     cVector3f mvCurrentFocusPos;

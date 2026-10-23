@@ -27,6 +27,10 @@ public:
     float mfMaxWaveDistanceSqr;
 
     float mfTimeCount;
+
+    cPlanef mSurfacePlane;
+
+    cVector3f mvPosition;
 };
 
 //----------------------------------------------

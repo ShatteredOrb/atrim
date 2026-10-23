@@ -14,6 +14,7 @@ public:
     ////////////////
     //Properties
     float mfPlayerDetectionHeight;
+    float mfRunSpeedMul;
 };
 
 //----------------------------------------------
@@ -82,6 +83,8 @@ private:
     //////////////
     //Data
     float mfPlayerDetectionHeight;
+    float mfRunSpeedMul;
+
     float mfEatDamage;
     float mfAfterAttackPauseTime;
 

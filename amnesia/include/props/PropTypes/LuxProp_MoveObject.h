@@ -77,7 +77,7 @@ private:
     void UpdateAutoMove(double adFixedDelta);
 
     void OnStartMove();
-    void CalculateOpenRotateMatrix();
+    void CalculateOpenRotateMatrix(float afCurrentOpenAmount);
 
     //Vars
     cVector3f mvAngularOffsetPos;

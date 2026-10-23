@@ -356,6 +356,7 @@ cLuxSaveGame_SaveData *cLuxSaveHandler::CreateSaveGameData()
     pSave->mHintHandler.FromHintHandler(gpBase->mpHintHandler);
     pSave->mInsanityHandler.FromInsanityHandler(gpBase->mpInsanityHandler);
     pSave->mLoadScreenHandler.FromLoadScreenHandler(gpBase->mpLoadScreenHandler);
+    pSave->mSoundManager.FromSoundManager(gpBase->mpEngine->GetResources()->GetSoundManager());
 
     return pSave;
 }
@@ -491,6 +492,10 @@ void cLuxSaveHandler::LoadSaveGameData(cLuxSaveGame_SaveData *apSave)
     //Clean up
     gpBase->mpHelpFuncs->CleanupData();
 
+    ////////////
+    // Preload sound after cleanup
+    apSave->mSoundManager.ToSoundManager(gpBase->mpEngine->GetResources()->GetSoundManager());
+
     ///////////////////
     // Destroy cache
     cache.Destroy();
@@ -512,6 +517,10 @@ tWString cLuxSaveHandler::GetProperSaveName(const tWString &asFile)
     {
         return _W("INVALID SAVE FILE SYNTAX");
     }
+
+    // Convert to upper in case of non-case sensitive name
+    vSaveNameStrings[0][0] = cString::ToUpperCaseW(vSaveNameStrings[0])[0];
+    vSaveNameStrings[1][0] = cString::ToUpperCaseW(vSaveNameStrings[1])[0];
 
     // Store prefix
     sProperName = vSaveNameStrings[0];

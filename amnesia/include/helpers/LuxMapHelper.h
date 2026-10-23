@@ -62,6 +62,7 @@ public:
     cVector3f mvClosestNormal;
     iPhysicsBody *mpClosestBody;
     int mlCheckCount;
+    bool mbCheckDynamic;
 };
 
 //----------------------------------------------
@@ -94,20 +95,21 @@ public:
                          float afMinDamage, float afMaxDamage, float afForce, float afMaxImpulse,
                          int alStrength, float afHitSpeed, eLuxDamageType aDamageType, eLuxWeaponHitType aWeaponHitType,
                          bool abCheckEnemies, bool abCheckPlayer, bool abCheckProps, bool abLethalForPlayer,
-                         bool *apHitPlayer = NULL);
+                         bool *apHitPlayer);
 
     bool CheckLineOfSight(const cVector3f& avStart, const cVector3f& avEnd, bool abCheckShadows);
 
     bool GetClosestEntity(    const cVector3f& avStart, const cVector3f& avDir, float afRayLength,
                               float *afDistance, iPhysicsBody **apBody, iLuxEntity **apEntity);
 
-    bool GetClosestCharCollider(const cVector3f& avStart, const cVector3f& avDir, float afRayLength,
+    bool GetClosestCharCollider(const cVector3f& avStart, const cVector3f& avDir, float afRayLength, bool abCheckDynamic,
                                 float *afDistance, cVector3f *avNormal, iPhysicsBody **apBody);
 
     float GetLightLevelAtPos(const cVector3f& avPos, std::vector<iLight*> *apSkipLightsVec = NULL, float afRadiusAdd = 0);
 
 private:
     void GetLightsAtNode(iRenderableContainerNode *apNode, tLightList &alstLights, const cVector3f& avPos);
+    void GetLightsAtNode(iRenderableContainerNode *apNode, tLightList &alstLights, const cVector3f& avPos, float afRadius, bool includeInvisible = false, bool includeBoxLights = true);
 
     cLuxLineOfSightCallback mLineOfSightCallback;
     cLuxClosestEntityCallback mClosestEntityCallback;

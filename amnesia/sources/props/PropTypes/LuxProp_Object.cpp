@@ -129,7 +129,7 @@ void cLuxPropLoader_Object::LoadInstanceVariables(iLuxProp *apProp, cResourceVar
 
     if(pObject->mbIsInsanityVision)
     {
-        pObject->SetInsanityVisionVisability(false);
+        pObject->SetInsanityVisionVisibility(false);
     }
 
     pObject->msContainedItem = apInstanceVars->GetVarString("ContainedItem", "");
@@ -488,14 +488,7 @@ void cLuxProp_Object::UpdatePropSpecific(double adFixedDelta)
 void cLuxProp_Object::BeforePropDestruction()
 {
     //////////////////////////////
-    // Check if break should happen and init stuff
-#ifndef LUXPROP_OBJECT_BREAKABLE_WORKAROUND
-    if(mbBroken == false || mBreakData.mbActive == false || mvBodies.empty() || mbDisableBreakable)
-    {
-        return;
-    }
-#endif /* LUXPROP_OBJECT_BREAKABLE_WORKAROUND */
-
+    // Init stuff
     cWorld *pWorld = mpMap->GetWorld();
     cMatrixf mtxCenterTransform = cMatrixf::Identity;
 
@@ -883,13 +876,13 @@ void cLuxProp_Object::UpdateInsanityVision(double adFixedDelta)
     //Change visibility
     if(bInsideFOV == false)
     {
-        SetInsanityVisionVisability(!mbInsanityVisionActive);
+        SetInsanityVisionVisibility(!mbInsanityVisionActive);
     }
 }
 
 //-----------------------------------------------------------------------
 
-void cLuxProp_Object::SetInsanityVisionVisability(bool abX)
+void cLuxProp_Object::SetInsanityVisionVisibility(bool abX)
 {
     mbInsanityVisionActive = abX;
 

@@ -243,7 +243,7 @@ void cLuxHandObject_Melee::UpdateCheckDamageEvent(double adFixedDelta)
                     mfAttackForce, mfMaxAttackForce,
                     mlAttackStrength, mfAttackHitSpeed,
                     eLuxDamageType_BloodSplat, eLuxWeaponHitType_Sword,
-                    true, false, true, false);
+                    true,false, true, false, NULL);
 
         if(bHit)
         {

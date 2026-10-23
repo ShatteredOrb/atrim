@@ -75,6 +75,8 @@ cLuxPlayer::cLuxPlayer() : iLuxUpdateable("LuxPlayer"), iLuxCollideCallbackConta
 
     mfAutoKillYPos = gpBase->mpGameCfg->GetFloat("Player_General", "AutoKillYPos", 0);
 
+    msHeadSpinHitSound = gpBase->mpGameCfg->GetString("Player_General","HeadSpinHitSound","");
+
     //////////////////////////////////
     // Init body properties
     mvBodySize = gpBase->mpGameCfg->GetVector3f("Player_Body", "Size", 0);
@@ -163,6 +165,9 @@ cLuxPlayer::cLuxPlayer() : iLuxUpdateable("LuxPlayer"), iLuxCollideCallbackConta
 
     mpInsanityCollapse = hplNew( cLuxPlayerInsanityCollapse, (this));
     mvHelpers.push_back(mpInsanityCollapse);
+
+    mpVoiceFlashback = hplNew( cLuxPlayerVoiceFlashback, (this));
+    mvHelpers.push_back(mpVoiceFlashback);
 }
 
 //-----------------------------------------------------------------------
@@ -261,6 +266,10 @@ void cLuxPlayer::Reset()
     mfAvgSpeed = 0;
     mlstPrevSpeeds.clear();
 
+    mlstPrevMoveDirs.clear();
+    mvAvgMoveDir2D = cVector3f(0,0,1);
+    mfAddMoveDirCount=100;
+
     msFocusText = _W("");
     msLastFocusText = _W("");
     mfFocusTextAlpha = 0;
@@ -283,6 +292,11 @@ void cLuxPlayer::Reset()
     mfRollGoal = 0;
     mfRollSpeedMul = 0;
     mfRollMaxSpeed = 0;
+
+    mbFadingPitch = false;
+    mfPitchGoal=0;
+    mfPitchSpeedMul=0;
+    mfPitchMaxSpeed=0;
 
     mfLeanRoll = 0;
     mfLeanRollGoal = 0;
@@ -375,6 +389,7 @@ void cLuxPlayer::Update(double adFixedDelta)
     UpdateTerror(adFixedDelta);
     UpdateFocusText(adFixedDelta);
     UpdateAvgSpeed(adFixedDelta);
+    UpdateAvgMoveDir(adFixedDelta);
 }
 
 //-----------------------------------------------------------------------
@@ -466,6 +481,9 @@ void cLuxPlayer::OnMapEnter(cLuxMap *apMap)
     mbIsInWater = false;
     mpEntityInFocus = NULL;
     mpBodyInFocus = NULL;
+    mlstPrevMoveDirs.clear();
+    mvAvgMoveDir2D = cVector3f(0,0,1);
+    mfAddMoveDirCount=100;
 }
 
 //-----------------------------------------------------------------------
@@ -498,6 +516,11 @@ void cLuxPlayer::OnMapLeave(cLuxMap *apMap)
     mfFOVMul = 1.0f;
     mfRollGoal = 0;
     mfRoll = 0;
+
+    mbFadingPitch = false;
+    mfPitchGoal=0;
+    mfPitchSpeedMul=0;
+    mfPitchMaxSpeed=0;
 
     mfLeanRoll = 0;
     mfLeanRollGoal = 0;
@@ -595,11 +618,21 @@ void cLuxPlayer::GiveDamage(float afAmount, int alStrength, eLuxDamageType aType
 
     mfHealth -= afAmount;
 
+    if(mState==eLuxPlayerState_Ladder)
+    {
+        ChangeState(eLuxPlayerState_Normal);
+    }
+
     mpHudEffect->AddDamageSplash(aType);
     mpHudEffect->Flash(cColor(0.6f, 0, 0, 0.5f), eGuiMaterial_Alpha, 0, 0.25f);
     if(abSpinHead)
     {
         SpinHead(mfHeadSpinDamageSpeed);
+    }
+
+    if(abSpinHead)
+    {
+        gpBase->mpHelpFuncs->PlayGuiSoundData(msHeadSpinHitSound, eSoundEntryType_Gui);
     }
 
     if(abLethal == false && mfHealth < 10)
@@ -1086,6 +1119,29 @@ void cLuxPlayer::FadeRollTo(float afX, float afSpeedMul, float afMaxSpeed)
     mfRollMaxSpeed = afMaxSpeed;
 }
 
+void cLuxPlayer::FadePitchTo(float afX, float afSpeedMul, float afMaxSpeed)
+{
+    float fPitchLimitMin = mpCamera->GetPitchMinLimit();
+    float fPitchLimitMax = mpCamera->GetPitchMaxLimit();
+
+    if(fPitchLimitMin!=0 || fPitchLimitMax!=0)
+    {
+        if(afX > fPitchLimitMax)
+        {
+            afX = fPitchLimitMax;
+        }
+        if(afX < fPitchLimitMin)
+        {
+            afX = fPitchLimitMin;
+        }
+    }
+
+    mfPitchGoal = afX;
+    mfPitchSpeedMul = afSpeedMul;
+    mfPitchMaxSpeed = afMaxSpeed;
+    mbFadingPitch = true;
+}
+
 void cLuxPlayer::FadeLeanRollTo(float afX, float afSpeedMul, float afMaxSpeed)
 {
     mfLeanRollGoal = afX;
@@ -1424,6 +1480,29 @@ void cLuxPlayer::UpdateCamera(double adFixedDelta)
     }
 
     ////////////////
+    // Pitch
+    if(mbFadingPitch)
+    {
+        float fSpeed = (mfPitchGoal - mpCamera->GetPitch()) * mfPitchSpeedMul;
+        if(fSpeed > mfPitchMaxSpeed)
+        {
+            fSpeed = mfPitchMaxSpeed;
+        }
+        if(fSpeed < -mfPitchMaxSpeed)
+        {
+            fSpeed = -mfPitchMaxSpeed;
+        }
+
+        mpCamera->SetPitch(mpCamera->GetPitch() + (float)adFixedDelta * fSpeed );
+
+        if(cMath::Abs(mfPitchGoal - mpCamera->GetPitch()) < 0.0f)
+        {
+            mpCamera->SetPitch(mfPitchGoal);
+            mbFadingPitch = false;
+        }
+    }
+
+    ////////////////
     // Lean Roll
     if(mfLeanRoll != mfLeanRollGoal)
     {
@@ -1485,7 +1564,7 @@ void cLuxPlayer::UpdateTerror(double adFixedDelta)
     {
         float fSpeed = mpCharBody->GetVelocity(adFixedDelta).Length();
 
-        mfTerror += mfTerrorIncSpeed * (float)adFixedDelta; //+ fSpeed * (float)adFixedDelta * 0.1f;
+        mfTerror += mfTerrorIncSpeed * (float)adFixedDelta;
         if(mfTerror > 1)
         {
             mfTerror = 1;
@@ -1608,6 +1687,44 @@ void cLuxPlayer::UpdateAvgSpeed(double adFixedDelta)
 
 //-----------------------------------------------------------------------
 
+void cLuxPlayer::UpdateAvgMoveDir(double adFixedDelta)
+{
+    mfAddMoveDirCount += (float)adFixedDelta;
+    if(mfAddMoveDirCount<0.25f)
+    {
+        return;
+    }
+    mfAddMoveDirCount =0;
+
+    ///////////////////////////////
+    // Add new dir
+    mlstPrevMoveDirs.push_back(mpCharBody->GetForward());
+    if(mlstPrevMoveDirs.size()>12)
+    {
+        mlstPrevMoveDirs.pop_front();
+    }
+
+    ////////////////////////////////////
+    //Calculate the average walking direction
+    tVector3fListIt firstIt = mlstPrevMoveDirs.begin();
+
+    mvAvgMoveDir2D =0;
+    float fTotalCount=0;
+    for(; firstIt != mlstPrevMoveDirs.end(); ++firstIt)
+    {
+        cVector3f vDir = *firstIt;
+        vDir.y=0;
+        vDir.Normalize();
+
+        mvAvgMoveDir2D += vDir;
+        fTotalCount++;
+    }
+    mvAvgMoveDir2D = mvAvgMoveDir2D / fTotalCount;
+    mvAvgMoveDir2D.Normalize();
+}
+
+//-----------------------------------------------------------------------
+
 void cLuxPlayer::CreateCharacterBody(iPhysicsWorld *apPhysicsWorld)
 {
     mpCharBody = apPhysicsWorld->CreateCharacterBody("Player", mvBodySize);
@@ -1641,8 +1758,11 @@ void cLuxPlayer::CreateCharacterBody(iPhysicsWorld *apPhysicsWorld)
     //mpCharBody->SetActive(false);
 }
 
-
 //-----------------------------------------------------------------------
 
+void cLuxPlayer::ReleasePlayerFromLimbo()
+{
+    GetHelperDeath()->ReleasePlayerFromLimbo();
+}
 
-
+//-----------------------------------------------------------------------

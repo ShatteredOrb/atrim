@@ -148,7 +148,7 @@ void cLuxProp_MoveObject::OnSetupAfterLoad(cWorld *apWorld)
     // Angular
     else
     {
-        CalculateOpenRotateMatrix();
+        CalculateOpenRotateMatrix(mfOpenAmount);
     }
 }
 
@@ -227,7 +227,16 @@ void cLuxProp_MoveObject::MoveToState(float afState, float afAcc, float afMaxSpe
     {
         //afState = cMath::Clamp(afState,0,1);
 
-        cMatrixf mtxWanted = cMath::MatrixSlerp(afState, m_mtxClosedTransform, m_mtxOpenTransform, true);
+        cVector3f vMul[3] = {cVector3f(1,0,0), cVector3f(0,1,0), cVector3f(0,0,1) };
+
+        float fCurrentOpenAmount = afState * mfOpenAmount;
+
+        cMatrixf mtxWanted = m_mtxClosedTransform.GetRotation();
+
+        cMatrixf mtxRot = cMath::MatrixRotate(vMul[mMoveAxis] * kPi2f * fCurrentOpenAmount,eEulerRotationOrder_XYZ);
+        mtxWanted = cMath::MatrixMul(mtxWanted, mtxRot);
+
+        mtxWanted.SetTranslation(m_mtxClosedTransform.GetTranslation());
 
         cMatrixf mtxInvClose = cMath::MatrixInverse(m_mtxClosedTransform);
         cVector3f vLocalOffset = cMath::MatrixMul(mtxInvClose, mvAngularOffsetPos);
@@ -267,7 +276,7 @@ void cLuxProp_MoveObject::SetAngularOffsetPos(const cVector3f& avWorldPos)
 
     if(mMoveObjectType == eLuxMoveObjectType_Angular)
     {
-        CalculateOpenRotateMatrix();
+        CalculateOpenRotateMatrix(mfOpenAmount);
     }
 }
 
@@ -366,13 +375,13 @@ void cLuxProp_MoveObject::OnStartMove()
     mbAutoMoveReachedGoal = false;
 }
 
-void cLuxProp_MoveObject::CalculateOpenRotateMatrix()
+void cLuxProp_MoveObject::CalculateOpenRotateMatrix(float afCurrentOpenAmount)
 {
     cVector3f vMul[3] = {cVector3f(1, 0, 0), cVector3f(0, 1, 0), cVector3f(0, 0, 1) };
 
     m_mtxOpenTransform = m_mtxClosedTransform.GetRotation();
 
-    cMatrixf mtxRot = cMath::MatrixRotate(vMul[mMoveAxis] * kPi2f * mfOpenAmount, eEulerRotationOrder_XYZ);
+    cMatrixf mtxRot = cMath::MatrixRotate(vMul[mMoveAxis] * kPi2f * afCurrentOpenAmount,eEulerRotationOrder_XYZ);
     m_mtxOpenTransform = cMath::MatrixMul(m_mtxOpenTransform, mtxRot);
 
     m_mtxOpenTransform.SetTranslation(m_mtxClosedTransform.GetTranslation());
@@ -433,7 +442,10 @@ void cLuxProp_MoveObject::LoadFromSaveData(iLuxEntity_SaveData* apSaveData)
     kCopyFromVar(pData, mbUseAngularLocalOffset);
     kCopyFromVar(pData, mbAutoMoveReachedGoal);
 
-    SetAngularOffsetPos(mvAngularOffsetPos);
+    if(mMoveObjectType == eLuxMoveObjectType_Angular)
+    {
+        CalculateOpenRotateMatrix(mfOpenAmount);
+    }
 }
 
 //-----------------------------------------------------------------------

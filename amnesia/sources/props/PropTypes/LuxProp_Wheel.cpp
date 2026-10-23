@@ -14,6 +14,7 @@
 cLuxPropLoader_Wheel::cLuxPropLoader_Wheel(const tString& asName) : iLuxPropLoader(asName)
 {
     mfDefaultMaxFocusDistance = gpBase->mpGameCfg->GetFloat("Player_Interaction", "Wheel_DefaultMaxFocusDist", 0);
+    mbForceFullGameSave = true;
 }
 
 //-----------------------------------------------------------------------

@@ -191,7 +191,7 @@ bool cLuxConfigHandler::ShowRestartWarning(cGuiSet* apSet, void* apObject, tGuiC
                                       kTranslate("MainMenu", "OK"), _W(""),
                                       apObject, apCallback);
 #if USE_GAMEPAD
-        pPopUp->GetGuiSet()->SetDrawFocus(true);
+        pPopUp->GetGuiSet()->SetDrawFocus(gpBase->mpInputHandler->IsGamepadPresent());
 #endif
         return true;
     }

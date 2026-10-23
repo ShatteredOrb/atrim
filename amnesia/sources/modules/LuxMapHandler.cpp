@@ -79,10 +79,10 @@ void cMapHandlerSoundCallback::OnStart(cSoundEntity *apSoundEntity)
     //Iterate enemies and send sound message to those close enough
     float fMaxDist = apSoundEntity->GetMaxDistance();
     float fMinDist = apSoundEntity->GetMaxDistance();
-    float fVolume = apSoundEntity->GetVolume();
+    float fVolume =  apSoundEntity->GetData()->GetAIVolume();
     cVector3f vPos = apSoundEntity->GetWorldPosition();
 
-    pMap->BroadcastEnemySoundMessage(vPos, fVolume, fMinDist, fMaxDist);
+    pMap->BroadcastEnemySoundMessage(vPos, fVolume, fMinDist, fMaxDist, sTypeName);
 }
 
 //-----------------------------------------------------------------------
@@ -474,7 +474,7 @@ void cLuxMapHandler::SetCurrentMap(cLuxMap* apMap, bool abRunScript, bool abFirs
         mpCurrentMap->PlacePlayerAtStartPos(asPlayerPos);
 
         //Create an automatic checkpoint
-        mpCurrentMap->SetCheckPoint("_auto", asPlayerPos, "");
+        mpCurrentMap->SetCheckPoint("_auto", asPlayerPos, "", false);
 
         //Map enter callback
         mpCurrentMap->OnEnter(abRunScript, abFirstTime);

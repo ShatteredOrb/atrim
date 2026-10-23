@@ -37,6 +37,7 @@ public:
 
     tString msName;
     bool mbActive;
+    bool mbStartsActive;
     bool mbFullGameSave;
     int mlEntityType;
     int mlID;
@@ -44,6 +45,10 @@ public:
     float mfMaxFocusDistance;
 
     bool mbInteractionDisabled;
+
+    bool mbIsCriticalEntity;
+    tString msCriticalRootName;
+    float mfCriticalEntityRadius;
 
     tString msCallbackFunc;
     tString msConnectionStateChangeCallback;
@@ -59,6 +64,10 @@ public:
     cContainerList<cLuxCollideCallback_SaveData> mlstCollideCallbacks;
 
     virtual iLuxEntity *CreateEntity(cLuxMap *apMap) = 0;
+    virtual iLuxEntity* CreateAndAddEntity(cLuxMap *apMap)
+    {
+        return NULL;
+    }
 };
 
 //----------------------------------------------
@@ -159,6 +168,12 @@ public:
     bool IsActive()
     {
         return mbActive;
+    }
+
+    void SetStartsActive(bool abX);
+    bool StartsActive()
+    {
+        return mbStartsActive;
     }
 
     cLuxMap *GetMap()
@@ -295,6 +310,7 @@ protected:
     tString msName;
     bool mbFullGameSave;
     bool mbActive;
+    bool mbStartsActive;
     bool mbIsSaved;
     int mlID;
 

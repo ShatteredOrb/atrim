@@ -29,13 +29,13 @@ void cEngineCharacterBody_SaveData::ToBody(iCharacterBody *apBody)
 {
     apBody->SetActive(mbActive);
     apBody->SetMass(mfMass);
-    apBody->SetPosition(mvPosition);
     apBody->SetYaw(mfYaw);
     apBody->SetPitch(mfPitch);
     apBody->SetMoveSpeed(eCharDir_Forward, mfSpeedForward);
     apBody->SetMoveSpeed(eCharDir_Right, mfSpeedRight);
     apBody->SetForceVelocity(mvForceVelocity);
     apBody->SetActiveSize(mlActiveSize);
+    apBody->SetPosition(mvPosition);
 }
 
 //------------------------------------------------------------------------
@@ -715,7 +715,7 @@ void cEnginePS_SaveData::FromPS(cParticleSystem *apPS)
         {
             iParticleEmitter *pEmitter = apPS->GetEmitter(i);
 
-            if(pEmitter->IsDying() || pEmitter->IsDead())
+            if(pEmitter->IsDying() && mbActive || pEmitter->IsDead())
             {
                 mvEmitterActive[i].mbActive = false;
             }
@@ -954,6 +954,28 @@ void cEngineLight_SaveData::FromLight(iLight *apLight)
         mfFlickerOffFadeMinLength = apLight->GetFlickerOffFadeMinLength();
         mfFlickerOffFadeMaxLength = apLight->GetFlickerOffFadeMaxLength();
     }
+    else
+    {
+        mDiffuseColor = apLight->GetDiffuseColor();
+        mfFarAttenuation = apLight->GetRadius();
+
+        mbFlickering = false;
+        msFlickerOffSound = "";
+        msFlickerOnSound = "";
+        msFlickerOffPS = "";
+        msFlickerOnPS = "";
+        mfFlickerOnMinLength = 0;
+        mfFlickerOffMinLength = 0;
+        mfFlickerOnMaxLength = 0;
+        mfFlickerOffMaxLength = 0;
+        mFlickerOffColor = cColor(1,1);
+        mfFlickerOffRadius = 1;
+        mbFlickerFade = false;
+        mfFlickerOnFadeMinLength = 1;
+        mfFlickerOnFadeMaxLength = 1;
+        mfFlickerOffFadeMinLength = 1;
+        mfFlickerOffFadeMaxLength = 1;
+    }
 }
 
 //------------------------------------------------------------------------
@@ -979,13 +1001,17 @@ void cEngineLight_SaveData::ToLight(iLight *apLight)
         //TODO: Attach billboards.
 
         apLight->SetFlickerActive(mbFlickering);
-        apLight->SetFlicker(mFlickerOffColor, mfFlickerOffRadius,
-                            mfFlickerOnMinLength, mfFlickerOnMaxLength,
-                            msFlickerOnSound, msFlickerOnPS,
-                            mfFlickerOffMinLength, mfFlickerOffMaxLength,
-                            msFlickerOffSound, msFlickerOffPS,
-                            mbFlickerFade, mfFlickerOnFadeMinLength, mfFlickerOnFadeMaxLength,
-                            mfFlickerOffFadeMinLength, mfFlickerOffFadeMaxLength);
+
+        if(mbFlickering)
+        {
+            apLight->SetFlicker(mFlickerOffColor,mfFlickerOffRadius,
+                                mfFlickerOnMinLength,mfFlickerOnMaxLength,
+                                msFlickerOnSound,msFlickerOnPS,
+                                mfFlickerOffMinLength,mfFlickerOffMaxLength,
+                                msFlickerOffSound,msFlickerOffPS,
+                                mbFlickerFade,mfFlickerOnFadeMinLength,mfFlickerOnFadeMaxLength,
+                                mfFlickerOffFadeMinLength, mfFlickerOffFadeMaxLength);
+        }
     }
 }
 

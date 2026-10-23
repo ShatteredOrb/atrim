@@ -76,6 +76,8 @@ enum eLuxPropType
     eLuxPropType_EmotionStone,
     eLuxPropType_NPC,
     eLuxPropType_MultiSlider,
+    eLuxPropType_PhoneBox,
+    eLuxPropType_VoiceFlashbackTrigger,
 
     eLuxPropType_LastEnum
 };
@@ -99,9 +101,8 @@ enum eLuxEnemyType
 {
     eLuxEnemyType_Grunt,
     eLuxEnemyType_WaterLurker,
-#if LUX_ENEMY_MANPIG
     eLuxEnemyType_ManPig,
-#endif
+    eLuxEnemyType_Child,
 
     eLuxEnemyType_LastEnum
 };
@@ -155,6 +156,8 @@ enum eLuxEnemyMessage
     eLuxEnemyMessage_TimeOut_3,
     eLuxEnemyMessage_TimeOut_4,
 
+    eLuxEnemyMessage_StopPatrolAnimation,
+
     eLuxEnemyMessage_AnimationOver,
     eLuxEnemyMessage_AnimationSpecialEvent,
     eLuxEnemyMessage_EndOfPath,
@@ -198,7 +201,7 @@ enum eLuxEnemyMusic
 enum eLuxHandObjectType
 {
     eLuxHandObjectType_Melee,
-    //eLuxHandObjectType_Ranged,
+    eLuxHandObjectType_Ranged,
     eLuxHandObjectType_LightSource,
 
     eLuxHandObjectType_LastEnum
@@ -360,6 +363,10 @@ enum eLuxAction
     eLuxAction_ZoomOut,
 #endif
 
+#ifdef _DEBUG
+    eLuxAction_DumpPigInfo,
+#endif
+
     eLuxAction_LastEnum
 };
 
@@ -397,6 +404,9 @@ enum eLuxFocusCrosshair
     eLuxFocusCrosshair_Pick,
     eLuxFocusCrosshair_LevelDoor,
     eLuxFocusCrosshair_Ladder,
+    eLuxFocusCrosshair_VoiceOver,
+    eLuxFocusCrosshair_PhoneBox,
+    eLuxFocusCrosshair_Note,
 
     eLuxFocusCrosshair_LastEnum
 };
@@ -565,6 +575,8 @@ public:
 class iLuxMessageCallback
 {
 public:
+    virtual ~iLuxMessageCallback() {}
+
     virtual void OnPress(bool abYes) = 0;
 };
 
@@ -775,17 +787,49 @@ typedef tLuxScriptVarMap::iterator tLuxScriptVarMapIt;
 
 //----------------------------------------
 
+class cTextQueueEntry : public iSerializable
+{
+    kSerializableClassInit(cTextQueueEntry)
+public:
+    tWString msTextEntry;
+    float mfDelay;
+};
+
+//---------------------------------------------------
+
 class cLuxVoiceData : public iSerializable
 {
     kSerializableClassInit(cLuxVoiceData)
 public:
+    //Defaults matter: mfCurrentTime / mfInterruptedAt are not saved, and saves made
+    //before mlPriority existed do not have it either. Garbage here = voice seeks past its end and is silent.
+    cLuxVoiceData() : mfTextDelay(0), mfText2Delay(0), mfText3Delay(0), mfText4Delay(0), mfText5Delay(0),
+                      mfText6Delay(0), mfText7Delay(0), mbUsePosition(false), mvPosition(0),
+                      mfMinDistance(0), mfMaxDistance(0), mlPriority(0), mfCurrentTime(0), mfInterruptedAt(-1) {}
+
     tWString msText;
+    float mfTextDelay;
+    tWString msText2;
+    float mfText2Delay;
+    tWString msText3;
+    float mfText3Delay;
+    tWString msText4;
+    float mfText4Delay;
+    tWString msText5;
+    float mfText5Delay;
+    tWString msText6;
+    float mfText6Delay;
+    tWString msText7;
+    float mfText7Delay;
     tString msVoiceFile;
     tString msEffectFile;
     bool mbUsePosition;
     cVector3f mvPosition;
     float mfMinDistance;
     float mfMaxDistance;
+    int mlPriority;
+    double mfCurrentTime;
+    double mfInterruptedAt;
 };
 
 //----------------------------------------------
@@ -802,6 +846,9 @@ public:
     bool mbDeleteWhenColliding;
     int mlStates;
     bool mbColliding;
+
+    cLuxCollideCallback_SaveData() {};
+    ~cLuxCollideCallback_SaveData() {};
 };
 
 

@@ -40,6 +40,25 @@ public:
 
 //----------------------------------------------
 
+class cLuxPreloadedSound_SaveData : public iSerializable
+{
+    kSerializableClassInit(cLuxPreloadedSound_SaveData)
+public:
+    tString msName;
+};
+
+class cLuxSoundManager_SaveData : public iSerializable
+{
+    kSerializableClassInit(cLuxSoundManager_SaveData)
+public:
+    void FromSoundManager(cSoundManager *apData);
+    void ToSoundManager(cSoundManager *apData);
+
+    cContainerList<cLuxPreloadedSound_SaveData> mlstPreloadedSounds;
+};
+
+//----------------------------------------------
+
 class cLuxInsanityHandler_Event_SaveData : public iSerializable
 {
     kSerializableClassInit(cLuxInsanityHandler_Event_SaveData)
@@ -155,7 +174,15 @@ public:
 
     tString msVoiceOverCallback;
     cContainerVec<cLuxVoiceData> mvVoiceData;
+    cContainerVec<cTextQueueEntry> mvTextQueue;
     bool mbVoiceActive;
+    float mfVoice_ElapsedTime;
+    tString msVoice_Name;
+    float mfVoice_MinDistance;
+    float mfVoice_MaxDistance;
+    cVector3f mvVoice_Position;
+    bool mbVoice_3D;
+    tString msEffect_Name;
 
     cContainerVec<cLuxEffectHandler_SoundMul_SaveData> mvGlobalSoundVolumeMul;
     cContainerVec<cLuxEffectHandler_SoundMul_SaveData> mvGlobalSoundSpeedMul;
@@ -303,6 +330,9 @@ class cLuxFlashbackData_SaveData : public iSerializable
 public:
     tString msFile;
     tString msCallback;
+
+    cLuxFlashbackData_SaveData() {};
+    ~cLuxFlashbackData_SaveData() {};
 };
 
 class cLuxPlayer_SaveData : public iSerializable
@@ -361,6 +391,11 @@ public:
     float mfRollSpeedMul;
     float mfRollMaxSpeed;
 
+    bool mbFadingPitch;
+    float mfPitchGoal;
+    float mfPitchSpeedMul;
+    float mfPitchMaxSpeed;
+
     cVector3f mvCamAnimPos;
     cVector3f mvCamAnimPosGoal;
     float mfCamAnimPosSpeedMul;
@@ -374,6 +409,8 @@ public:
 
     bool mbLanternOn;
     bool mbLanternDisabled;
+    bool mbLanternFlickering;
+    float mfLanternFlickeringSpeed;
 
     tString msDeathHintCat;
     tString msDeathHintEntry;
@@ -417,6 +454,24 @@ public:
     float mfYawMaxLimit;
     float mfYawMinLimit;
 
+    bool mbVoiceFlashback_IsDelaying;
+    bool mbVoiceFlashback_IsPlaying;
+    bool mbVoiceFlashback_UseEffects;
+    bool mbVoiceFlashback_ObstructMovement;
+
+    float mfVoiceFlashback_EffectFadeInTime;
+    float mfVoiceFlashback_EffectFadeOutTime;
+    float mfVoiceFlashback_SepiaAmount;
+    float mfVoiceFlashback_LightFadeAmount;
+    float mfVoiceFlashback_ImageTrailAmount;
+    float mfVoiceFlashback_BlurStartDistance;
+    float mfVoiceFlashback_BlurAmount;
+    float mfVoiceFlashback_FovMultiplier;
+    float mfVoiceFlashback_MoveSpeedMultiplier;
+    float mfVoiceFlashback_MouseSensitivityModifier;
+
+    tString msVoiceFlashback_StopSound;
+
     cContainerVec<cLuxHeadPosAdd> mvHeadPosAdds;
 
     cContainerVec<int> mvTerrorEnemyIDs;
@@ -449,6 +504,7 @@ public:
     cLuxHintHandler_SaveData mHintHandler;
     cLuxInsanityHandler_SaveData mInsanityHandler;
     cLuxLoadScreenHandler_SaveData mLoadScreenHandler;
+    cLuxSoundManager_SaveData mSoundManager;
 
     cLuxSavedGameMapCollection *mpSavedMaps;
 };

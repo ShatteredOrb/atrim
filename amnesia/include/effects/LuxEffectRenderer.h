@@ -9,10 +9,21 @@ class cGlowObject
 {
 public:
     cGlowObject() {}
-    cGlowObject(iRenderable* apObject, float afAlpha) : mpObject(apObject), mfAlpha(afAlpha) {}
+    cGlowObject(iRenderable* apObject, float afAlpha, cColor acColor) : mpObject(apObject), mfAlpha(afAlpha), mcColor(acColor) {}
 
+    cColor mcColor;
     iRenderable *mpObject;
     float mfAlpha;
+};
+
+class cOutlineObject
+{
+public:
+    cOutlineObject() {}
+    cOutlineObject(iRenderable* apObject, cColor acColor ) : mpObject(apObject), mcColor(acColor) {}
+
+    cColor mcColor;
+    iRenderable* mpObject;
 };
 
 //----------------------------------------------
@@ -32,11 +43,11 @@ public:
     void RenderSolid(cRendererCallbackFunctions* apFunctions);
     void RenderTrans(cRendererCallbackFunctions* apFunctions);
 
-    void AddOutlineObject(iRenderable *apObject);
+    void AddOutlineObject(iRenderable *apObject, cColor acColor);
     void ClearOutlineObjects();
 
-    void AddFlashObject(iRenderable *apObject, float afAlpha);
-    void AddEnemyGlow(iRenderable *apObject, float afAlpha);
+    void AddFlashObject(iRenderable *apObject, float afAlpha, cColor acColor);
+    void AddEnemyGlow(iRenderable *apObject, float afAlpha, cColor acColor);
 
 private:
     void RenderFlashObjects(cRendererCallbackFunctions* apFunctions);
@@ -48,7 +59,7 @@ private:
     std::vector<cGlowObject> mvFlashObjects;
     std::vector<cGlowObject> mvEnemyGlowObjects;
 
-    std::vector<iRenderable *> mvOutlineObjects;
+    std::vector<cOutlineObject> mvOutlineObjects;
 
     iFrameBuffer *mpDeferredAccumBuffer;
     iFrameBuffer *mpFrameBufferColor;

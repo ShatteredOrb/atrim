@@ -13,6 +13,7 @@ public:
     float mfMinDistance;
     float mfMaxDistance;
     float mfVolume;
+    float mfAIVolume;
     cSoundEntry *mpSoundEntry;
 };
 

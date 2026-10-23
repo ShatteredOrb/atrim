@@ -59,7 +59,11 @@ public:
     void OnMapLeave(cLuxMap *apMap);
 
     void Play(const tString &asFile, bool abLoop, float afVolume, float afFadeTime, int alPrio, bool abResume, bool abSpecialEffect);
-    void Stop(float afFadeTime, int alPrio);
+    void Stop(float afFadeTime, int alPrio, bool abForceStop = false);
+
+    //Stops enemy (attack/search) and danger music. Must force stop because
+    //their mvGameMusic slots are blanked on Play so they do not auto resume.
+    void StopAllEnemyMusic(float afFadeTime);
 
     void AddEnemy(eLuxEnemyMusic aType, iLuxEnemy *apEnemy);
     void RemoveEnemy(eLuxEnemyMusic aType, iLuxEnemy *apEnemy);

@@ -8,9 +8,6 @@
 //----------------------------------------------
 
 class iLuxEnemy;
-#if LUX_ENEMY_MANPIG
-class cLuxEnemy_ManPig;
-#endif
 
 //----------------------------------------------
 
@@ -19,6 +16,7 @@ enum eLuxEnemyMoveState
     eLuxEnemyMoveState_Backward,
     eLuxEnemyMoveState_Stopped,
     eLuxEnemyMoveState_Walking,
+    eLuxEnemyMoveState_Jogging,
     eLuxEnemyMoveState_Running,
 
     eLuxEnemyMoveState_LastEnum
@@ -30,9 +28,6 @@ class cLuxEnemyMover
 {
     friend class cLuxEnemyMover_SaveData;
     friend class iLuxEnemy;
-#if LUX_ENEMY_MANPIG
-    friend class cLuxEnemy_ManPig;
-#endif
 public:
     cLuxEnemyMover(iLuxEnemy *apEnemy, iCharacterBody *apCharBody);
     virtual ~cLuxEnemyMover();
@@ -50,7 +45,12 @@ public:
     void TurnToPos(const cVector3f& avFeetPos);
     void TurnToAngle(float afAngle);
 
+    void MoveBackwardsToPos(const cVector3f& avFeetPos);
+    void TurnAwayFromPos(const cVector3f& avFeetPos);
+
     void UseMoveStateAnimations();
+
+    void ForceMoveState(eLuxEnemyMoveState aMoveState);
 
     //////////////////////
     //Properties
@@ -64,10 +64,7 @@ public:
     //This gets speed / wanted_speed
     float GetWantedSpeedAmount();
 
-    void SetOverideMoveState(bool abX)
-    {
-        mbOverideMoveState = abX;
-    }
+    void SetOverideMoveState(bool abX);
     bool GetOverideMoveState()
     {
         return mbOverideMoveState;
@@ -90,18 +87,33 @@ public:
         mfStuckCounter = 0;
     }
 
+    void StopTurning()
+    {
+        mbTurning = false;
+    }
+
+    void SetWallAvoidanceActive(bool abX)
+    {
+        mbWallAvoidActive = abX;
+    }
+
+    void SetupWallAvoidance(float afRadius, float afSteerAmount, int alSamples);
 
     //////////////////////
-    //Data
+    //Update
+    void UpdateWallAvoidance(double adFixedDelta);
 
     //////////////////////
-    //Save data stuff
+    //Debug
+    void OnRenderSolid(cRendererCallbackFunctions* apFunctions);
 
 private:
     void UpdateStuckCounter(double adFixedDelta);
     void UpdateTurning(double adFixedDelta);
     void UpdateMoveAnimation(double adFixedDelta);
     void UpdateStepEffects(double adFixedDelta);
+    void ConvertLocalDirTo2D(cVector3f& avLocalDir);
+    cMatrixf GetMovementDirectionMatrix();
 
     ///////////////////
     // Data
@@ -111,6 +123,10 @@ private:
     float mfStuckLimit;
     float mfMaxStuckCounter;
 
+    float mfWallAvoidRadius;
+    float mfWallAvoidSteerAmount;
+
+    static std::vector<cVector3f> mvPrecalcSampleDirs;
 
     ///////////////////
     // Variables
@@ -119,10 +135,23 @@ private:
     float mfTurnSpeed;
     float mfTurnBreakAcc;
 
+    cVector3f mvCurrentGoal;
+
     float mfStuckCounter;
+
+    cVector3f mvSteeringVec;
 
     eLuxEnemyMoveState mMoveState;
     bool mbOverideMoveState;
+
+    bool mbWallAvoidActive;
+    float mfWallAvoidCount;
+    std::vector<cVector3f> mvSampleRays;
+    std::vector<cVector3f> mvSampleRayBaseDir;
+    std::vector<bool> mvSampleRaysCollide;
+    std::vector<float> mvSampleRaysAmount;
+    std::vector<int> mvSamplePartitionUsed;
+    int mlSampleMaxPartCount;
 };
 
 //----------------------------------------------

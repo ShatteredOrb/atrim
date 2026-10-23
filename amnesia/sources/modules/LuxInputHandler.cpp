@@ -87,6 +87,9 @@ static cLuxAction gvLuxActions[] =
     cLuxAction("Crouch", eLuxAction_Crouch,        true, eLuxActionCategory_Movement),
     cLuxAction("Jump", eLuxAction_Jump,            true, eLuxActionCategory_Movement),
 
+#ifdef _DEBUG
+    cLuxAction("DumpPigInfo",	    eLuxAction_DumpPigInfo, true, eLuxActionCategory_Action),
+#endif
 
     cLuxAction()
 };
@@ -163,6 +166,10 @@ static cLuxInput gvLuxInputs[] =
     cLuxInput("Keyboard", eKey_LeftShift, eLuxAction_Run),
     cLuxInput("Keyboard", eKey_LeftCtrl, eLuxAction_Crouch),
     cLuxInput("Keyboard", eKey_Space, eLuxAction_Jump),
+
+#ifdef _DEBUG
+    cLuxInput("Keyboard", eKey_N, eLuxAction_DumpPigInfo),
+#endif
 
     ///////////////////////////////////////////////////////////////////////
     // Gamepad layout
@@ -446,6 +453,16 @@ void cLuxInputHandler::Update(double adFixedDelta)
     case eLuxInputState_LoadScreen:
         UpdateLoadScreenInput();
         break;
+    }
+
+    if(mState != eLuxInputState_Game)
+    {
+        ////////////////
+        // Stop using interaction it is released when in a menu
+        if(mpInput->IsTriggerd(eLuxAction_Interact) == false)
+        {
+            mpPlayer->DoAction(eLuxPlayerAction_Interact, false);
+        }
     }
 }
 
@@ -979,6 +996,7 @@ void cLuxInputHandler::UpdateGameInput()
     }
 
 }
+
 //-----------------------------------------------------------------------
 
 void cLuxInputHandler::UpdateGamePlayerInput()

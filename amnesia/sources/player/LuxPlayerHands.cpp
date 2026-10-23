@@ -650,7 +650,7 @@ iLuxHandObject *cLuxPlayerHands::LoadHandObject(const tString& asName)
 
     //Create object and load data
     iLuxHandObject *pObject = CreateObjectFromType(asName, aType);
-    if(aType == eLuxHandObjectType_LastEnum)
+    if(pObject == NULL) //e.g. "Ranged" is parsed but not implemented and returns NULL
     {
         pResources->DestroyXmlDocument(pDoc);
         return NULL;
@@ -659,6 +659,7 @@ iLuxHandObject *cLuxPlayerHands::LoadHandObject(const tString& asName)
     //Load the main data (model file name, etc)
     if(pObject->LoadMainData(pMainElem) == false)
     {
+        hplDelete(pObject);
         pResources->DestroyXmlDocument(pDoc);
         return NULL;
     }
@@ -687,6 +688,8 @@ iLuxHandObject *cLuxPlayerHands::CreateObjectFromType(const tString& asName, eLu
     case eLuxHandObjectType_Ranged:
         return hplNew(cLuxHandObject_Ranged, (asName, this));
     */
+    case eLuxHandObjectType_Ranged:
+        return NULL;
     case eLuxHandObjectType_LightSource:
         return hplNew(cLuxHandObject_LightSource, (asName, this));
     }
@@ -706,12 +709,10 @@ eLuxHandObjectType cLuxPlayerHands::ToHandObjectType(const tString& asType)
     {
         return eLuxHandObjectType_Melee;
     }
-    /*
     if(sLowType == "ranged")
     {
         return eLuxHandObjectType_Ranged;
     }
-    */
     if(sLowType == "lightsource")
     {
         return eLuxHandObjectType_LightSource;

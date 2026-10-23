@@ -69,6 +69,17 @@ public:
     float mfEffectfAlpha;
 };
 
+class cLuxJournalImageData : public iLuxJournalWidgetData
+{
+public:
+    cLuxJournalImageData(iWidget *apWidget, eLuxJournalState aType) : iLuxJournalWidgetData(apWidget), mType(aType), mfEffectfAlpha(0) {}
+
+    void Update(double adFixedDelta);
+
+    eLuxJournalState mType;
+    float mfEffectfAlpha;
+};
+
 //----------------------------------------
 
 class cLuxJournal;
@@ -174,6 +185,15 @@ public:
     void OpenDiary(cLuxDiary *apDiary, bool abNarration);
     void SetDiaryAsLastRead(cLuxDiary *apDiary);
 
+    bool GetDisabled()
+    {
+        return mbDisabled;
+    }
+    void SetDisabled(bool abX)
+    {
+        mbDisabled = abX;
+    }
+
     void OpenLastReadText();
 
 private:
@@ -260,6 +280,7 @@ private:
     // Variables
     bool mbActive;
     float mfAlpha;
+    bool mbDisabled;
 
     bool mbForceInstantExit;
     bool mbOpenedFromInventory;

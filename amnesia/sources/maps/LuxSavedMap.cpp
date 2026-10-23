@@ -123,7 +123,8 @@ void cLuxSavedMap::FromMap(cLuxMap *apMap)
         {
             cParticleSystem *pPS = psIt.Next();
 
-            if(    pPS->IsSaved() && pPS->GetEntityParent() == NULL && pPS->GetParent() == NULL && pPS->IsDying() == false)
+            if(pPS->IsSaved() && pPS->GetEntityParent() == NULL && pPS->GetParent()==NULL &&
+                    (pPS->IsDying()==false || pPS->IsActive() == false && pPS->IsDead() == false))
             {
                 cEnginePS_SaveData savePS;
                 savePS.FromPS(pPS);

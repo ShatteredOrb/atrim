@@ -1,4 +1,3 @@
-#if LUX_ENEMY_MANPIG
 #ifndef LUX_ENEMY_MAN_PIG_H
 #define LUX_ENEMY_MAN_PIG_H
 
@@ -36,11 +35,6 @@ public:
     bool mbTeslaFadeDisabled;
     bool mbTeslaSoundDisabled;
     bool mbTeslaEasyEscapeDisabled;
-
-    int mlCurrentPose;
-    int mlCurrentMoveType;
-
-    bool mbSkipVisibilityRangeHandicaps;
 };
 
 //----------------------------------------------
@@ -61,29 +55,7 @@ public:
 
     //////////////////////
     //Actions
-    void ChangePose(eLuxEnemyPoseType aPose, bool abSendMessage = true);
-    void ChangeMoveType(eLuxEnemyMoveType aMoveType);
     bool StateEventImplement(int alState, eLuxEnemyStateEvent aEvent, cLuxStateMessage *apMessage);
-
-    //////////////////////
-    // Movement animation names
-    virtual const tString &GetBackwardAnimationName()
-    {
-        return msBackwardAnimationName[mCurrentMoveType][mCurrentPose];
-    }
-    virtual const tString &GetIdleAnimationName()
-    {
-        return msIdleAnimationName[mCurrentMoveType][mCurrentPose];
-    }
-    virtual const tString &GetWalkAnimationName()
-    {
-        return msWalkAnimationName[mCurrentMoveType][mCurrentPose];
-    }
-    virtual const tString &GetRunAnimationName()
-    {
-        return msRunAnimationName[mCurrentMoveType][mCurrentPose];
-    }
-
 
     //////////////////////
     //Debug
@@ -205,9 +177,6 @@ private:
 
     cSoundEntity *mpHuntSound;
     int mlHuntSoundId;
-
-    eLuxEnemyMoveType mCurrentMoveType;
-
 };
 
 //----------------------------------------------
@@ -224,7 +193,5 @@ public:
 };
 
 //----------------------------------------------
-
-#endif
 
 #endif // LUX_ENEMY_MAN_PIG_H

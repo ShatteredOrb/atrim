@@ -30,6 +30,9 @@ iLuxPlayerState_DefaultBase::iLuxPlayerState_DefaultBase(cLuxPlayer *apPlayer, e
     mvFocusCrosshairGfx[eLuxFocusCrosshair_Pick] = pGui->CreateGfxImage("hud_crosshair_over_pick.tga", eGuiMaterial_Alpha);
     mvFocusCrosshairGfx[eLuxFocusCrosshair_LevelDoor] = pGui->CreateGfxImage("hud_crosshair_over_leveldoor.tga", eGuiMaterial_Alpha);
     mvFocusCrosshairGfx[eLuxFocusCrosshair_Ladder] = pGui->CreateGfxImage("hud_crosshair_over_ladder.tga", eGuiMaterial_Alpha);
+    mvFocusCrosshairGfx[eLuxFocusCrosshair_VoiceOver] = pGui->CreateGfxImage("hud_crosshair_over_voice.tga",eGuiMaterial_Alpha);
+    mvFocusCrosshairGfx[eLuxFocusCrosshair_PhoneBox] = pGui->CreateGfxImage("hud_crosshair_over_phone.tga",eGuiMaterial_Alpha);
+    mvFocusCrosshairGfx[eLuxFocusCrosshair_Note] = pGui->CreateGfxImage("hud_crosshair_over_note.tga",eGuiMaterial_Alpha);
 }
 
 //-----------------------------------------------------------------------
@@ -227,7 +230,12 @@ bool iLuxPlayerState_DefaultBase::ShowOutlineOnEntity(iLuxEntity *apEntity, iPhy
 
     iLuxProp *pProp = static_cast<iLuxProp *>(apEntity);
 
-    return pProp->GetPropType() == eLuxPropType_Item && apEntity->CanInteract(apBody) && apEntity->GetInteractionDisabled() == false;
+    eLuxPropType propType = pProp->GetPropType();
+    bool bOutlineType = (propType == eLuxPropType_Item ||
+                         propType == eLuxPropType_PhoneBox ||
+                         propType == eLuxPropType_VoiceFlashbackTrigger);
+
+    return bOutlineType && apEntity->CanInteract(apBody) && apEntity->GetInteractionDisabled() == false;
 }
 
 //-----------------------------------------------------------------------
@@ -269,9 +277,15 @@ void iLuxPlayerState_DefaultBase::AddOutlineObjects(iPhysicsBody *apBody, iLuxEn
         return;
     }
 
-    mbCurrentEntityHasOutline = true;
-
     iLuxProp *pProp = static_cast<iLuxProp *>(apEntity);
+
+    if(!pProp->GetGlowEnabled() )
+    {
+        mbCurrentEntityHasOutline = false;
+        return;
+    }
+
+    mbCurrentEntityHasOutline = true;
 
     /////////////////////////////
     //Show all connected bodies
@@ -291,7 +305,7 @@ void iLuxPlayerState_DefaultBase::AddOutlineObjects(iPhysicsBody *apBody, iLuxEn
 
             if(BodyIsAdded(static_cast<iPhysicsBody * >(pSubEnt->GetEntityParent()), lstAttachedBodies))
             {
-                gpBase->mpEffectRenderer->AddOutlineObject(pSubEnt);
+                gpBase->mpEffectRenderer->AddOutlineObject(pSubEnt, pProp->GetGlowOutlineColor());
             }
         }
     }
@@ -300,13 +314,17 @@ void iLuxPlayerState_DefaultBase::AddOutlineObjects(iPhysicsBody *apBody, iLuxEn
     else
     {
         cMeshEntity *pMeshEntity = pProp->GetEffectMeshEntity();
+        if(pMeshEntity == NULL)
+        {
+            return;
+        }
         for(int i = 0; i < pMeshEntity->GetSubMeshEntityNum(); ++i)
         {
             cSubMeshEntity *pSubEnt = pMeshEntity->GetSubMeshEntity(i);
 
             if(static_cast<iPhysicsBody * >(pSubEnt->GetEntityParent()) == apBody)
             {
-                gpBase->mpEffectRenderer->AddOutlineObject(pSubEnt);
+                gpBase->mpEffectRenderer->AddOutlineObject(pSubEnt, pProp->GetGlowOutlineColor());
             }
         }
     }

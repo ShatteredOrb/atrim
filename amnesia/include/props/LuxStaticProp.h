@@ -20,6 +20,8 @@ class iLuxStaticProp_SaveData : public iSerializable
 {
     kSerializableClassInit(iLuxEntity_SaveData)
 public:
+    virtual ~iLuxStaticProp_SaveData() {}
+
     tString msName;
     int mlID;
 

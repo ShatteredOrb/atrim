@@ -144,7 +144,7 @@ public:
 private:
     void UpdateFoodEnemyAttraction(double adFixedDelta);
     void UpdateInsanityVision(double adFixedDelta);
-    void SetInsanityVisionVisability(bool abX);
+    void SetInsanityVisionVisibility(bool abX);
 
     void SetJointMinMax(int alIdx, float afMin, float afMax);
 

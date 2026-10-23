@@ -54,6 +54,8 @@ class iLuxProp_CritterBase_SaveData : public iLuxProp_SaveData
 {
     kSerializableClassInit(iLuxProp_CritterBase_SaveData)
 public:
+    virtual ~iLuxProp_CritterBase_SaveData() {}
+
     cVector3f mvVel;
     cVector3f mvGravityVel;
     cVector3f mvSwarmPoint;
@@ -197,6 +199,7 @@ class iLuxPropLoader_Critter : public iLuxPropLoader
 {
 public:
     iLuxPropLoader_Critter(const tString asName);
+    virtual ~iLuxPropLoader_Critter() {}
 
     void LoadVariables(iLuxProp *apProp, cXmlElement *apRootElem);
     void LoadInstanceVariables(iLuxProp *apProp, cResourceVarsObject *apInstanceVars);

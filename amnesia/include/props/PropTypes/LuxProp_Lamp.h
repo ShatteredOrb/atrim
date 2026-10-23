@@ -18,6 +18,16 @@ public:
     float mfConnectionLightAmount;
     bool mbConnectionLightUseOnColor;
     bool mbConnectionLightUseSpec;
+    tString msConnectionLight2;
+    float mfConnectionLight2Amount;
+    bool mbConnectionLight2UseOnColor;
+    bool mbConnectionLight2UseSpec;
+    bool mbCanBeLitByPlayer;
+    bool mbCanBeGrabbed;
+    bool mbCanBeTurnedOff;
+    bool mbNeedsTinderbox;
+    bool mbSynchronizeFlickering;
+    bool mbFlickerActive;
 };
 
 
@@ -79,11 +89,14 @@ public:
 
     void UpdatePropSpecific(double adFixedDelta);
 
+    void FadeTo(float afR, float afG, float afB, float afA, float afRadius, float afTime);
+
     void BeforePropDestruction();
 
     eLuxFocusCrosshair GetFocusCrosshair(iPhysicsBody *apBody, const cVector3f &avPos);
     tWString GetFocusText();
 
+    void SetFlickerActive(bool abFlickerActive);
 
     //////////////////////
     //Properties
@@ -96,6 +109,15 @@ public:
     bool GetLit()
     {
         return mbLit;
+    }
+
+    void SetCanBeLitByPlayer(bool abX)
+    {
+        mbCanBeLitByPlayer = abX;
+    }
+    bool GetCanBeLitByPlayer()
+    {
+        return mbCanBeLitByPlayer;
     }
 
     bool CanBeIgnitByPlayer();
@@ -111,8 +133,8 @@ public:
     void LoadFromSaveData(iLuxEntity_SaveData* apSaveData);
     void SetupSaveData(iLuxEntity_SaveData *apSaveData);
 
-
 private:
+    void SynchronizeFlickering();
     void SetupLampLightConnection();
 
     //Vars
@@ -120,17 +142,26 @@ private:
 
     bool mbLightConnectionSetup;
 
-    cLuxLampLightConnection *mpLightConnection;
+    cLuxLampLightConnection *mpLightConnection1;
+    cLuxLampLightConnection *mpLightConnection2;
     tString msConnectionLight;
     float mfConnectionLightAmount;
     bool mbConnectionLightUseOnColor;
     bool mbConnectionLightUseSpec;
+    tString msConnectionLight2;
+    float mfConnectionLight2Amount;
+    bool mbConnectionLight2UseOnColor;
+    bool mbConnectionLight2UseSpec;
+    bool mbSynchronizeFlickering;
 
+    bool mbFlickerActive;
 
     //Data
     bool mbCanBeLitByPlayer;
     bool mbCanBeGrabbed;
 
+    bool mbCanBeTurnedOff;
+    bool mbNeedsTinderbox;
 
     cLuxInteractData_Grab mGrabData;
 };
