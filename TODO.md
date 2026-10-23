@@ -1,8 +1,5 @@
 # TODO
 
-### v1.4.6
-- Upgrade game logic code with changes from *Amnesia: A Machine for Pigs*
-
 ### v1.4.7 (or v1.4.666+ hotfix)
 - Add FOV slider
 - Fast forward for some sounds is behind the speed multipler
