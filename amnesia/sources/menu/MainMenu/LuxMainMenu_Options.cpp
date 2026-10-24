@@ -360,7 +360,7 @@ void cLuxMainMenu_Options::AddGameOptions(cWidgetTab* apTab)
     // Hand orientation Combobox
     pLabel = mpGuiSet->CreateWidgetLabel(vPos, -1, kTranslate("OptionsMenu", "HandOrientation"), apTab);
     mpCBHandOrientation = mpGuiSet->CreateWidgetComboBox(vPos + cVector3f(pLabel->GetSize().x + 5, -2, 0), cVector2f(150, 25), _W(""), apTab);
-    SetUpInput(pLabel, mpCBFocusIconStyle, false, kTranslate("OptionsMenu", "HandOrientationTip"));
+    SetUpInput(pLabel, mpCBHandOrientation, false, kTranslate("OptionsMenu", "HandOrientationTip"));
     mpCBHandOrientation->AddItem(kTranslate("ButtonNames", "Left"));
     mpCBHandOrientation->AddItem(kTranslate("ButtonNames", "Right"));
     vPos.y += pLabel->GetSize().y + 15;
