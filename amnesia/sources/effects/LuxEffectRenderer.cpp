@@ -58,7 +58,10 @@ cLuxEffectRenderer::cLuxEffectRenderer() : iLuxUpdateable("LuxEffectRenderer")
     programVars.Add("UseUv");
     programVars.Add("UseNormals");
     mpFlashProgram = pGraphics->CreateGpuProgramFromShaders("GameOutline", "deferred_base_vtx.glsl", "game_object_flash_frag.glsl", &programVars);
-    mpFlashProgram->GetVariableAsId("afColorMul", kVar_afColorMul);
+    if(mpFlashProgram)
+    {
+        mpFlashProgram->GetVariableAsId("afColorMul", kVar_afColorMul);
+    }
     programVars.Clear();
 
     /////////////////////////////
@@ -67,7 +70,10 @@ cLuxEffectRenderer::cLuxEffectRenderer() : iLuxUpdateable("LuxEffectRenderer")
     programVars.Add("UseUv");
     programVars.Add("UseNormals");
     mpEnemyGlowProgram = pGraphics->CreateGpuProgramFromShaders("EnemyGlow", "deferred_base_vtx.glsl", "game_enemy_darkness_glow_frag.glsl", &programVars);
-    mpEnemyGlowProgram->GetVariableAsId("afColorMul", kVar_afColorMul);
+    if(mpEnemyGlowProgram)
+    {
+        mpEnemyGlowProgram->GetVariableAsId("afColorMul", kVar_afColorMul);
+    }
     programVars.Clear();
 
     /////////////////////////////
@@ -337,6 +343,11 @@ void cLuxEffectRenderer::RenderEnemyGlow(cRendererCallbackFunctions* apFunctions
 void cLuxEffectRenderer::RenderOutline(cRendererCallbackFunctions* apFunctions)
 {
     if(mvOutlineObjects.empty())
+    {
+        return;
+    }
+    if( mpOutlineColorProgram[0] == NULL || mpOutlineColorProgram[1] == NULL ||
+            mpBlurProgram[0] == NULL || mpBlurProgram[1] == NULL)
     {
         return;
     }
