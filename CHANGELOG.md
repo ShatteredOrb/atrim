@@ -2,6 +2,7 @@
 ### v1.4.6
 - Added 64-bit support
 - Added application thread locking for multi-processor systems
+- Added bitmap to texture and index null checks and protections
 - Added borderless window functionality on Windows Vista and 7+
 - Added customizable loading text colors
 - Added customizable top menu font color settings from version 1.5
@@ -64,11 +65,13 @@
 - Fixed game crash when pressing Esc quickly to skip through bootup logos
 - Fixed inactive character bodies being simulated
 - Fixed invalid serialization of coins needed to unlock chests
+- Fixed libvorbis crashes caused by the library being too old
 - Fixed limit for Tinderboxes not being properly enforced
 - Fixed max amount of game logic updates not scaling properly with Fast Forward (`F3`)
 - Fixed mipmap level detection and image loading
 - Fixed missing material check for player step sounds
 - Fixed missing, null or invalid data check for sound entities
+- Fixed missing shader crashes for effect renderer
 - Fixed patch language fallback loading for unsupported languages
 - Fixed post effects breaking at >60 FPS
 - Fixed SDL backquote/grave (`` ` ``) key which incorrectly returned as a backslash (`\`)
@@ -99,6 +102,7 @@
 - Replaced `SDL_SetGamma` with a dedicated GLSL shader that controls the in-game gamma
 - Restored unused Brute enemy enabled sound
 - Restored unused Penumbra-style head leaning behavior
+- Unified loading resource directories
 - Upgraded application timing to use platform high resolution timers
 - Upgraded engine and game code with changes from Amnesia: A Machine For Pigs
 - Upgraded game physics to use double precision
