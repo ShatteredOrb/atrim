@@ -111,12 +111,6 @@ void cLuxEnemy_WaterLurker::OnSetupAfterLoad(cWorld *apWorld)
     mpMeshEntity->SetActive(false);
     mpMeshEntity->SetVisible(false);
 
-    mpCharBody->SetGravityActive(false);
-    mpCharBody->SetDeaccelerateMoveSpeedInAir(true);
-    mpCharBody->SetCollideStaticVolatile(false);
-    mpCharBody->SetClimbHeightAdd(0);
-    mpCharBody->SetMaxStepSize(0);
-    mpCharBody->SetMaxStepSizeInAir(0);
 }
 
 
