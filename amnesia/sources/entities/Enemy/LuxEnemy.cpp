@@ -317,7 +317,9 @@ void iLuxEnemyLoader::AfterLoad(cXmlElement *apRootElem, const cMatrixf &a_mtxTr
     pEnemy->mfWaterStepSpeedRun = GetVarFloat("WaterStepSpeedRun", 0);
     pEnemy->mfWaterStepSpeedMisc = GetVarFloat("WaterStepSpeedMisc", 0);
 
-    pEnemy->mfPathNodeReachedCheckVolumeScaleFactor = GetVarFloat("PathNodeReachedCheckVolumeScaleFactor", 1.2f);
+    //The Dark Descent used a hard coded 1.3 (its enemies are tuned for that), MFP made it a variable with 1.2 as default.
+    float fDefaultNodeReachedScale = pEnemy->GetEnemyType() == eLuxEnemyType_ManPig ? 1.2f : 1.3f;
+    pEnemy->mfPathNodeReachedCheckVolumeScaleFactor = GetVarFloat("PathNodeReachedCheckVolumeScaleFactor", fDefaultNodeReachedScale);
 
     //////////////////////////////
     // Load hit variables
@@ -2838,6 +2840,57 @@ bool iLuxEnemy::PlayerInFOV(float fFOV)
 bool iLuxEnemy::PlayerInFOV()
 {
     return InFOV(gpBase->mpPlayer->GetCharacterBody()->GetPosition());
+}
+
+//-----------------------------------------------------------------------
+
+bool iLuxEnemy::PlayerIsInAttackContact()
+{
+    cLuxPlayer *pPlayer = gpBase->mpPlayer;
+    if(pPlayer->IsDead() || TriggersDisabled())
+    {
+        return false;
+    }
+
+    iCharacterBody *pPlayerBody = pPlayer->GetCharacterBody();
+
+    ///////////////////////////
+    // Touching (with a little margin, the bodies push each other apart)
+    float fContactDist = mpCharBody->GetSize().x * 0.5f + pPlayerBody->GetSize().x * 0.5f + 0.25f;
+    if(DistToPlayer2D() > fContactDist)
+    {
+        return false;
+    }
+
+    ///////////////////////////
+    // Same floor (not on a ledge above / below)
+    if(AbsHeightDistToPlayer() > mpCharBody->GetSize().y * 0.5f)
+    {
+        return false;
+    }
+
+    ///////////////////////////
+    // Nothing in between (thin wall, closed door). Characters are skipped by the test.
+    return gpBase->mpMapHelper->CheckLineOfSight(mpCharBody->GetPosition(), pPlayerBody->GetPosition(), false);
+}
+
+//-----------------------------------------------------------------------
+
+void iLuxEnemy::TurnToPlayerBeforeAttackHit()
+{
+    //When the player is pressed against the enemy he is often to the side of it (the bodies
+    //slide along each other), and the attack shape is placed in front of the enemy, so the
+    //swing would miss. Keep facing the player until the hit happens.
+    if(mpCurrentAnimation == NULL || mpCurrentAnimation->IsBeforeSpecialEvent() == false)
+    {
+        return;
+    }
+    if(gpBase->mpPlayer->IsDead())
+    {
+        return;
+    }
+
+    mpMover->TurnToPos(gpBase->mpPlayer->GetCharacterBody()->GetFeetPosition());
 }
 
 //-----------------------------------------------------------------------

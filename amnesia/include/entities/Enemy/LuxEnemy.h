@@ -762,6 +762,15 @@ protected:
     bool PlayerInFOV();
     bool PlayerInFOV(float fFOV);
 
+    /**
+     * True if the player is pressed against the enemy (bodies touching, same floor and no
+     * wall/door between the centers). Used to allow melee attacks even if the regular
+     * line of sight test (needs 3 checks in a row, 0.3s apart, plus range handicaps for
+     * darkness/crouching) has not caught up yet.
+     */
+    bool PlayerIsInAttackContact();
+    void TurnToPlayerBeforeAttackHit();
+
     void OnSetActive(bool abX);
 
     virtual float GetDamageMul(float afAmount, int alStrength) = 0;

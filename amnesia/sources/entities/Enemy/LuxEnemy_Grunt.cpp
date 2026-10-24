@@ -569,7 +569,7 @@ bool cLuxEnemy_Grunt::StateEventImplement(int alState, eLuxEnemyStateEvent aEven
     //////////////////////////
     //Short attack
     float fDistToPlayer = DistToPlayer();
-    if(CanSeePlayer() && fDistToPlayer < mfNormalAttackDistance)
+    if((CanSeePlayer() || PlayerIsInAttackContact()) && fDistToPlayer < mfNormalAttackDistance)
     {
         ChangeState(eLuxEnemyState_AttackMeleeShort);
     }
@@ -794,6 +794,9 @@ bool cLuxEnemy_Grunt::StateEventImplement(int alState, eLuxEnemyStateEvent aEven
 
     kLuxOnLeave
     mfFOVMul = 1.0f;
+
+    kLuxOnUpdate
+    TurnToPlayerBeforeAttackHit();
 
     kLuxOnMessage(eLuxEnemyMessage_AnimationOver)
     if(mPreviousState == eLuxEnemyState_Hurt)
