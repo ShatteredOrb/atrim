@@ -603,6 +603,11 @@ void cGuiSet::DrawGfx(    cGuiGfxElement* apGfx, const cVector3f &avPos, const c
                           float afRotationAngle,
                           bool abUseCustomPivot, const cVector3f& avCustomPivot)
 {
+    //Missing image (file not found in the resources of a mod), nothing to draw.
+    if(apGfx == NULL)
+    {
+        return;
+    }
     if(mpCurrentClipRegion == NULL)
     {
         return;

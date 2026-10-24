@@ -191,6 +191,12 @@ cGuiGfxElement *iLuxPlayerState_DefaultBase::GetCrosshair()
         }
     }
 
+    //MFP crosshairs (voice, phone, note) do not exist in every mod's resources.
+    if(pCrosshair == NULL)
+    {
+        pCrosshair = mpDefaultCrosshairGfx;
+    }
+
     if(pCrosshair)
     {
         bool bPlayerIsRightHanded = (mpPlayer->GetHandOrientation() == eLuxHandOrientation_Right);
