@@ -38,7 +38,7 @@ void cLuxPropLoader_Lamp::LoadVariables(iLuxProp *apProp, cXmlElement *apRootEle
     pLamp->mbCanBeGrabbed = GetVarBool("CanBeGrabbed", false);
 
     pLamp->mbCanBeTurnedOff = GetVarBool("CanBeTurnedOff", false);
-    pLamp->mbNeedsTinderbox = GetVarBool("NeedsTinderbox", false);
+    pLamp->mbNeedsTinderbox = GetVarBool("NeedsTinderbox", pLamp->mbCanBeTurnedOff == false);
 
     ///////////////////////////
     // Grab specific
