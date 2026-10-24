@@ -120,6 +120,11 @@ public:
     {
         return mbBroken;
     }
+    /** True if damage can break the door (breakable and not disabled by script). */
+    bool CanBeBroken()
+    {
+        return mbBreakable && mbDisableBreakable == false;
+    }
 
     //////////////////////
     //Connection callbacks

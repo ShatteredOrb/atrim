@@ -18,6 +18,7 @@
 
 #include "LuxProp.h"
 #include "LuxProp_Object.h"
+#include "LuxProp_SwingDoor.h"
 
 //////////////////////////////////////////////////////////////////////////
 // Global Vars
@@ -2055,10 +2056,16 @@ void iLuxEnemy::UpdateCheckStuckAtDoor(double adFixedDelta)
             continue;
         }
 
+        //A broken door keeps its (disabled) bodies, do not get stuck on it again.
+        if(static_cast<cLuxProp_SwingDoor *>(pProp)->IsBroken())
+        {
+            continue;
+        }
+
         for(int i = 0; i < pProp->GetBodyNum(); ++i)
         {
             iPhysicsBody *pBody = pProp->GetBody(i);
-            if(pBody->GetMass() == 0)
+            if(pBody->GetMass() == 0 || pBody->IsActive() == false)
             {
                 continue;
             }
@@ -2890,6 +2897,63 @@ bool iLuxEnemy::PlayerIsInAttackContact()
 
 //-----------------------------------------------------------------------
 
+bool iLuxEnemy::StuckDoorIsCleared()
+{
+    iLuxEntity *pEntity = mpMap->GetEntityByID(mlStuckDoorID);
+    if(pEntity == NULL || pEntity->GetEntityType() != eLuxEntityType_Prop)
+    {
+        return true;
+    }
+
+    iLuxProp *pProp = static_cast<iLuxProp *>(pEntity);
+    if(pProp->GetPropType() != eLuxPropType_SwingDoor)
+    {
+        return true;
+    }
+
+    cLuxProp_SwingDoor *pDoor = static_cast<cLuxProp_SwingDoor *>(pProp);
+    return pDoor->IsBroken() || pDoor->GetClosed() == false;
+}
+
+//-----------------------------------------------------------------------
+
+void iLuxEnemy::OnBreakDoorHit()
+{
+    iLuxEntity *pEntity = mpMap->GetEntityByID(mlStuckDoorID);
+    if(pEntity == NULL || pEntity->GetEntityType() != eLuxEntityType_Prop)
+    {
+        return;
+    }
+
+    iLuxProp *pProp = static_cast<iLuxProp *>(pEntity);
+    if(pProp->GetPropType() != eLuxPropType_SwingDoor)
+    {
+        return;
+    }
+
+    //Unbreakable door that is unlocked (e.g. the padlock was broken and a script unlocked it)
+    //but still closed: the hit swings it open. A closed door is held at 2 degrees by its hinge,
+    //so hits can never open it, and it can never break either. Breakable doors are left alone,
+    //they still get smashed like in TDD.
+    cLuxProp_SwingDoor *pDoor = static_cast<cLuxProp_SwingDoor *>(pProp);
+    if( pDoor->IsBroken() == false && pDoor->CanBeBroken() == false &&
+            pDoor->GetLocked() == false && pDoor->GetClosed())
+    {
+        pDoor->SetClosed(false, true);
+    }
+}
+
+//-----------------------------------------------------------------------
+
+void iLuxEnemy::OnStuckDoorCleared()
+{
+    mbStuckAtDoor = false;
+    mlStuckDoorID = -1;
+    mpMover->ResetStuckCounter();
+}
+
+//-----------------------------------------------------------------------
+
 void iLuxEnemy::TurnToPlayerBeforeAttackHit()
 {
     //When the player is pressed against the enemy he is often to the side of it (the bodies
@@ -3080,6 +3144,7 @@ iLuxEnemy_SaveData::iLuxEnemy_SaveData()
     mfNextAnimSpeedMul = 1.0f;
     mbNextAnimUseMoveAnimWhenCurrentIsOver = false;
     mbNextAnimOverideMoveState = false;
+    mlStuckDoorID = -1;
 }
 
 //-----------------------------------------------------------------------
