@@ -24,6 +24,16 @@ public:
     virtual bool FetchResults() = 0;
 
     /**
+     * Waits until the result is in and fetches it. Lets the driver do the waiting instead of
+     * spinning on FetchResults() (every spin is a round trip to the driver, which is extra
+     * slow through layers like Wine).
+     */
+    virtual void WaitForResults()
+    {
+        while(FetchResults() == false);
+    }
+
+    /**
      * Get the number of samples that passed stencil and depth test in the query begin/end.
      */
     virtual unsigned int GetSampleCount() = 0;

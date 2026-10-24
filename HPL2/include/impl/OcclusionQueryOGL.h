@@ -15,6 +15,7 @@ public:
     void Begin();
     void End();
     bool FetchResults();
+    void WaitForResults();
     unsigned int GetSampleCount();
 
 public:

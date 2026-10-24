@@ -201,6 +201,7 @@ private:
     static void RemoveCamera(cCamera *apCamera);
 
     static void ClearActive();
+    static void ForgetTouched();
 
     class cTouchedEntry
     {

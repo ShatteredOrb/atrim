@@ -215,6 +215,9 @@ cEngine::cEngine(iLowLevelEngineSetup *apGameSetup, tFlag alHplSetupFlags, cEngi
     , dFrameTime(0.0)
     , dCurrentTime(0.0)
     , dRenderAlpha(0.0)
+    , mlFrameRateLimit(0)
+    , mdFrameLimitPeriod(0.0)
+    , mdNextFrameDeadline(0.0)
 {
     //Set up variables
     mbApplicationHasInputFocus = false;
@@ -529,14 +532,30 @@ void cEngine::Run()
             ++iUpdatesOnCurrentFrame;
         }
 
-        if(dAccumulator >= kFixedDelta && iUpdatesOnCurrentFrame >= iMaxGameUpdates)
+        // Hit the update cap (use the same cap as the loop above, it is raised with the speed mul)
+        if(dAccumulator >= kFixedDelta && iUpdatesOnCurrentFrame >= iDynamicMaxUpdates)
         {
             dAccumulator = std::fmod(dAccumulator, kFixedDelta);
         }
 
         // Make alpha dividing the accumulated time by the fixed delta timestep.
         // Rendering shows the world this far between the last two ticks.
-        dRenderAlpha = dAccumulator / kFixedDelta;
+        //
+        // The time spent running the ticks of this frame is added too. The clock was read
+        // before the ticks ran, so without it frames that ran a tick showed the world
+        // "older" than frames that did not (by the tick's CPU time), which is felt as
+        // micro stutter at high frame rates. The time is not removed from the
+        // accumulator, the next frame's delta includes it as usual.
+        double dTimeSpentInTicks = 0.0;
+        if(iUpdatesOnCurrentFrame > 0)
+        {
+            dTimeSpentInTicks = (cPlatform::GetApplicationTimeX() - dCurrentTime) * dSpeedMul;
+            if(dTimeSpentInTicks < 0.0)
+            {
+                dTimeSpentInTicks = 0.0;
+            }
+        }
+        dRenderAlpha = (dAccumulator + dTimeSpentInTicks) / kFixedDelta;
         if(dRenderAlpha > 1.0)
         {
             dRenderAlpha = 1.0;
@@ -567,6 +586,8 @@ void cEngine::Run()
         mpUpdater->RunMessage(eUpdateableMessage_OnPostBufferSwap);
 
         mpFPSCounter->AddFrame();
+
+        WaitForFrameLimit();
     }
 
     Log("--------------------------------------------------------\n\n");
@@ -631,6 +652,59 @@ void cEngine::Run()
     Log("--------------------------------------------------------\n");
 
     mpUpdater->BroadcastMessageToAll(eUpdateableMessage_OnExit);
+}
+
+//-----------------------------------------------------------------------
+
+void cEngine::SetFrameRateLimit(int alFPS)
+{
+    if(alFPS < 0)
+    {
+        alFPS = 0;
+    }
+    //Anything below the logic rate makes no sense (and breaks pacing), clamp it.
+    if(alFPS > 0 && alFPS < 30)
+    {
+        alFPS = 30;
+    }
+
+    mlFrameRateLimit = alFPS;
+    mdFrameLimitPeriod = alFPS > 0 ? 1.0 / (double)alFPS : 0.0;
+    mdNextFrameDeadline = 0.0;
+}
+
+//-----------------------------------------------------------------------
+
+void cEngine::WaitForFrameLimit()
+{
+    if(mdFrameLimitPeriod <= 0.0)
+    {
+        return;
+    }
+
+    double dNow = cPlatform::GetApplicationTimeX();
+
+    // Keep a fixed cadence (deadline += period) so the presented frames are evenly spaced.
+    // If we fell behind by more than a frame (load, hitch), start over from now instead
+    // of trying to catch up with a burst of frames.
+    mdNextFrameDeadline += mdFrameLimitPeriod;
+    if(mdNextFrameDeadline < dNow - mdFrameLimitPeriod || mdNextFrameDeadline > dNow + mdFrameLimitPeriod)
+    {
+        mdNextFrameDeadline = dNow + mdFrameLimitPeriod;
+    }
+
+    // Sleep while there is plenty of time left (Sleep has ~1 ms granularity at best)...
+    while(mdNextFrameDeadline - dNow > 0.002)
+    {
+        cPlatform::Sleep(1);
+        dNow = cPlatform::GetApplicationTimeX();
+    }
+
+    // ...and spin the last bit for accuracy.
+    while(dNow < mdNextFrameDeadline)
+    {
+        dNow = cPlatform::GetApplicationTimeX();
+    }
 }
 
 //-----------------------------------------------------------------------

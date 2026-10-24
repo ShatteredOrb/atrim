@@ -72,6 +72,17 @@ void cRenderInterpolation::EndTick()
     ClearActive();
 
     //////////////////////////////
+    // Interpolation turned off: nothing will be interpolated, so skip resolving and
+    // snapshotting (this resolves all bones of every touched mesh, every tick, which is a
+    // lot of CPU time on old machines where interpolation is most likely to be turned off).
+    // Mark them to snap, so the history starts fresh if interpolation is turned on again.
+    if(mbEnabled == false)
+    {
+        ForgetTouched();
+        return;
+    }
+
+    //////////////////////////////
     // Snapshot everything touched during this tick.
     // The list is swapped out first, so anything touched by the hooks below simply
     // ends up in the (fresh) list for the next tick.
@@ -205,6 +216,14 @@ void cRenderInterpolation::BeginRender()
                 pEntity->OnRenderInterpResolve();
             }
         }
+        return;
+    }
+
+    //////////////////////////////
+    // Interpolation off: the exact state is shown anyway, nothing to resolve or snapshot.
+    if(mbEnabled == false)
+    {
+        ForgetTouched();
         return;
     }
 
@@ -488,6 +507,23 @@ void cRenderInterpolation::RemoveCamera(cCamera *apCamera)
             return;
         }
     }
+}
+
+//-----------------------------------------------------------------------
+
+void cRenderInterpolation::ForgetTouched()
+{
+    for(size_t i = 0; i < mvTouched.size(); ++i)
+    {
+        iEntity3D *pEntity = mvTouched[i].mpEntity;
+        if(pEntity == NULL)
+        {
+            continue;
+        }
+        pEntity->mlInterpTouchIdx = -1;
+        pEntity->mbInterpSnap = true;
+    }
+    mvTouched.clear();
 }
 
 //-----------------------------------------------------------------------

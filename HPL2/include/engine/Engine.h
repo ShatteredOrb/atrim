@@ -179,6 +179,17 @@ public:
         return kFixedDelta;
     }
 
+    /**
+     * Optional frame rate cap (0 = off). Helps frame pacing when running far above the
+     * refresh rate without vsync (frames are presented at a steady rate instead of as fast
+     * as possible).
+     */
+    void SetFrameRateLimit(int alFPS);
+    int GetFrameRateLimit()
+    {
+        return mlFrameRateLimit;
+    }
+
     static void SetDeviceWasPlugged()
     {
         mbDevicePlugged = true;
@@ -226,6 +237,12 @@ private:
     double dCurrentTime;
 
     double dRenderAlpha;
+
+    int mlFrameRateLimit;
+    double mdFrameLimitPeriod;
+    double mdNextFrameDeadline;
+
+    void WaitForFrameLimit();
 
     iLowLevelEngineSetup *mpGameSetup;
     cUpdater *mpUpdater;

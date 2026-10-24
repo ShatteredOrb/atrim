@@ -62,6 +62,7 @@ void cLuxConfigHandler::LoadMainConfig()
     mbVSync =            gpBase->mpMainConfig->GetBool("Screen", "Vsync", false);
     mbRenderInterpolation = gpBase->mpMainConfig->GetBool("Screen", "RenderInterpolation", true);
     mbFrameRateMouseLook = gpBase->mpMainConfig->GetBool("Screen", "FrameRateMouseLook", true);
+    mlFrameRateLimit =    gpBase->mpMainConfig->GetInt("Screen", "FrameRateLimit", 0);
 
     mbFastPhysicsLoad =    gpBase->mpMainConfig->GetBool("MapLoad", "FastPhysicsLoad", false);
     mbFastStaticLoad =    gpBase->mpMainConfig->GetBool("MapLoad", "FastStaticLoad", false);
@@ -134,6 +135,7 @@ void cLuxConfigHandler::SaveMainConfig()
     gpBase->mpMainConfig->SetBool("Screen", "Vsync", mbVSync);
     gpBase->mpMainConfig->SetBool("Screen", "RenderInterpolation", mbRenderInterpolation);
     gpBase->mpMainConfig->SetBool("Screen", "FrameRateMouseLook", mbFrameRateMouseLook);
+    gpBase->mpMainConfig->SetInt("Screen", "FrameRateLimit", mlFrameRateLimit);
 
     gpBase->mpMainConfig->SetBool("MapLoad", "FastPhysicsLoad", mbFastPhysicsLoad);
     gpBase->mpMainConfig->SetBool("MapLoad", "FastStaticLoad", mbFastStaticLoad);

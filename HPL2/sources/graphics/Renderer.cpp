@@ -316,7 +316,7 @@ int cRenderSettings::RetrieveOcclusionObjectSamples(iRenderer *apRenderer, void 
         return pObject->mlSampleResults;
     }
 
-    while(pQuery->FetchResults() == false);
+    pQuery->WaitForResults();
 
     pObject->mlSampleResults = pQuery->GetSampleCount();
     pObject->mpQuery = NULL;
@@ -399,7 +399,7 @@ void cRenderSettings::WaitAndRetrieveAllOcclusionQueries(iRenderer *apRenderer)
             continue;
         }
 
-        while(pQuery->FetchResults() == false);
+        pQuery->WaitForResults();
 
         mvOcclusionObjectPool[i]->mlSampleResults = pQuery->GetSampleCount();
         mvOcclusionObjectPool[i]->mpQuery = NULL;
@@ -1539,6 +1539,14 @@ void iRenderer::CheckForVisibleObjectsAddToListAndRenderZ(    cVisibleRCNodeTrac
 
 
             //////////////////////////////////////
+            //Nothing else to do on the CPU until this result is in: let the driver wait for it
+            //instead of spinning on the query (each spin is a full driver round trip).
+            if(setNodeStack.empty())
+            {
+                noPair.mpQuery->WaitForResults();
+            }
+
+            //////////////////////////////////////
             //Check if the query is done
             if(noPair.mpQuery->FetchResults() == false)
             {
@@ -2271,7 +2279,7 @@ void iRenderer::RetrieveAllLightOcclusionPair(bool abWaitForResult)
         //Wait for results if specfied.
         if(abWaitForResult)
         {
-            while(pQuery->FetchResults() == false);
+            pQuery->WaitForResults();
         }
 
         //Get result and set resulting samples

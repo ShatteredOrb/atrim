@@ -39,6 +39,7 @@ public:
     bool mbVSync;
     bool mbRenderInterpolation;
     bool mbFrameRateMouseLook;
+    int mlFrameRateLimit; //0 = no limit
     int mlTextureQuality;
     int mlTextureFilter;
     float mfTextureAnisotropy;

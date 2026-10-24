@@ -1037,6 +1037,7 @@ bool cLuxBase::InitEngine()
     /////////////////////////
     // Set up more properties
     mpEngine->GetGraphics()->GetLowLevel()->SetVsyncActive(mpConfigHandler->mbVSync);
+    mpEngine->SetFrameRateLimit(mpConfigHandler->mlFrameRateLimit);
     cRenderInterpolation::SetEnabled(mpConfigHandler->mbRenderInterpolation);
 
     float fGamma = mpMainConfig->GetFloat("Graphics", "Gamma", 1.0f);

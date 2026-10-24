@@ -75,6 +75,29 @@ bool cOcclusionQueryOGL::FetchResults()
     return true;
 }
 
+void cOcclusionQueryOGL::WaitForResults()
+{
+    if(mbResultsAreFetched)
+    {
+        return;
+    }
+
+    //if it is not a query, there are no samples to get!
+    if(glIsQuery(mlQueryId) == GL_FALSE)
+    {
+        mbResultsAreFetched = true;
+        mlLastSampleCount = 0;
+        return;
+    }
+
+    //GL_QUERY_RESULT blocks inside the driver until the result is available.
+    glGetQueryObjectivARB(mlQueryId, GL_QUERY_RESULT_ARB, (GLint *)&mlLastSampleCount);
+
+    mbResultsAreFetched = true;
+}
+
+//-----------------------------------------------------------------------
+
 unsigned int cOcclusionQueryOGL::GetSampleCount()
 {
     return mlLastSampleCount;
