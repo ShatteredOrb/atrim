@@ -736,6 +736,10 @@ bool cLuxBase::InitApp()
     msDefaultGameLanguage = pInitCfg->GetString("ConfigFiles", "DefaultGameLanguage", "");
     msDefaultPatchLanguage = pInitCfg->GetString("ConfigFiles", "DefaultPatchLanguage", "");
 
+    msDefaultBaseLanguage = cString::GetFileName(msDefaultBaseLanguage);
+    msDefaultGameLanguage = cString::GetFileName(msDefaultGameLanguage);
+    msDefaultPatchLanguage = cString::GetFileName(msDefaultPatchLanguage);
+
     //Directories
     msBaseLanguageFolder = pInitCfg->GetString("Directories", "BaseLanguageFolder", "");
     msGameLanguageFolder = pInitCfg->GetString("Directories", "GameLanguageFolder", "");
@@ -794,6 +798,7 @@ bool cLuxBase::InitApp()
             if(pBaseInitCfg->Load())
             {
                 sBaseSaveFolder = pBaseInitCfg->GetStringW("Directories", "MainSaveFolder", _W(""));
+                msBaseResourceConfigPath = pBaseInitCfg->GetString("ConfigFiles", "Resources", "");
             }
             hplDelete(pBaseInitCfg);
         }
@@ -984,6 +989,20 @@ void cLuxBase::CopyBaseMainSettingsToFullConversion()
     hplDelete(pBaseSettings);
 
     Log("Full conversion first start: copied main settings from '%ls'\n", sBaseSettings.c_str());
+}
+
+//-----------------------------------------------------------------------
+
+void cLuxBase::LoadResourceDirs()
+{
+    cResources *pResources = mpEngine->GetResources();
+
+    pResources->LoadResourceDirsFile(msResourceConfigPath, GetResourceAltPath());
+
+    if(mbFullConversionMode && msBaseResourceConfigPath != "" && msBaseResourceConfigPath != msResourceConfigPath)
+    {
+        pResources->LoadResourceDirsFile(msBaseResourceConfigPath);
+    }
 }
 
 //-----------------------------------------------------------------------
@@ -1337,7 +1356,7 @@ bool cLuxBase::InitEngine()
 
     /////////////////////////
     //Load configurations
-    mpEngine->GetResources()->LoadResourceDirsFile(msResourceConfigPath, GetResourceAltPath());
+    LoadResourceDirs();
 
     mpEngine->GetPhysics()->LoadSurfaceData(msMaterialConfigPath);
 
@@ -1783,7 +1802,7 @@ bool cLuxBase::LoadLanguage(const tString& asName, bool abForceReload)
     pResources->AddResourceDir(_W("core/shaders"),false);
     pResources->AddResourceDir(_W("core/textures"),false);
     pResources->AddResourceDir(_W("core/models"),false);
-    pResources->LoadResourceDirsFile(msResourceConfigPath, GetResourceAltPath());
+    LoadResourceDirs();
 
     if(mpCustomStory)
         mpEngine->GetResources()->AddResourceDir(mpCustomStory->msStoryRootFolder, true);

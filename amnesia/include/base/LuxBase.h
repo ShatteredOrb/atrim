@@ -136,6 +136,9 @@ public:
     // exits and starts itself again with "-fc <story root>". Leaving the full conversion
     // (quit from its menus) starts the base game again.
 
+    /** Loads resources.cfg (+ the base game's one as fallback inside a full conversion). */
+    void LoadResourceDirs();
+
     /** Exits and restarts atrim as the full conversion in asStoryRootFolder. */
     void LaunchFullConversion(const tWString& asStoryRootFolder);
     /** Quit from a menu: inside a full conversion, go back to the base game instead. */
@@ -323,6 +326,7 @@ public:
 
     bool mbFullConversionMode;
     tWString msFullConversionRoot;
+    tString msBaseResourceConfigPath;
 
 private:
     bool ParseFullConversionCommandLine(const tString& asArgs);
