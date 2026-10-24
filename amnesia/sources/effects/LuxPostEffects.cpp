@@ -240,6 +240,11 @@ void cLuxPostEffectHandler::OnStart()
 
 void cLuxPostEffectHandler::Update(double adFixedDelta)
 {
+    {
+        float fGamma = gpBase->mpEngine->GetGraphics()->GetLowLevel()->GetGammaCorrection();
+        mpGamma->SetActive(cMath::Abs(fGamma - 1.0f) > 0.001f);
+    }
+
     for(size_t i = 0; i < mvPostEffects.size(); ++i)
     {
         iLuxPostEffect *pPostEffect = mvPostEffects[i];
