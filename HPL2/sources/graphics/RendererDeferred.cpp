@@ -638,7 +638,9 @@ bool cRendererDeferred::LoadData()
         // Textures and frame buffers
 
         // Textures
-        mpLinearDepthTexture = CreateRenderTexture("LinearDepth", vSSAOSize, ePixelFormat_RGB16);
+        //Depth is only used for compares, bilinear filtering costs bandwidth since
+        //older cards (Radeon 9500-X850) can not filter float textures at all
+        mpLinearDepthTexture = CreateRenderTexture("LinearDepth", vSSAOSize, ePixelFormat_RGB16, eTextureFilter_Nearest);
         mpSSAOTexture = CreateRenderTexture("SSAO", vSSAOSize, ePixelFormat_RGB);
         mpSSAOBlurTexture = CreateRenderTexture("SSAOBlur", vSSAOSize, ePixelFormat_RGB);
 
@@ -1209,6 +1211,14 @@ void cRendererDeferred::RenderSSAO()
 {
     //If not active or loaded, return.
     if(mbSSAOLoaded == false || mpCurrentSettings->mbSSAOActive == false)
+    {
+        return;
+    }
+
+    //If any of the programs fail to compile due to shader limits on older cards then skip instead
+    //Otherwise the fixed function pipeline would be used and garbage multiplied onto the color buffer
+    if(    mpUnpackDepthProgram == NULL || mpSSAORenderProgram == NULL ||
+            mpSSAOBlurProgram[0] == NULL || mpSSAOBlurProgram[1] == NULL)
     {
         return;
     }

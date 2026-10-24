@@ -101,7 +101,7 @@ static int GetSSAOSamplesFromIndex(int alX)
         //case 4: return 64;
         //case 5: return 128;
     }
-    return 3;
+    return 8;
 }
 
 //-----------------------------------------------------------------------
