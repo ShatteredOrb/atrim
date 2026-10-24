@@ -9,7 +9,7 @@ atrim is currently being maintained by one person ([@RoozerXC](https://github.co
 
 > [!IMPORTANT]
 > - **This port is based on the official *Amnesia: The Dark Descent* version 1.4.3 (1.41b) source code release from October 12th, 2020.**
-> - **This port now works with mods installed from the Steam Workshop! Workshop Full Conversion mod support is slightly limited!**
+> - **This port now works with mods made for version 1.5, and mods installed from the Steam Workshop!**
 
 See instructions below on how to install the atrim client and installing Steam Workshop mods for it.
 
@@ -32,9 +32,6 @@ Installing [*Amnesia: The Dark Descent - Remastered*](https://archive.org/detail
 1. Go to this path: `steamapps/workshop/content/57300`
 2. Copy all of the Workshop mod folders.
 3. Go to the `custom_stories` folder in your game directory and paste all of them.
-
-> [!IMPORTANT]
-> Full conversion mods with a valid `custom_story_settings.cfg` will work, but switching to a Full Conversion environment from a Custom Story is a bit limited compared to the official functionality in version 1.5.
 
 ## Building & Debugging
 ### Prerequisites
