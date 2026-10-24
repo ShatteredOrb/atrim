@@ -580,6 +580,18 @@ iLuxEnemy::iLuxEnemy(const tString &asName, int alID, cLuxMap *apMap, eLuxEnemyT
 
     mbBlind = false;
     mbDeaf = false;
+
+    mlStuckDoorID = -1;
+    mfDarknessGlowAlphaGoal = 0;
+    mvTempPos = 0;
+    mfTempVal = 0;
+    mlTempVal = 0;
+    mbNextAnimationLoop = false;
+    mbNextAnimationDependsOnSpeed = false;
+    mfNextAnimSpeedMul = 1.0f;
+    mbNextAnimUseMoveAnimWhenCurrentIsOver = false;
+    mbNextAnimOverideMoveState = false;
+
     mfPlayerInDarknessLightLevel = 0.35f;
     mfCrouchVisibleRangeMul = 0.5f;
     mfDarknessStillSightRangeMul = 1.0f;
@@ -3059,6 +3071,15 @@ iLuxEnemy_SaveData::iLuxEnemy_SaveData()
 {
     mbBlind = false;
     mbDeaf = false;
+    mCurrentPose = 0;        //eLuxEnemyPoseType_Biped
+    mCurrentMoveType = 0;    //eLuxEnemyMoveType_Normal
+    mbSkipVisibilityRangeHandicaps = false;
+    mlNextAnimationIndex = -1;
+    mbNextAnimationLoop = false;
+    mbNextAnimationDependsOnSpeed = false;
+    mfNextAnimSpeedMul = 1.0f;
+    mbNextAnimUseMoveAnimWhenCurrentIsOver = false;
+    mbNextAnimOverideMoveState = false;
 }
 
 //-----------------------------------------------------------------------
