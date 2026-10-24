@@ -194,7 +194,8 @@ bool cLanguageFile::AddFromFile(const tWString& asFile, bool abAddResourceDirs, 
                             tString sCommand = "";
                             int lCount = 1;
 
-                            while(sString[i + lCount] != ']' && i + lCount < sString.length() && lCount < 16)
+                            //Check the length BEFORE reading the char (could read past the end of the string).
+                            while(i + lCount < sString.length() && sString[i + lCount] != ']' && lCount < 16)
                             {
                                 sCommand += sString[i + lCount];
                                 lCount++;
@@ -204,7 +205,7 @@ bool cLanguageFile::AddFromFile(const tWString& asFile, bool abAddResourceDirs, 
                             {
                                 pEntry->mwsText += _W('\n');
                             }
-                            else if(sCommand[0] == 'u')
+                            else if(sCommand.empty() == false && sCommand[0] == 'u')
                             {
                                 int lNum = cString::ToInt(sCommand.substr(1).c_str(), 0);
                                 pEntry->mwsText += (wchar_t)lNum;
@@ -225,17 +226,58 @@ bool cLanguageFile::AddFromFile(const tWString& asFile, bool abAddResourceDirs, 
                             }
                         }
                         //Decode UTF-8!
+                        //Only 2 byte sequences were handled before, so 3 byte chars
+                        //(like the German quotes U+201E U+201C or U+2019) ate the next letter.
                         else if(c >= 128)
                         {
-                            unsigned char c2 = sString[i + 1];
+                            int lExtraBytes = 0;
+                            int lNum = 0;
+                            if((c & 0xE0) == 0xC0)
+                            {
+                                lExtraBytes = 1;    // 110xxxxx
+                                lNum = c & 0x1f;
+                            }
+                            else if((c & 0xF0) == 0xE0)
+                            {
+                                lExtraBytes = 2;    // 1110xxxx
+                                lNum = c & 0x0f;
+                            }
+                            else if((c & 0xF8) == 0xF0)
+                            {
+                                lExtraBytes = 3;    // 11110xxx
+                                lNum = c & 0x07;
+                            }
 
-                            int lNum = c & 0x1f; // c AND 0001 1111
-                            lNum = lNum << 6;
-                            lNum = lNum | (c2 & 0x3f);// c AND 0011 1111
+                            //Make sure the continuation bytes are really there
+                            bool bValid = lExtraBytes > 0 && i + lExtraBytes < sString.length();
+                            for(int j = 1; bValid && j <= lExtraBytes; ++j)
+                            {
+                                unsigned char cNext = sString[i + j];
+                                if((cNext & 0xC0) != 0x80)
+                                {
+                                    bValid = false;
+                                }
+                                else
+                                {
+                                    lNum = (lNum << 6) | (cNext & 0x3f);
+                                }
+                            }
 
-                            pEntry->mwsText += (wchar_t)lNum;
-                            ++i;
-                            //Log(" %d: (%x %x) -> %d\n",i,c,c2,(wchar_t)lNum);
+                            if(bValid)
+                            {
+                                //wchar_t is 16 bit on Windows, chars outside the BMP can not be shown.
+                                if(lNum > 0xFFFF)
+                                {
+                                    lNum = '?';
+                                }
+                                pEntry->mwsText += (wchar_t)lNum;
+                                i += lExtraBytes;
+                            }
+                            else
+                            {
+                                //Not valid UTF-8, treat it as a Latin-1 char (old behaviour for stray bytes).
+                                pEntry->mwsText += (wchar_t)c;
+                            }
                         }
                         else
                         {

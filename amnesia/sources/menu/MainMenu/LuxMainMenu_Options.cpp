@@ -309,7 +309,8 @@ void cLuxMainMenu_Options::AddGameOptions(cWidgetTab* apTab)
     // Language Combobox
     cWidgetLabel* pLabel = mpGuiSet->CreateWidgetLabel(vPos, -1, kTranslate("OptionsMenu", "Language"), apTab);
     mpCBLanguage = mpGuiSet->CreateWidgetComboBox(vPos + cVector3f(pLabel->GetSize().x + 5, -2, 0), cVector2f(150, 25), _W(""), apTab);
-    SetUpInput(pLabel, mpCBLanguage, false, kTranslate("OptionsMenu", "LanguageTip"));
+    //Language is only loaded at startup, so a restart is needed for it to apply everywhere.
+    SetUpInput(pLabel, mpCBLanguage, true, kTranslate("OptionsMenu", "LanguageTip"));
     mpCBLanguage->AddCallback(eGuiMessage_SelectionChange, this, kGuiCallback(ChangeLanguage));
 
     vPos.y += mpCBLanguage->GetSize().y + 15;

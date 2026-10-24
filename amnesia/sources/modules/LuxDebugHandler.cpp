@@ -1311,7 +1311,7 @@ bool cLuxDebugHandler::RecompileScript()
 void cLuxDebugHandler::ReloadTranslations()
 {
     gpBase->mpEngine->GetResources()->ClearTranslations();
-    gpBase->LoadLanguage(gpBase->mpMainConfig->GetString("Game", "StartLanguage", gpBase->msDefaultGameLanguage), true);
+    gpBase->LoadLanguage(gpBase->msCurrentLanguage, true);
 }
 
 //-----------------------------------------------------------------------

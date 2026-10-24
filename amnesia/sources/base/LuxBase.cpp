@@ -1546,55 +1546,62 @@ bool cLuxBase::LoadLanguage(const tString& asName, bool abForceReload)
         sPatchLangFallback = msDefaultPatchLanguage;
     }
 
-    // Using a different language, check if the file really exists.
-    if(sPatchFileName != sPatchLangFallback)
-    {
-        tString sPatchLangPath;
-        if(msPatchLanguageFolder != "")
-        {
-            sPatchLangPath = msPatchLanguageFolder + sPatchFileName;
-        }
-        else
-        {
-            sPatchLangPath = "config/" + sPatchFileName;
-        }
+    tString sPatchFolder = msPatchLanguageFolder != "" ? msPatchLanguageFolder : tString("config/");
+    tString sPatchLangFallbackPath = sPatchFolder + sPatchLangFallback;
 
-        pResources->AddLanguageFile(sPatchLangPath, true);
-    }
+    const bool bIsFallbackPatchLang = cString::ToLowerCase(sPatchFileName) == cString::ToLowerCase(sPatchLangFallback);
 
-    tString sPatchLangFallbackPath;
-    if(msPatchLanguageFolder != "")
+    // NOTE: The first file that defines an entry wins (cLanguageFile skips entries that
+    // already exist). So ALL files of the selected language must be added before ANY
+    // English fallback file. The old order added patch_english.lang before the selected
+    // language's main/base files, which replaced every translated entry that the patch
+    // file also defines (ButtonNames, Actions, OptionsMenu, ...) with English text.
+
+    ////////////////////////////////////////////
+    // Selected language: client patch lang (only if the language has one)
+    if(bIsFallbackPatchLang)
     {
-        sPatchLangFallbackPath = msPatchLanguageFolder + sPatchLangFallback;
+        //English: the patch file must override the base files, so it goes first.
+        pResources->AddLanguageFile(sPatchLangFallbackPath, true);
     }
     else
     {
-        sPatchLangFallbackPath = "config/" + sPatchLangFallback;
+        tString sPatchLangPath = sPatchFolder + sPatchFileName;
+        if(cPlatform::FileExists(cString::To16Char(sPatchLangPath)))
+        {
+            pResources->AddLanguageFile(sPatchLangPath, true);
+        }
     }
 
-    // Fallback language loading must succeed!
-    pResources->AddLanguageFile(sPatchLangFallbackPath, true);
-
     ////////////////////////////////////////////
-    // Main game lang
+    // Selected language: main game lang
     pResources->AddLanguageFile(msGameLanguageFolder + sGameFileName, true);
     pResources->AddLanguageFile(msBaseLanguageFolder + sBaseFileName, true);
 
     ////////////////////////////////////////////
-    //If not default language, add default to so only missing entries are filled in
-    if(mpCustomStory && sGameFileName != mpCustomStory->msDefaultExtraLanguage)
+    // Fallbacks: only fill in entries that are still missing.
+
+    //Custom story default extra lang
+    if(mpCustomStory && cString::ToLowerCase(sGameFileName) != cString::ToLowerCase(mpCustomStory->msDefaultExtraLanguage))
     {
         pResources->AddLanguageFile(cString::To8Char(mpCustomStory->msStoryRootFolder) +
                                     mpCustomStory->msExtraLangFilePrefix +
                                     mpCustomStory->msDefaultExtraLanguage, false);
     }
 
-    if(sGameFileName != msDefaultGameLanguage)
+    // English (enUS) client patch fallback. Loading must succeed!
+    // (Already loaded above when English is the selected language.)
+    if(bIsFallbackPatchLang == false)
+    {
+        pResources->AddLanguageFile(sPatchLangFallbackPath, false);
+    }
+
+    if(cString::ToLowerCase(sGameFileName) != cString::ToLowerCase(msDefaultGameLanguage))
     {
         pResources->AddLanguageFile(msGameLanguageFolder + msDefaultGameLanguage, false);
     }
 
-    if(sBaseFileName != msDefaultBaseLanguage)
+    if(cString::ToLowerCase(sBaseFileName) != cString::ToLowerCase(msDefaultBaseLanguage))
     {
         pResources->AddLanguageFile(msBaseLanguageFolder + msDefaultBaseLanguage, false);
     }
