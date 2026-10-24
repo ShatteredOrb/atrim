@@ -298,6 +298,7 @@ void cLowLevelGraphicsSDL::SetupGL()
     mbScissorActive = false;
     mvScissorPos = 0;
     mvScissorSize = mvScreenSize;
+    mlScissorFrameBufferHeight = -1;
 
     mbBlendActive = false;
 
@@ -1078,7 +1079,12 @@ void cLowLevelGraphicsSDL::SetStencilActive(bool abX)
     }
     else
     {
-        glDisable(GL_STENCIL_TEST_TWO_SIDE_EXT);
+        //Only exists with EXT_stencil_two_side (not on ATI/AMD, Radeon 9x00/X-series would
+        //raise GL_INVALID_ENUM on every call).
+        if(GLEW_EXT_stencil_two_side)
+        {
+            glDisable(GL_STENCIL_TEST_TWO_SIDE_EXT);
+        }
         glDisable(GL_STENCIL_TEST);
     }
 }
@@ -1264,14 +1270,6 @@ void cLowLevelGraphicsSDL::SetScissorActive(bool abX)
 
 void cLowLevelGraphicsSDL::SetScissorRect(const cVector2l& avPos, const cVector2l& avSize)
 {
-    if(mvScissorPos == avPos && mvScissorSize == avSize)
-    {
-        return;
-    }
-
-    mvScissorPos = avPos;
-    mvScissorSize = avSize;
-
     cVector2l vFrameBufferSize;
 
     if(mpFrameBuffer)
@@ -1282,6 +1280,19 @@ void cLowLevelGraphicsSDL::SetScissorRect(const cVector2l& avPos, const cVector2
     {
         vFrameBufferSize = mvScreenSize;
     }
+
+    //The GL rect is flipped using the height of the current frame buffer, so the cache must
+    //include it. Comparing only pos and size skipped the call after switching between frame
+    //buffers of different height (screen, reflection, half size buffers) with the same rect.
+    if( mvScissorPos == avPos && mvScissorSize == avSize &&
+            mlScissorFrameBufferHeight == vFrameBufferSize.y)
+    {
+        return;
+    }
+
+    mvScissorPos = avPos;
+    mvScissorSize = avSize;
+    mlScissorFrameBufferHeight = vFrameBufferSize.y;
 
     glScissor(avPos.x, (vFrameBufferSize.y - avPos.y) - avSize.y, avSize.x, avSize.y);
 }
@@ -1370,6 +1381,14 @@ void cLowLevelGraphicsSDL::SetBlendFuncSeparate(eBlendFunc aSrcFactorColor, eBle
     {
         return;
     }
+
+    //Keep the cache in sync! (It was never updated here, so a later SetBlendFunc() with the
+    //same color factors as before was skipped and the separate alpha factors stayed active.)
+    mBlendSrcFactor = aSrcFactorColor;
+    mBlendDestFactor = aDestFactorColor;
+    mBlendSrcFactorAlpha = aSrcFactorAlpha;
+    mBlendDestFactorAlpha = aDestFactorAlpha;
+    mbBlendFuncSeparate = true;
 
     if(GLEW_EXT_blend_func_separate)
     {

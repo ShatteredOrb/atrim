@@ -330,6 +330,7 @@ private:
     bool mbScissorActive;
     cVector2l mvScissorPos;
     cVector2l mvScissorSize;
+    int mlScissorFrameBufferHeight;
 
     bool mbBlendActive;
     eBlendFunc mBlendSrcFactor;
