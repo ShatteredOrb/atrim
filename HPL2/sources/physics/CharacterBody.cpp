@@ -1050,15 +1050,6 @@ void iCharacterBody::Update(double adFixedDelta)
     UpdateCamera();
     UpdateEntity();
 
-    static bool bLogged = false;
-    if(!bLogged && mvVelocity.y < -5.0f)
-    {
-        bLogged = true;
-        Log("CharBody '%s' falling: pos %s flags %x active %d testcoll %d grav %d\n",
-            msName.c_str(), mvPosition.ToString().c_str(), (unsigned)mlCollideFlags,
-            (int)mbActive, (int)mbTestCollision, (int)mbGravityActive);
-    }
-
     PostUpdateConnection(adFixedDelta);
 }
 
