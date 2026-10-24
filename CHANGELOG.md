@@ -47,7 +47,6 @@
 - Fixed broken enemy "standing still" checks
 - Fixed broken node and bone index resolve for mesh entities
 - Fixed buggy enemy collision behavior
-- Fixed character body simulation errors
 - Fixed character collision flag bits being fed with garbage data
 - Fixed crosshair focus for static, non-interactable entities and objects
 - Fixed Custom Story images not being cleared out when another Custom Story was selected
