@@ -151,6 +151,7 @@ bool cSDLTexture::CreateFromRawData(const cVector3l &avSize, ePixelFormat aPixel
     //Create the texture data
     glEnable(GLTarget);
     glBindTexture(GLTarget, mvTextureHandles[0]);
+    mpGfxSDL->InvalidateActiveTextureUnit();
 
     int lDataSize = avSize.x * avSize.y * avSize.z * GetBytesPerPixel(aPixelFormat);
     bool bRet = CopyTextureDataToGL(mvTextureHandles[0], 0, apData, lDataSize, avSize, aPixelFormat, 0);
@@ -194,6 +195,7 @@ void cSDLTexture::SetRawData(    int alLevel, const cVector3l& avOffset, const c
 
     glEnable(GLTarget);
     glBindTexture(GLTarget, mvTextureHandles[0]);
+    mpGfxSDL->InvalidateActiveTextureUnit();
 
     if(mType == eTextureType_1D)
     {
@@ -353,6 +355,7 @@ void cSDLTexture::SetFilter(eTextureFilter aFilter)
         for(size_t i = 0; i < mvTextureHandles.size(); ++i)
         {
             glBindTexture(GLTarget, mvTextureHandles[i]);
+            mpGfxSDL->InvalidateActiveTextureUnit();
 
             if(mbUseMipMaps && mType != eTextureType_Rect)
             {
@@ -425,6 +428,7 @@ void cSDLTexture::SetAnisotropyDegree(float afX)
     for(size_t i = 0; i < mvTextureHandles.size(); ++i)
     {
         glBindTexture(GLTarget, mvTextureHandles[i]);
+        mpGfxSDL->InvalidateActiveTextureUnit();
 
         glTexParameterf(GLTarget, GL_TEXTURE_MAX_ANISOTROPY_EXT, mfAnisotropyDegree);
     }
@@ -454,6 +458,7 @@ void cSDLTexture::SetWrapS(eTextureWrap aMode)
     for(size_t i = 0; i < mvTextureHandles.size(); ++i)
     {
         glBindTexture(GLTarget, mvTextureHandles[i]);
+        mpGfxSDL->InvalidateActiveTextureUnit();
 
         glTexParameteri(GLTarget, GL_TEXTURE_WRAP_S, GetGLWrapEnum(aMode));
     }
@@ -483,6 +488,7 @@ void cSDLTexture::SetWrapT(eTextureWrap aMode)
     for(size_t i = 0; i < mvTextureHandles.size(); ++i)
     {
         glBindTexture(GLTarget, mvTextureHandles[i]);
+        mpGfxSDL->InvalidateActiveTextureUnit();
 
         glTexParameteri(GLTarget, GL_TEXTURE_WRAP_T, GetGLWrapEnum(aMode));
     }
@@ -512,6 +518,7 @@ void cSDLTexture::SetWrapR(eTextureWrap aMode)
     for(size_t i = 0; i < mvTextureHandles.size(); ++i)
     {
         glBindTexture(GLTarget, mvTextureHandles[i]);
+        mpGfxSDL->InvalidateActiveTextureUnit();
 
         glTexParameteri(GLTarget, GL_TEXTURE_WRAP_R, GetGLWrapEnum(aMode));
     }
@@ -543,6 +550,7 @@ void cSDLTexture::SetWrapSTR(eTextureWrap aMode)
     for(size_t i = 0; i < mvTextureHandles.size(); ++i)
     {
         glBindTexture(GLTarget, mvTextureHandles[i]);
+        mpGfxSDL->InvalidateActiveTextureUnit();
 
         glTexParameteri(GLTarget, GL_TEXTURE_WRAP_S, GetGLWrapEnum(aMode));
         glTexParameteri(GLTarget, GL_TEXTURE_WRAP_T, GetGLWrapEnum(aMode));
@@ -570,6 +578,7 @@ void cSDLTexture::SetCompareMode(eTextureCompareMode aMode)
     for(size_t i = 0; i < mvTextureHandles.size(); ++i)
     {
         glBindTexture(GLTarget, mvTextureHandles[i]);
+        mpGfxSDL->InvalidateActiveTextureUnit();
 
         glTexParameteri(GLTarget, GL_TEXTURE_COMPARE_MODE, GLCompareMode);
     }
@@ -593,6 +602,7 @@ void cSDLTexture::SetCompareFunc(eTextureCompareFunc aFunc)
     for(size_t i = 0; i < mvTextureHandles.size(); ++i)
     {
         glBindTexture(GLTarget, mvTextureHandles[i]);
+        mpGfxSDL->InvalidateActiveTextureUnit();
 
         glTexParameteri(GLTarget, GL_TEXTURE_COMPARE_FUNC, GLCompareFunc);
     }
@@ -616,6 +626,7 @@ void cSDLTexture::AutoGenerateMipmaps()
         for(size_t i = 0; i < mvTextureHandles.size(); ++i)
         {
             glBindTexture(GLTarget, mvTextureHandles[i]);
+            mpGfxSDL->InvalidateActiveTextureUnit();
             glTexParameteri(GLTarget, GL_GENERATE_MIPMAP_SGIS, GL_TRUE);
         }
 
@@ -820,6 +831,7 @@ bool cSDLTexture::CreateTexture(    int alTextureHandle,
     //Bind texture
     glEnable(GLTarget);
     glBindTexture(GLTarget, alTextureHandle);
+    mpGfxSDL->InvalidateActiveTextureUnit();
 
     //Log("Texture: '%s' StartLevel: %d Mipmap num: %d GenerateMipmaps: %d\n", msName.c_str(), lStartMipMapLevel,alNumOfMipMaps, abGenerateMipMaps);
 
@@ -1088,6 +1100,7 @@ void cSDLTexture::SetupProperties(int alTextureHandle)
 
     glEnable(GLTarget);
     glBindTexture(GLTarget, alTextureHandle);
+    mpGfxSDL->InvalidateActiveTextureUnit();
 
     /////////////////////////////////////////
     //Minimum Filtering

@@ -1578,6 +1578,20 @@ void cLowLevelGraphicsSDL::ClearTextureHandle(GLuint aHandle)
 
 //-----------------------------------------------------------------------
 
+void cLowLevelGraphicsSDL::InvalidateActiveTextureUnit()
+{
+    int lUnit = glCurrentActiveTextureUnit < 0 ? 0 : glCurrentActiveTextureUnit;
+    if(lUnit >= kMaxTextureUnits)
+    {
+        return;
+    }
+
+    //Not a valid handle, so the next SetTexture() on this unit always binds (and enables).
+    mvCurrentTextureHandle[lUnit] = (GLuint)~0u;
+}
+
+//-----------------------------------------------------------------------
+
 void cLowLevelGraphicsSDL::SetActiveTextureUnit(unsigned int alUnit)
 {
     SetGLActiveTextureUnit(alUnit);

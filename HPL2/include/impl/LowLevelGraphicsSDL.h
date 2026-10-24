@@ -223,6 +223,12 @@ public:
 
     void SetTexture(unsigned int alUnit, iTexture* apTex);
     void ClearTextureHandle(GLuint aHandle);
+    /**
+     * Call after binding a texture / changing the enable state of the active texture unit
+     * outside of SetTexture() (texture creation, parameter changes...). Makes the next
+     * SetTexture() on that unit bind and enable again instead of trusting the cache.
+     */
+    void InvalidateActiveTextureUnit();
 
     void SetActiveTextureUnit(unsigned int alUnit);
     void SetTextureEnv(eTextureParam aParam, int alVal);
