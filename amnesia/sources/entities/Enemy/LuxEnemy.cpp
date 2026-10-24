@@ -578,6 +578,8 @@ iLuxEnemy::iLuxEnemy(const tString &asName, int alID, cLuxMap *apMap, eLuxEnemyT
 
     mfEnemyDarknessGlowMaxDistance = gpBase->mpGameCfg->GetFloat("Enemy", "EnemyDarknessGlowMaxDistance", 0);
 
+    mbBlind = false;
+    mbDeaf = false;
     mfPlayerInDarknessLightLevel = 0.35f;
     mfCrouchVisibleRangeMul = 0.5f;
     mfDarknessStillSightRangeMul = 1.0f;
@@ -3050,6 +3052,14 @@ kSerializeVar(mPathfinder, eSerializeType_Class)
 kSerializeVar(mCharBody, eSerializeType_Class)
 
 kEndSerialize()
+
+//-----------------------------------------------------------------------
+
+iLuxEnemy_SaveData::iLuxEnemy_SaveData()
+{
+    mbBlind = false;
+    mbDeaf = false;
+}
 
 //-----------------------------------------------------------------------
 
