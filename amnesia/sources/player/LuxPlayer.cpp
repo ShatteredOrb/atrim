@@ -1673,7 +1673,8 @@ void cLuxPlayer::UpdateAvgSpeed(double adFixedDelta)
 {
     float fSpeed = mpCharBody->GetVelocity(adFixedDelta).Length();
     mlstPrevSpeeds.push_back(fSpeed);
-    if((int)mlstPrevSpeeds.size() > mlMaxPrevSpeeds)
+    int lMaxPrevSpeeds = mlMaxPrevSpeeds > 0 ? mlMaxPrevSpeeds : 1;
+    while((int)mlstPrevSpeeds.size() > lMaxPrevSpeeds)
     {
         mlstPrevSpeeds.pop_front();
     }
