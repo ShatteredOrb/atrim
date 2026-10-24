@@ -21,6 +21,7 @@ std::vector<cCamera *> cRenderInterpolation::mvCameras;
 
 bool cRenderInterpolation::mbEnabled = true;
 bool cRenderInterpolation::mbInsideTick = false;
+bool cRenderInterpolation::mbTickNeededForFrame = true;
 bool cRenderInterpolation::mbSnapAllPending = false;
 bool cRenderInterpolation::mbApplyingState = false;
 int cRenderInterpolation::mlViewModelEntityCount = 0;
@@ -38,10 +39,11 @@ double cRenderInterpolation::mdGameTime = 0.0;
 
 //-----------------------------------------------------------------------
 
-void cRenderInterpolation::BeginTick()
+void cRenderInterpolation::BeginTick(bool abNeededForFrame)
 {
     ++mlTick;
     mbInsideTick = true;
+    mbTickNeededForFrame = abNeededForFrame;
 
     //Remember where the cameras were before this tick changed them.
     for(size_t i = 0; i < mvCameras.size(); ++i)
@@ -79,6 +81,29 @@ void cRenderInterpolation::EndTick()
     if(mbEnabled == false)
     {
         ForgetTouched();
+        return;
+    }
+
+    //////////////////////////////
+    // At least two more ticks run before the next frame is drawn (low frame rate), so this
+    // snapshot would be overwritten before it is ever used. Just forget the touched list.
+    // Anything changed is left with a dirty transform, so when it is touched again in the
+    // next tick it starts with fresh history (snap) and interpolates normally between the
+    // last two ticks. A pending SnapAll is kept for the next tick that is processed.
+    if(mbTickNeededForFrame == false)
+    {
+        if(bSnapAll)
+        {
+            mbSnapAllPending = true;
+        }
+        for(size_t i = 0; i < mvTouched.size(); ++i)
+        {
+            if(mvTouched[i].mpEntity)
+            {
+                mvTouched[i].mpEntity->mlInterpTouchIdx = -1;
+            }
+        }
+        mvTouched.clear();
         return;
     }
 

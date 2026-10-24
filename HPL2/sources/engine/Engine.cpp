@@ -500,6 +500,18 @@ void cEngine::Run()
             iDynamicMaxUpdates = (int)(iMaxGameUpdates * dSpeedMul);
         }
 
+        //Count the ticks that will run this frame (same arithmetic as the loop below), so
+        //render interpolation knows which ticks are the last two (the only ones it uses).
+        int iTicksThisFrame = 0;
+        {
+            double dTempAccumulator = dAccumulator;
+            while(dTempAccumulator >= kFixedDelta && iTicksThisFrame < iDynamicMaxUpdates)
+            {
+                dTempAccumulator -= kFixedDelta;
+                ++iTicksThisFrame;
+            }
+        }
+
         while(dAccumulator >= kFixedDelta && iUpdatesOnCurrentFrame < iDynamicMaxUpdates)
         {
             if(GetGameIsDone())
@@ -509,7 +521,7 @@ void cEngine::Run()
 
             // Run Update callback in updater
             START_TIMING(FixedUpdate)
-            cRenderInterpolation::BeginTick();
+            cRenderInterpolation::BeginTick(iUpdatesOnCurrentFrame >= iTicksThisFrame - 2);
             mpUpdater->RunMessage(eUpdateableMessage_PreUpdate, kFixedDelta);
             mpUpdater->RunMessage(eUpdateableMessage_Update, kFixedDelta);
             mpUpdater->RunMessage(eUpdateableMessage_PostUpdate, kFixedDelta);

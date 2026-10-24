@@ -63,8 +63,13 @@ public:
     ////////////////////////////////////
     // Engine hooks (called by cEngine / cScene)
 
-    /** Called right before the fixed update messages of a tick. */
-    static void BeginTick();
+    /**
+     * Called right before the fixed update messages of a tick.
+     * abNeededForFrame: false if more than one tick follows this one before the next frame is
+     * drawn. Only the last two ticks of a frame are interpolated between, so the (costly)
+     * snapshot work of such a tick can be skipped.
+     */
+    static void BeginTick(bool abNeededForFrame = true);
     /** Called right after the fixed update messages of a tick. */
     static void EndTick();
     /** Called once per frame after all ticks are done, alpha = accumulator / fixed delta. */
@@ -231,6 +236,7 @@ private:
 
     static bool mbEnabled;
     static bool mbInsideTick;
+    static bool mbTickNeededForFrame;
     static bool mbSnapAllPending;
     static bool mbApplyingState;
     static int mlViewModelEntityCount;
