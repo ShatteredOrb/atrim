@@ -423,11 +423,17 @@ iTexture *cTextureManager::CreateSimpleTexture(const tString& asName, bool abUse
         {
             cVector3l size = pBmp->GetSize();
 
-            assert(size.z == 1 && size.y == (size.x * size.x));
+            if(size.z != 1 || size.y != (size.x * size.x))
+            {
+                Error("Texture '%s' is not a valid Flattened 3D volume (got %dx%dx%d, expected height == width*width)\n",
+                      asName.c_str(), size.x, size.y, size.z);
+                hplDelete(pBmp);
+                EndLoad();
+                return NULL;
+            }
 
             size.y = size.x;
             size.z = size.x;
-
             pBmp->SetSize(size);
         }
 
