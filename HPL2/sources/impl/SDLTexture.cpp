@@ -55,8 +55,12 @@ cSDLTexture::~cSDLTexture()
 
 bool cSDLTexture::CreateFromBitmap(cBitmap* apBmp)
 {
+    if(apBmp == NULL)
+    {
+        Error("CreateFromBitmap called with NULL bitmap for '%s'\n", msName.c_str());
+        return false;
+    }
     GenerateHandles(1);
-
     return CreateFromBitmapToIndex(apBmp, 0);
 }
 
@@ -682,6 +686,11 @@ void cSDLTexture::GenerateHandles(int alNumOfHandles)
 
 bool cSDLTexture::CreateFromBitmapToIndex(cBitmap* apBmp, int alIdx)
 {
+    if(apBmp == NULL)
+    {
+        Error("CreateFromBitmapToIndex called with NULL bitmap for '%s'\n", msName.c_str());
+        return false;
+    }
     ////////////////////////////
     //Create Cubemap texture
     if(mType == eTextureType_CubeMap)
