@@ -454,14 +454,7 @@ void iCharacterBody::SetActive(bool abX)
 {
     mbActive = abX;
 
-    if(mbActive == false)
-    {
-        mpCurrentBody->SetActive(false);
-    }
-    else
-    {
-        mpCurrentBody->SetActive(true);
-    }
+    mpCurrentBody->SetActive(mbActive && mbTestCollision);
 }
 
 //-----------------------------------------------------------------------
@@ -477,15 +470,7 @@ void iCharacterBody::SetTestCollision(bool abX)
 {
     mbTestCollision = abX;
 
-    if(mbTestCollision == false)
-    {
-        mpCurrentBody->SetActive(false);
-    }
-    else
-    {
-        mpCurrentBody->SetActive(true);
-    }
-
+    mpCurrentBody->SetActive(mbActive && mbTestCollision);
 }
 
 //-----------------------------------------------------------------------
