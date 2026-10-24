@@ -111,7 +111,7 @@ bool cGLSLProgram::Link()
             glUniform1i(lVarHandle, lUnit);
         }
 
-        glUseProgram(0);
+        glUseProgram(mlCurrentProgram);
     }
 
     return true;
