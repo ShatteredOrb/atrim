@@ -1320,7 +1320,7 @@ void cLuxDebugHandler::ReloadMap()
 {
     ///////////////////
     // Reload all resources
-    gpBase->mpEngine->GetResources()->LoadResourceDirsFile(gpBase->msResourceConfigPath);
+    gpBase->mpEngine->GetResources()->LoadResourceDirsFile(gpBase->msResourceConfigPath, gpBase->GetResourceAltPath());
 
     ///////////////////
     // Reload all lang files

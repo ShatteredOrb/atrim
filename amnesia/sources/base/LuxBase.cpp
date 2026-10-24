@@ -195,6 +195,8 @@ cLuxCustomStorySettings::cLuxCustomStorySettings(cLuxCustomStorySettings* apStor
     msMapsFolder = apStory->msMapsFolder;
     msStartMap = apStory->msStartMap;
     msStartPos = apStory->msStartPos;
+
+    msInitCfgFile = apStory->msInitCfgFile;
 }
 
 cLuxCustomStorySettings::~cLuxCustomStorySettings()
@@ -249,13 +251,34 @@ bool cLuxCustomStorySettings::CreateFromPath(const tWString& asPath)
         msStartMap = pCustomStoryCfg->GetString("Main", "StartMap", "");
         msStartPos = pCustomStoryCfg->GetString("Main", "StartPos", "");
 
-        tWString sStartMapPath = cString::To16Char(msMapsFolder) + cString::To16Char(msStartMap);
-
-        if(msStartMap == "" ||
-                cPlatform::FileExists(sStartMapPath) == false)
+        ///////////////////////////
+        // Full conversion (1.5 style): has its own main init file, start map comes from there.
+        msInitCfgFile = pCustomStoryCfg->GetString("Main", "InitCfgFile", "");
+        if(msInitCfgFile != "")
         {
-            sErrorMsg = "could not find start map";
-            bValid = false;
+            if(msInitCfgFile[0] == '/' || msInitCfgFile[0] == '\\')
+            {
+                msInitCfgFile = cString::Sub(msInitCfgFile, 1);
+            }
+
+            if(cPlatform::FileExists(msStoryRootFolder + cString::To16Char(msInitCfgFile)) == false)
+            {
+                Log("InitCfgFile '%s' not found in '%ls', treating it as a normal custom story\n",
+                    msInitCfgFile.c_str(), msStoryRootFolder.c_str());
+                msInitCfgFile = "";
+            }
+        }
+
+        if(msInitCfgFile == "")
+        {
+            tWString sStartMapPath = cString::To16Char(msMapsFolder) + cString::To16Char(msStartMap);
+
+            if(msStartMap == "" ||
+                    cPlatform::FileExists(sStartMapPath) == false)
+            {
+                sErrorMsg = "could not find start map";
+                bValid = false;
+            }
         }
 
         msName = cString::To16Char(pCustomStoryCfg->GetString("Main", "Name", ""));
@@ -301,6 +324,12 @@ void cLuxCustomStorySettings::SetActive()
 
 bool cLuxCustomStorySettings::StartGame()
 {
+    if(IsFullConversion())
+    {
+        gpBase->LaunchFullConversion(msStoryRootFolder);
+        return true;
+    }
+
     gpBase->mpMainMenu->SetWindowActive(eLuxMainMenuWindow_LastEnum);
 
     gpBase->mpInputHandler->ChangeState(eLuxInputState_Game);
@@ -332,6 +361,9 @@ cLuxBase::cLuxBase()
     mpUserKeyConfig = NULL;
 
     mpCustomStory = NULL;
+
+    mbFullConversionMode = false;
+    mbRelaunchAtExit = false;
 
     mpMenuCfg = NULL;
     mpGameCfg = NULL;
@@ -626,6 +658,13 @@ bool cLuxBase::ParseCommandLine(const tString &asCommandline)
 {
     msDefaultInitConfigFile = _W("config/main_init.cfg");
 
+    //////////////////////////////////
+    // Full conversion started from the custom story menu: -fc "<story root folder>"
+    if(asCommandline.size() >= 3 && cString::ToLowerCase(asCommandline.substr(0, 3)) == "-fc")
+    {
+        return ParseFullConversionCommandLine(asCommandline.substr(3));
+    }
+
     if(asCommandline == "ptest")
     {
         mbPTestActivated = true;
@@ -717,6 +756,57 @@ bool cLuxBase::InitApp()
     hplDelete(pInitCfg);
 
     //////////////////////////////
+    // Full conversion: paths in its main_init.cfg can be relative to the full conversion
+    // root (1.5 style) or to the game folder (old batch file style). Use the full conversion
+    // one if it exists.
+    if(mbFullConversionMode)
+    {
+        msDefaultUserConfigPath = ResolveFullConversionPathW(msDefaultUserConfigPath);
+        msDefaultUserKeyConfigPath = ResolveFullConversionPathW(msDefaultUserKeyConfigPath);
+        msDefaultMainConfigPath = ResolveFullConversionPathW(msDefaultMainConfigPath);
+
+        msGameConfigPath = ResolveFullConversionPathW(msGameConfigPath);
+        msMenuConfigPath = ResolveFullConversionPathW(msMenuConfigPath);
+        msPreMenuConfigPath = ResolveFullConversionPathW(msPreMenuConfigPath);
+
+        msResourceConfigPath = ResolveFullConversionPath(msResourceConfigPath);
+        msMaterialConfigPath = ResolveFullConversionPath(msMaterialConfigPath);
+
+        msBaseLanguageFolder = ResolveFullConversionPath(msBaseLanguageFolder);
+        msGameLanguageFolder = ResolveFullConversionPath(msGameLanguageFolder);
+        msPatchLanguageFolder = ResolveFullConversionPath(msPatchLanguageFolder);
+
+        msStartMapFolder = ResolveFullConversionPath(msStartMapFolder);
+
+        //Keep the normal custom story list available inside the full conversion if it does
+        //not have its own (the running full conversion is hidden from the list).
+        msCustomStoryPath = ResolveFullConversionPath(msCustomStoryPath);
+        if(msCustomStoryPath == "")
+        {
+            msCustomStoryPath = "custom_stories";
+        }
+
+        //A full conversion without its own save folder (or with the same one as the base game)
+        //must not mix its saves, profiles and settings with the base game.
+        tWString sBaseSaveFolder = _W("");
+        {
+            cConfigFile *pBaseInitCfg = hplNew(cConfigFile, (msDefaultInitConfigFile));
+            if(pBaseInitCfg->Load())
+            {
+                sBaseSaveFolder = pBaseInitCfg->GetStringW("Directories", "MainSaveFolder", _W(""));
+            }
+            hplDelete(pBaseInitCfg);
+        }
+        if(msMainSaveFolder == _W("") || cString::ToLowerCaseW(msMainSaveFolder) == cString::ToLowerCaseW(sBaseSaveFolder))
+        {
+            tWStringVec vParts;
+            tWString sSep = _W("/\\");
+            cString::GetStringVecW(msFullConversionRoot, vParts, &sSep);
+            msMainSaveFolder = vParts.empty() ? tWString(_W("FullConversion")) : vParts.back();
+        }
+    }
+
+    //////////////////////////////
     //Set up the directories to be created
     tWStringVec vDirs;
     hpl::SetupBaseDirs(vDirs, PERSONAL_RELATIVEGAME_PARENT, msMainSaveFolder);
@@ -737,6 +827,191 @@ bool cLuxBase::InitApp()
     SetUpdateLogFile(msBaseSavePath + _W("hpl_update.log"));
 
     return true;
+}
+
+//-----------------------------------------------------------------------
+
+//////////////////////////////////////////////////////////////////////////
+// FULL CONVERSION SWITCHING
+//////////////////////////////////////////////////////////////////////////
+
+//-----------------------------------------------------------------------
+
+bool cLuxBase::ParseFullConversionCommandLine(const tString& asArgs)
+{
+    //////////////////////////
+    // Get the root folder (trim spaces and quotes)
+    tString sRoot = asArgs;
+    while(sRoot.empty() == false && (sRoot[0] == ' ' || sRoot[0] == '"'))
+    {
+        sRoot = cString::Sub(sRoot, 1);
+    }
+    while(sRoot.empty() == false && (sRoot[sRoot.size() - 1] == ' ' || sRoot[sRoot.size() - 1] == '"'))
+    {
+        sRoot = sRoot.substr(0, sRoot.size() - 1);
+    }
+
+    msInitConfigFile = msDefaultInitConfigFile;
+    if(sRoot.empty())
+    {
+        msErrorMessage = _W("No full conversion folder given after -fc!");
+        return false;
+    }
+
+    tWString sRootW = cString::AddSlashAtEndW(cString::To16Char(sRoot));
+
+    //////////////////////////
+    // Read the init file from the custom story settings.
+    // (Not with cLuxCustomStorySettings::CreateFromPath, the engine does not exist yet and it
+    // uses translations.)
+    tString sInitCfgFile = "";
+    const wchar_t *vCfgNames[2] = { _W("custom_story_settings.cfg"), _W("csinfo.cfg") };
+    for(int i = 0; i < 2 && sInitCfgFile == ""; ++i)
+    {
+        cConfigFile *pStoryCfg = hplNew(cConfigFile, (sRootW + vCfgNames[i]));
+        if(pStoryCfg->Load())
+        {
+            sInitCfgFile = pStoryCfg->GetString("Main", "InitCfgFile", "");
+        }
+        hplDelete(pStoryCfg);
+    }
+
+    if(sInitCfgFile != "" && (sInitCfgFile[0] == '/' || sInitCfgFile[0] == '\\'))
+    {
+        sInitCfgFile = cString::Sub(sInitCfgFile, 1);
+    }
+
+    if(sInitCfgFile == "" || cPlatform::FileExists(sRootW + cString::To16Char(sInitCfgFile)) == false)
+    {
+        msErrorMessage = _W("Not a valid full conversion (InitCfgFile missing or not found): ") + sRootW;
+        return false;
+    }
+
+    mbFullConversionMode = true;
+    msFullConversionRoot = sRootW;
+    msInitConfigFile = msFullConversionRoot + cString::To16Char(sInitCfgFile);
+
+    return true;
+}
+
+//-----------------------------------------------------------------------
+
+tString cLuxBase::ResolveFullConversionPath(const tString& asPath)
+{
+    if(mbFullConversionMode == false || asPath.empty())
+    {
+        return asPath;
+    }
+
+    tString sRelative = asPath;
+    if(sRelative[0] == '/' || sRelative[0] == '\\')
+    {
+        sRelative = cString::Sub(sRelative, 1);
+    }
+
+    tWString sCandidate = msFullConversionRoot + cString::To16Char(sRelative);
+    if(cPlatform::FileExists(sCandidate) || cPlatform::FolderExists(sCandidate))
+    {
+        return cString::To8Char(sCandidate);
+    }
+
+    return asPath;
+}
+
+tWString cLuxBase::ResolveFullConversionPathW(const tWString& asPath)
+{
+    if(mbFullConversionMode == false || asPath.empty())
+    {
+        return asPath;
+    }
+
+    tWString sRelative = asPath;
+    if(sRelative[0] == _W('/') || sRelative[0] == _W('\\'))
+    {
+        sRelative = cString::SubW(sRelative, 1);
+    }
+
+    tWString sCandidate = msFullConversionRoot + sRelative;
+    if(cPlatform::FileExists(sCandidate) || cPlatform::FolderExists(sCandidate))
+    {
+        return sCandidate;
+    }
+
+    return asPath;
+}
+
+//-----------------------------------------------------------------------
+
+void cLuxBase::CopyBaseMainSettingsToFullConversion()
+{
+    //////////////////////////
+    // Find the base game's main_settings.cfg (save folder from the default main init file)
+    cConfigFile *pBaseInitCfg = hplNew(cConfigFile, (msDefaultInitConfigFile));
+    if(pBaseInitCfg->Load() == false)
+    {
+        hplDelete(pBaseInitCfg);
+        return;
+    }
+    tWString sBaseSaveFolder = pBaseInitCfg->GetStringW("Directories", "MainSaveFolder", _W(""));
+    hplDelete(pBaseInitCfg);
+
+    tWString sPersonalDir = cString::AddSlashAtEndW(cPlatform::GetWorkingDir());
+    tWString sBaseSettings = sPersonalDir + PERSONAL_RELATIVEROOT PERSONAL_RELATIVEGAME_PARENT + sBaseSaveFolder + _W("/main_settings.cfg");
+
+    if(sBaseSaveFolder == msMainSaveFolder || cPlatform::FileExists(sBaseSettings) == false)
+    {
+        return;
+    }
+
+    cConfigFile *pBaseSettings = hplNew(cConfigFile, (sBaseSettings));
+    if(pBaseSettings->Load() == false)
+    {
+        hplDelete(pBaseSettings);
+        return;
+    }
+
+    //////////////////////////
+    // Everything but "Main" (that one holds the full conversion's own flow: pre menu, menu,
+    // profile name, ...). From "Main" only the language, if the full conversion has it.
+    mpMainConfig->CopyLevelsFrom(pBaseSettings, "Main");
+
+    tString sLanguage = pBaseSettings->GetString("Main", "StartLanguage", "");
+    if(sLanguage != "" && cPlatform::FileExists(cString::To16Char(msGameLanguageFolder + cString::SetFileExt(sLanguage, "lang"))))
+    {
+        mpMainConfig->SetString("Main", "StartLanguage", sLanguage);
+    }
+
+    hplDelete(pBaseSettings);
+
+    Log("Full conversion first start: copied main settings from '%ls'\n", sBaseSettings.c_str());
+}
+
+//-----------------------------------------------------------------------
+
+void cLuxBase::LaunchFullConversion(const tWString& asStoryRootFolder)
+{
+    mbRelaunchAtExit = true;
+    msRelaunchCommandLine = "-fc \"" + cString::To8Char(asStoryRootFolder) + "\"";
+
+    Log("Restarting as full conversion: %s\n", msRelaunchCommandLine.c_str());
+
+    mpEngine->Exit();
+}
+
+//-----------------------------------------------------------------------
+
+void cLuxBase::ExitFromMenu()
+{
+    if(mbFullConversionMode)
+    {
+        //Back to the base game (no command line = default main init file)
+        mbRelaunchAtExit = true;
+        msRelaunchCommandLine = "";
+
+        Log("Leaving full conversion, restarting base game\n");
+    }
+
+    mpEngine->Exit();
 }
 
 //-----------------------------------------------------------------------
@@ -821,10 +1096,19 @@ bool cLuxBase::InitMainConfig()
 
     /////////////////////////////////////////////////
     // Load the main settings
+    bool bFirstFullConversionStart = mbFullConversionMode && cPlatform::FileExists(msBaseSavePath + _W("main_settings.cfg")) == false;
+
     mpMainConfig = LoadConfigFile(msDefaultMainConfigPath, msBaseSavePath + _W("main_settings.cfg"), false);
     if(mpMainConfig == NULL)
     {
         return false;
+    }
+
+    //First time this full conversion runs: take over the player's settings (screen, graphics,
+    //sound, ...) from the base game instead of the full conversion's defaults.
+    if(bFirstFullConversionStart)
+    {
+        CopyBaseMainSettingsToFullConversion();
     }
 
     //Load some basic variables
@@ -1053,7 +1337,7 @@ bool cLuxBase::InitEngine()
 
     /////////////////////////
     //Load configurations
-    mpEngine->GetResources()->LoadResourceDirsFile(msResourceConfigPath);
+    mpEngine->GetResources()->LoadResourceDirsFile(msResourceConfigPath, GetResourceAltPath());
 
     mpEngine->GetPhysics()->LoadSurfaceData(msMaterialConfigPath);
 
@@ -1499,7 +1783,7 @@ bool cLuxBase::LoadLanguage(const tString& asName, bool abForceReload)
     pResources->AddResourceDir(_W("core/shaders"),false);
     pResources->AddResourceDir(_W("core/textures"),false);
     pResources->AddResourceDir(_W("core/models"),false);
-    pResources->LoadResourceDirsFile(msResourceConfigPath);
+    pResources->LoadResourceDirsFile(msResourceConfigPath, GetResourceAltPath());
 
     if(mpCustomStory)
         mpEngine->GetResources()->AddResourceDir(mpCustomStory->msStoryRootFolder, true);
@@ -1533,7 +1817,7 @@ bool cLuxBase::LoadLanguage(const tString& asName, bool abForceReload)
         {
             if(gpBase->mpEngine->GetResources()->GetFileSearcher()->GetFilePath(sExtraLangFileName) != _W(""))
             {
-                pResources->AddLanguageFile(sExtraLangFileName, true);
+                pResources->AddLanguageFile(sExtraLangFileName, true, GetResourceAltPath());
             }
         }
     }
@@ -1563,21 +1847,21 @@ bool cLuxBase::LoadLanguage(const tString& asName, bool abForceReload)
     if(bIsFallbackPatchLang)
     {
         //English: the patch file must override the base files, so it goes first.
-        pResources->AddLanguageFile(sPatchLangFallbackPath, true);
+        pResources->AddLanguageFile(sPatchLangFallbackPath, true, GetResourceAltPath());
     }
     else
     {
         tString sPatchLangPath = sPatchFolder + sPatchFileName;
         if(cPlatform::FileExists(cString::To16Char(sPatchLangPath)))
         {
-            pResources->AddLanguageFile(sPatchLangPath, true);
+            pResources->AddLanguageFile(sPatchLangPath, true, GetResourceAltPath());
         }
     }
 
     ////////////////////////////////////////////
     // Selected language: main game lang
-    pResources->AddLanguageFile(msGameLanguageFolder + sGameFileName, true);
-    pResources->AddLanguageFile(msBaseLanguageFolder + sBaseFileName, true);
+    pResources->AddLanguageFile(msGameLanguageFolder + sGameFileName, true, GetResourceAltPath());
+    pResources->AddLanguageFile(msBaseLanguageFolder + sBaseFileName, true, GetResourceAltPath());
 
     ////////////////////////////////////////////
     // Fallbacks: only fill in entries that are still missing.
@@ -1587,24 +1871,24 @@ bool cLuxBase::LoadLanguage(const tString& asName, bool abForceReload)
     {
         pResources->AddLanguageFile(cString::To8Char(mpCustomStory->msStoryRootFolder) +
                                     mpCustomStory->msExtraLangFilePrefix +
-                                    mpCustomStory->msDefaultExtraLanguage, false);
+                                    mpCustomStory->msDefaultExtraLanguage, false, GetResourceAltPath());
     }
 
     // English (enUS) client patch fallback. Loading must succeed!
     // (Already loaded above when English is the selected language.)
     if(bIsFallbackPatchLang == false)
     {
-        pResources->AddLanguageFile(sPatchLangFallbackPath, false);
+        pResources->AddLanguageFile(sPatchLangFallbackPath, false, GetResourceAltPath());
     }
 
     if(cString::ToLowerCase(sGameFileName) != cString::ToLowerCase(msDefaultGameLanguage))
     {
-        pResources->AddLanguageFile(msGameLanguageFolder + msDefaultGameLanguage, false);
+        pResources->AddLanguageFile(msGameLanguageFolder + msDefaultGameLanguage, false, GetResourceAltPath());
     }
 
     if(cString::ToLowerCase(sBaseFileName) != cString::ToLowerCase(msDefaultBaseLanguage))
     {
-        pResources->AddLanguageFile(msBaseLanguageFolder + msDefaultBaseLanguage, false);
+        pResources->AddLanguageFile(msBaseLanguageFolder + msDefaultBaseLanguage, false, GetResourceAltPath());
     }
 
     // Refresh all modules with new translation

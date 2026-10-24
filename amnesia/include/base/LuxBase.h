@@ -98,6 +98,14 @@ public:
 
     tString msExtraLangFilePrefix;
     tString msDefaultExtraLanguage;
+
+    //Full conversion (1.5 style): InitCfgFile in custom_story_settings.cfg, relative to the
+    //story root. Empty for normal custom stories.
+    tString msInitCfgFile;
+    bool IsFullConversion()
+    {
+        return msInitCfgFile != "";
+    }
 };
 
 typedef std::vector<cLuxCustomStorySettings *> tCustomStorySettingsVec;
@@ -121,6 +129,35 @@ public:
 
     bool StartGame(const tString& asFile, const tString& asFolder, const tString& asStartPos);
     bool StartCustomStory();
+
+    /////////////////////////
+    // Full conversion switching
+    // A full conversion started from the custom story menu runs in its own process: atrim
+    // exits and starts itself again with "-fc <story root>". Leaving the full conversion
+    // (quit from its menus) starts the base game again.
+
+    /** Exits and restarts atrim as the full conversion in asStoryRootFolder. */
+    void LaunchFullConversion(const tWString& asStoryRootFolder);
+    /** Quit from a menu: inside a full conversion, go back to the base game instead. */
+    void ExitFromMenu();
+
+    bool IsFullConversionMode()
+    {
+        return mbFullConversionMode;
+    }
+    /** Root folder of the running full conversion (with trailing slash), empty if none. */
+    const tWString &GetFullConversionRoot()
+    {
+        return msFullConversionRoot;
+    }
+    /** Alt path for resource / language dirs (the full conversion root or empty). */
+    tWString GetResourceAltPath()
+    {
+        return mbFullConversionMode ? msFullConversionRoot : tWString(_W(""));
+    }
+
+    bool mbRelaunchAtExit;
+    tString msRelaunchCommandLine;
 
     void SaveConfig();
 
@@ -283,6 +320,16 @@ public:
     tWString msFirstStartFlagPath;
 
     bool mbSaveConfigAtExit;
+
+    bool mbFullConversionMode;
+    tWString msFullConversionRoot;
+
+private:
+    bool ParseFullConversionCommandLine(const tString& asArgs);
+    tString ResolveFullConversionPath(const tString& asPath);
+    tWString ResolveFullConversionPathW(const tWString& asPath);
+    void CopyBaseMainSettingsToFullConversion();
+public:
 
     std::vector<iLuxUpdateable *> mvModules;
 

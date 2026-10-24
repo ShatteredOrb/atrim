@@ -170,6 +170,32 @@ bool cConfigFile::Save()
 
 //-----------------------------------------------------------------------
 
+void cConfigFile::CopyLevelsFrom(cConfigFile *apSource, const tString& asSkipLevel)
+{
+    if(apSource == NULL || apSource->mpXmlDoc == NULL)
+    {
+        return;
+    }
+
+    TiXmlElement *pSrcLevel = apSource->mpXmlDoc->FirstChildElement();
+    for(; pSrcLevel != NULL; pSrcLevel = pSrcLevel->NextSiblingElement())
+    {
+        tString sLevel = pSrcLevel->Value();
+        if(sLevel == asSkipLevel)
+        {
+            continue;
+        }
+
+        TiXmlAttribute *pAttr = pSrcLevel->FirstAttribute();
+        for(; pAttr != NULL; pAttr = pAttr->Next())
+        {
+            SetString(sLevel, pAttr->Name(), pAttr->Value());
+        }
+    }
+}
+
+//-----------------------------------------------------------------------
+
 void cConfigFile::SetString(const tString& asLevel, const tString& asName, const tString& asVal)
 {
     TiXmlElement *pLevelElem = mpXmlDoc->FirstChildElement(asLevel.c_str());

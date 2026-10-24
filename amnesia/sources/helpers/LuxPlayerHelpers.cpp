@@ -2548,7 +2548,7 @@ void cLuxPlayerDeath::Update(double adFixedDelta)
         cSoundHandler *pSoundHandler = gpBase->mpEngine->GetSound()->GetSoundHandler();
         if(mpVoiceEntry == NULL || pSoundHandler->IsValid(mpVoiceEntry, mlVoiceEntryId) == false)
         {
-            gpBase->mpEngine->Exit();
+            gpBase->ExitFromMenu(); //Game ended. Inside a full conversion, back to the base game.
         }
     }
     //////////////////////

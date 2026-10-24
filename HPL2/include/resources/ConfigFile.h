@@ -69,6 +69,12 @@ public:
 
     cColor GetColor(const tString& asLevel, const tString& asName, const cColor& aDefault);
 
+    /**
+     * Copies every attribute of every level (top element) in apSource into this file,
+     * overwriting existing values. Levels named asSkipLevel are left out.
+     */
+    void CopyLevelsFrom(cConfigFile *apSource, const tString& asSkipLevel = "");
+
 private:
     tWString msFile;
     cFileSearcher *mpFileSearcher;

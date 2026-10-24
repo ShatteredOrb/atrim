@@ -631,7 +631,7 @@ void cLuxMainMenu::OnMenuExit()
     ////////////////
     // Quit Game
     case eLuxMainMenuExit_QuitGame:
-        gpBase->mpEngine->Exit();
+        gpBase->ExitFromMenu(); //Inside a full conversion this goes back to the base game
         break;
     ////////////////
     // Return To Game

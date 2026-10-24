@@ -386,7 +386,7 @@ bool cLuxMainMenu_Profile::ClickedExitPopup(iWidget* apWidget, const cGuiMessage
 
     if(bExit)
     {
-        gpBase->mpEngine->Exit();
+        gpBase->ExitFromMenu(); //Inside a full conversion this goes back to the base game
     }
     else
     {

@@ -202,7 +202,8 @@ void cLuxMainMenu_CustomStory::SetCurrentStory(cLuxCustomStorySettings* apStory)
     }
 
     float fButtonSep = 3.0f;
-    bool bSaveFileExists = gpBase->mpSaveHandler->SaveFileExists();
+    //A full conversion keeps its saves in its own environment, only "Start" makes sense here.
+    bool bSaveFileExists = mpStory->IsFullConversion() == false && gpBase->mpSaveHandler->SaveFileExists();
     tBoolVec vButtonAffectedBySave;
     // Continue button
     vButtonAffectedBySave.push_back(true);
@@ -275,6 +276,14 @@ kGuiCallbackDeclaredFuncEnd(cLuxMainMenu_CustomStory, PressContinue);
 
 bool cLuxMainMenu_CustomStory::PressStart(iWidget* apWidget, const cGuiMessageData& aData)
 {
+    //////////////////////////////////////////////////////
+    // Full conversion: restarts atrim into it, no custom story save folder needed.
+    if(mpStory && mpStory->IsFullConversion())
+    {
+        gpBase->StartCustomStory();
+        return true;
+    }
+
     //////////////////////////////////////////////////////
     // Create save folder if not already present
     tWString sProfileCustomSaveFolder = gpBase->msMainProfileSavePath + _W("custom");
@@ -456,6 +465,15 @@ void cLuxMainMenu_CustomStoryList::PopulateStoryList()
     {
         const tWString& sStoryPath = sPath + *it;
         cLuxCustomStorySettings* pStory = hplNew(cLuxCustomStorySettings, ());
+
+        //Do not list the full conversion that is running right now (it can not start itself).
+        if( gpBase->IsFullConversionMode() &&
+                cString::ToLowerCaseW(cString::ReplaceCharToW(cString::AddSlashAtEndW(sStoryPath), _W("\\"), _W("/"))) ==
+                cString::ToLowerCaseW(cString::ReplaceCharToW(gpBase->GetFullConversionRoot(), _W("\\"), _W("/"))))
+        {
+            hplDelete(pStory);
+            continue;
+        }
 
         if(pStory->CreateFromPath(sStoryPath))
         {
