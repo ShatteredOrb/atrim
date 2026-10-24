@@ -8,6 +8,7 @@
 - Added extra checks to ensure the parallax quality setting is applied correctly
 - Added `#include` directive for version 1.5 mod support
 - Added new customizable loading bar, inspired by the *Amnesia: Collection* ports
+- Added new dark mode GUI theme based on the HPL2 Community Editors
 - Added new drop-down menu for selecting the type of parallax rendering effect (Simple, Relief)
 - Added new engine build ID (`YYYYMMDDhhmmss`)
 - Added new engine performance metrics (saved to `hpl.log`)
