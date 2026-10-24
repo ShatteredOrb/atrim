@@ -13,6 +13,7 @@
 - Added new engine performance metrics (saved to `hpl.log`)
 - Added new flashback intensity slider
 - Added new "Flattened 3D" texture type
+- Added new frame limiter setting (`FrameRateLimit`) in `main_settings.cfg`
 - Added new Infinity Ward-style version watermark for debugging
 - Added new left- and right-handedness options
 - Added new "lite" version of the deferred light shader for ATi Radeon 9xxx video cards
@@ -32,6 +33,7 @@
 - Added ScreenImage effect and script functions from A Machine For Pigs
 - Added SDL 1.2.15 as a static library in the executable
 - Added two-sided stencil safety check for nVidia + ATi
+- Added version 1.5 full conversion mod support
 - Allowed debug menu to be used and individual maps to be loaded in Justine (ptest)
 - Allowed loading of outlines for bitmap fonts
 - Changed `F8` screenshot key to `F12`, so screenshots can be taken normally
@@ -42,6 +44,7 @@
 - Fixed billboard alphas dividing by zero
 - Fixed bloom and SSAO shader rendering bugs
 - Fixed broken byte order/endianness check so fast little-endian paths are now used
+- Fixed broken enemy "standing still" checks
 - Fixed broken node and bone index resolve for mesh entities
 - Fixed buggy enemy collision behavior
 - Fixed character body simulation errors
@@ -49,12 +52,15 @@
 - Fixed crosshair focus for static, non-interactable entities and objects
 - Fixed Custom Story images not being cleared out when another Custom Story was selected
 - Fixed destructive recursive reparse point deletion when a profile is deleted
+- Fixed enemy breakable/stuck door check malfunctions
+- Fixed enemy proximity and player distancing issues
 - Fixed engine crash from addressing 32-bit memory over 2 GB
 - Fixed excess screen aspect ratio calculation
 - Fixed fatal crash after loading invalid or null animation data
 - Fixed fatal crash due to missing null checks for skeleton bounds
 - Fixed fatal crash when meshes and mesh caches had invalid data
 - Fixed fatal crash while encoding Ogg Vorbis files
+- Fixed frame pacing issues when frames per second were slightly low
 - Fixed game crash when pressing Esc quickly to skip through bootup logos
 - Fixed inactive character bodies being simulated
 - Fixed invalid serialization of coins needed to unlock chests
@@ -66,6 +72,7 @@
 - Fixed patch language fallback loading for unsupported languages
 - Fixed post effects breaking at >60 FPS
 - Fixed SDL backquote/grave (`` ` ``) key which incorrectly returned as a backslash (`\`)
+- Fixed SSAO rendering lag from depth fetch expenses
 - Fixed Shader Model 3 parallax mapping fallback
 - Fixed user settings not refreshing visually after switching between profiles
 - Fixed visual bug caused by mesh coverage overshoot when an entity was being faded in
@@ -75,6 +82,7 @@
 - Improved text quality for notes, diaries and mementos in the Journal
 - Improved text quality for on-screen debug overlay and game subtitles
 - Improved volume slider in the main menu for more precise control
+- Major optimizations to OpenGL graphics code, greatly improving performance
 - Prevent game crash by kicking the player back into main menu if a save file was missing or corrupt
 - Removed achievement code from the Steam and console versions of Amnesia: The Dark Descent
 - Removed annoying crosshair toggle key (`X`)
@@ -91,7 +99,6 @@
 - Replaced `SDL_SetGamma` with a dedicated GLSL shader that controls the in-game gamma
 - Restored unused Brute enemy enabled sound
 - Restored unused Penumbra-style head leaning behavior
-- Some optimizations to OpenGL graphics code
 - Upgraded application timing to use platform high resolution timers
 - Upgraded engine and game code with changes from Amnesia: A Machine For Pigs
 - Upgraded game physics to use double precision
